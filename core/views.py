@@ -69,6 +69,7 @@ from .models import (
     UserAchievement,
     KhatmaPart,
     KhatmaChat,
+    GroupChat,
     QuranReading,
     ReadingGroup,
     GroupMembership,
@@ -83,6 +84,7 @@ from .forms import (
     UserProfileEditForm,
     KhatmaInteractionForm,
     KhatmaChatForm,
+    GroupChatForm,
     ExtendedUserCreationForm,
     ReadingGroupForm,
     GroupMembershipForm,
@@ -422,6 +424,9 @@ def logout_view(request):
         logout(request)
         messages.success(request, 'تم تسجيل الخروج بنجاح')
         return redirect('core:index')
+    else:
+        # For GET requests, show the logout confirmation page
+        return render(request, 'registration/logout.html')
 
 @login_required
 def profile(request):
@@ -1029,6 +1034,20 @@ def create_khatma_post(request, khatma_id):
 @login_required
 def index(request):
     """Enhanced home page with more personalized content"""
+    # Get user's reading groups
+    user_groups = ReadingGroup.objects.filter(members=request.user, is_active=True).order_by('-created_at')[:5]
+
+    # Get groups created by the user
+    created_groups = ReadingGroup.objects.filter(creator=request.user).order_by('-created_at')[:5]
+
+    # Get public groups that the user is not a member of
+    public_groups = ReadingGroup.objects.filter(
+        privacy='public',
+        is_active=True
+    ).exclude(
+        members=request.user
+    ).order_by('-created_at')[:5]
+
     context = {
         'user_khatmas': Khatma.objects.filter(creator=request.user).order_by('-id')[:5],
         'participating_khatmas': Khatma.objects.filter(participant__user=request.user).exclude(creator=request.user).order_by('-id')[:5],
@@ -1043,11 +1062,14 @@ def index(request):
         'unread_notifications': Notification.objects.filter(
             user=request.user,
             is_read=False
-        ).order_by('-id')[:5]
+        ).order_by('-id')[:5],
+        'user_groups': user_groups,
+        'created_groups': created_groups,
+        'public_groups': public_groups
     }
 
     # Use the new template with modern design
-    return render(request, 'core/new_index.html', context)
+    return render(request, 'core/index.html', context)
 
 # This function was removed as it was a duplicate of the one below
 
@@ -2262,6 +2284,18 @@ def register(request):
         form = ExtendedUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+
+            # Create user profile with selected account type
+            account_type = request.POST.get('account_type', 'individual')
+            profile, created = Profile.objects.get_or_create(
+                user=user,
+                defaults={'account_type': account_type}
+            )
+
+            if not created:
+                profile.account_type = account_type
+                profile.save()
+
             messages.success(
                 request,
                 'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.'
@@ -2376,6 +2410,78 @@ def khatma_chat(request, khatma_id):
     }
 
     return render(request, 'core/khatma_chat.html', context)
+
+@login_required
+def group_chat(request, group_id):
+    """View for group chat functionality"""
+    group = get_object_or_404(ReadingGroup, id=group_id)
+
+    # Check if user is a member of the group
+    if not GroupMembership.objects.filter(user=request.user, group=group, is_active=True).exists():
+        messages.error(request, 'يجب أن تكون عضوًا في المجموعة للمشاركة في الدردشة')
+        return redirect('core:group_detail', group_id=group.id)
+
+    # Get user's role in the group
+    user_membership = GroupMembership.objects.get(user=request.user, group=group)
+    user_role = user_membership.role
+
+    if request.method == 'POST':
+        message_type = request.POST.get('message_type', 'text')
+        message_text = request.POST.get('message', '').strip()
+        image = request.FILES.get('image')
+        audio = request.FILES.get('audio')
+
+        if not message_text and not image and not audio:
+            messages.error(request, 'لا يمكن إرسال رسالة فارغة')
+            return redirect('core:group_chat', group_id=group.id)
+
+        # Create chat message
+        GroupChat.objects.create(
+            group=group,
+            user=request.user,
+            message=message_text,
+            message_type=message_type,
+            image=image,
+            audio=audio
+        )
+
+        # Create notifications for other group members
+        other_members = GroupMembership.objects.filter(
+            group=group,
+            is_active=True
+        ).exclude(user=request.user)
+
+        for membership in other_members:
+            Notification.objects.create(
+                user=membership.user,
+                notification_type='group_chat',
+                message=f'رسالة جديدة من {request.user.username} في مجموعة {group.name}',
+                related_user=request.user
+            )
+
+        messages.success(request, 'تم إرسال الرسالة بنجاح')
+        return redirect('core:group_chat', group_id=group.id)
+
+    # Get chat messages
+    chat_messages = GroupChat.objects.filter(group=group).order_by('created_at')
+
+    # Get active members count
+    members_count = group.get_active_members_count()
+
+    # Get pinned messages
+    pinned_messages = GroupChat.objects.filter(group=group, is_pinned=True).order_by('-created_at')
+
+    context = {
+        'group': group,
+        'chat_messages': chat_messages,
+        'members_count': members_count,
+        'pinned_messages': pinned_messages,
+        'user_role': user_role,
+        'is_admin': user_role == 'admin',
+        'is_moderator': user_role in ['admin', 'moderator']
+    }
+
+    return render(request, 'core/group_chat.html', context)
 
 
 @login_required

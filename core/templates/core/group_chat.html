@@ -1,0 +1,914 @@
+{% extends 'base.html' %}
+
+{% block title %}دردشة مجموعة {{ group.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        max-height: 65vh;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        background-image: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: 300px;
+        background-blend-mode: overlay;
+        background-opacity: 0.05;
+        border-radius: 0;
+        padding: 20px;
+        scrollbar-width: thin;
+        position: relative;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .chat-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255,255,255,0.97);
+        z-index: -1;
+    }
+
+    .chat-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-container::-webkit-scrollbar-track {
+        background-color: rgba(0,0,0,0.02);
+        border-radius: 4px;
+    }
+
+    .chat-container::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.15);
+        border-radius: 4px;
+        border: 2px solid #f8f9fa;
+    }
+
+    .chat-container::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(0,0,0,0.25);
+    }
+
+    .chat-message {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 18px;
+        max-width: 75%;
+        position: relative;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .chat-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .chat-message.sent {
+        background: linear-gradient(135deg, #1a2a6c, #4361ee);
+        color: white;
+        align-self: flex-end;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+    }
+
+    .chat-message.sent .message-sender,
+    .chat-message.sent .message-time {
+        color: rgba(255,255,255,0.8);
+    }
+
+    .chat-message.received {
+        background: linear-gradient(135deg, #f5f7fa, #e4e5e6);
+        color: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+    }
+
+    .chat-message.pinned {
+        border: none;
+        box-shadow: 0 3px 15px rgba(255, 193, 7, 0.3);
+        position: relative;
+    }
+
+    .chat-message.pinned::before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        right: 20px;
+        width: 16px;
+        height: 16px;
+        background-color: #ffc107;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 1;
+    }
+
+    .chat-message.pinned::after {
+        content: '📌';
+        position: absolute;
+        top: -8px;
+        right: 20px;
+        font-size: 12px;
+        z-index: 2;
+    }
+
+    .chat-message.dua {
+        background: linear-gradient(135deg, #43a047, #66bb6a);
+        color: white;
+        border-left: none;
+    }
+
+    .chat-message.dua .message-sender,
+    .chat-message.dua .message-time {
+        color: rgba(255,255,255,0.8);
+    }
+
+    .chat-message.announcement {
+        background: linear-gradient(135deg, #e65100, #ff9800);
+        color: white;
+        border-left: none;
+    }
+
+    .chat-message.announcement .message-sender,
+    .chat-message.announcement .message-time {
+        color: rgba(255,255,255,0.8);
+    }
+
+    .chat-message.question {
+        background: linear-gradient(135deg, #0277bd, #29b6f6);
+        color: white;
+        border-left: none;
+    }
+
+    .chat-message.question .message-sender,
+    .chat-message.question .message-time {
+        color: rgba(255,255,255,0.8);
+    }
+
+    .chat-message.answer {
+        background: linear-gradient(135deg, #7b1fa2, #ba68c8);
+        color: white;
+        border-left: none;
+    }
+
+    .chat-message.answer .message-sender,
+    .chat-message.answer .message-time {
+        color: rgba(255,255,255,0.8);
+    }
+
+    .chat-message.welcome {
+        background: linear-gradient(135deg, #3f51b5, #7986cb);
+        color: white;
+        border-left: none;
+    }
+
+    .chat-message.welcome .message-sender,
+    .chat-message.welcome .message-time {
+        color: rgba(255,255,255,0.8);
+    }
+
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        align-items: center;
+    }
+
+    .message-sender {
+        font-weight: bold;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .message-sender::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #4caf50;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .message-time {
+        color: #777;
+        font-size: 0.75rem;
+        background-color: rgba(0,0,0,0.05);
+        padding: 2px 8px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .message-time i {
+        margin-right: 4px;
+        font-size: 0.7rem;
+    }
+
+    .message-content {
+        word-break: break-word;
+        line-height: 1.5;
+        font-size: 1rem;
+        position: relative;
+        padding-bottom: 5px;
+    }
+
+    .message-content i {
+        font-size: 1.2rem;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+
+    .message-actions {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: none;
+        background-color: rgba(255,255,255,0.9);
+        border-radius: 20px;
+        padding: 3px 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 10;
+        transition: all 0.3s ease;
+    }
+
+    .chat-message:hover .message-actions {
+        display: flex;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .message-action-btn {
+        background: none;
+        border: none;
+        color: #555;
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 3px 8px;
+        border-radius: 15px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .message-action-btn:hover {
+        color: #1a2a6c;
+        background-color: rgba(26, 42, 108, 0.1);
+        transform: scale(1.1);
+    }
+
+    .message-action-btn.text-danger:hover {
+        color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+
+    .empty-chat-icon {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        color: rgba(26, 42, 108, 0.2);
+    }
+
+    .empty-chat-dots {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        gap: 5px;
+    }
+
+    .empty-chat-dots span {
+        width: 10px;
+        height: 10px;
+        background-color: rgba(26, 42, 108, 0.3);
+        border-radius: 50%;
+        animation: dotPulse 1.5s infinite;
+    }
+
+    .empty-chat-dots span:nth-child(2) {
+        animation-delay: 0.5s;
+    }
+
+    .empty-chat-dots span:nth-child(3) {
+        animation-delay: 1s;
+    }
+
+    @keyframes dotPulse {
+        0% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.5); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.5; }
+    }
+
+    .pinned-messages {
+        background: linear-gradient(135deg, #fff8e1, #fffde7);
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-left: none;
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pinned-messages::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(to bottom, #ffc107, #ffeb3b);
+    }
+
+    .pinned-messages h6 {
+        color: #e65100;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed rgba(255, 193, 7, 0.3);
+    }
+
+    .pinned-messages h6 i {
+        margin-right: 8px;
+        background-color: rgba(255, 193, 7, 0.2);
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .pinned-message {
+        padding: 12px;
+        border-radius: 10px;
+        background-color: rgba(255,255,255,0.7);
+        margin-bottom: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        border-right: 3px solid #ffc107;
+    }
+
+    .pinned-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        background-color: rgba(255,255,255,0.9);
+    }
+
+    .pinned-message:last-child {
+        margin-bottom: 0;
+    }
+
+    .pinned-message .fw-bold {
+        color: #e65100;
+        display: flex;
+        align-items: center;
+    }
+
+    .pinned-message .fw-bold::before {
+        content: '';
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background-color: #ffc107;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .pinned-message .text-muted {
+        font-size: 0.75rem;
+        background-color: rgba(0,0,0,0.03);
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+
+    .chat-input-container {
+        background: linear-gradient(135deg, #f5f7fa, #ffffff);
+        border-radius: 0 0 15px 15px;
+        padding: 20px;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+        position: relative;
+        z-index: 5;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .chat-input-container::before {
+        content: '';
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 5px;
+        background-color: rgba(0,0,0,0.05);
+        border-radius: 5px;
+    }
+
+    .chat-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chat-input {
+        flex-grow: 1;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 12px 20px;
+        resize: none;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        min-height: 45px;
+        max-height: 120px;
+        margin: 0 10px;
+    }
+
+    .chat-input:focus {
+        outline: none;
+        border-color: #2c3e50;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05), 0 0 0 3px rgba(44, 62, 80, 0.1);
+    }
+
+    .chat-send-btn {
+        background-color: #2c3e50;
+        color: white;
+        border: none;
+        border-radius: 30px;
+        min-width: 100px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
+        padding: 0 20px;
+    }
+
+    .chat-send-btn i {
+        margin-left: 8px;
+        font-size: 1.1rem;
+    }
+
+    .chat-send-btn .send-text {
+        display: inline-block;
+    }
+
+    .chat-send-btn:hover {
+        background-color: #1a252f;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(44, 62, 80, 0.3);
+    }
+
+    .chat-send-btn:active {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(44, 62, 80, 0.2);
+    }
+
+    .send-btn-hover {
+        animation: pulse-button 1s infinite alternate;
+    }
+
+    @keyframes pulse-button {
+        0% {
+            transform: translateY(-3px) scale(1);
+        }
+        100% {
+            transform: translateY(-3px) scale(1.05);
+        }
+    }
+
+    .chat-options {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .message-type-select {
+        min-width: 140px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .message-type-select:focus {
+        border-color: #2c3e50;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05), 0 0 0 3px rgba(44, 62, 80, 0.1);
+        outline: none;
+    }
+
+    .selected-attachment {
+        display: flex;
+        align-items: center;
+        background-color: #f8f9fa;
+        padding: 5px 10px;
+        border-radius: 10px;
+        margin-top: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border: 1px solid #ddd;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-attachment-btn {
+        background: none;
+        border: none;
+        color: #777;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 5px;
+        transition: all 0.2s;
+    }
+
+    .chat-attachment-btn:hover {
+        color: #333;
+        transform: scale(1.1);
+    }
+
+    .group-chat-header {
+        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+        color: white;
+        padding: 20px;
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .group-chat-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: cover;
+        opacity: 0.05;
+        mix-blend-mode: overlay;
+    }
+
+    .group-chat-title {
+        font-size: 1.6rem;
+        margin: 0;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+    }
+
+    .group-chat-title i {
+        background: rgba(255,255,255,0.2);
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .group-chat-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+    }
+
+    .group-chat-badge {
+        background-color: rgba(255,255,255,0.2);
+        padding: 8px 15px;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .group-chat-badge:hover {
+        background-color: rgba(255,255,255,0.3);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #e4e5e6 100%);">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <div class="card border-0 shadow-lg" style="border-radius: 15px; overflow: hidden; box-shadow: 0 15px 50px rgba(0,0,0,0.1) !important;">
+                <div class="group-chat-header">
+                    <h3 class="group-chat-title">
+                        <i class="bi bi-chat-dots-fill me-2"></i>
+                        دردشة مجموعة: {{ group.name }}
+                    </h3>
+                    <div class="group-chat-info">
+                        <span class="group-chat-badge">
+                            <i class="bi bi-people-fill me-1"></i>
+                            {{ members_count }} عضو
+                        </span>
+                        <a href="{% url 'core:group_detail' group.id %}" class="btn btn-sm btn-light">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            العودة للمجموعة
+                        </a>
+                    </div>
+                </div>
+
+                {% if pinned_messages %}
+                <div class="pinned-messages mx-3 mt-3">
+                    <h6 class="mb-2">
+                        <i class="bi bi-pin-angle-fill"></i>
+                        الرسائل المثبتة
+                    </h6>
+                    {% for message in pinned_messages|slice:":3" %}
+                        <div class="pinned-message">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">{{ message.user.username }}</span>
+                                <small class="text-muted">{{ message.created_at|date:"j F Y, g:i a" }}</small>
+                            </div>
+                            <div class="mt-1">
+                                {% if message.message_type == 'dua' %}
+                                    <i class="bi bi-pray text-success"></i>
+                                {% elif message.message_type == 'announcement' %}
+                                    <i class="bi bi-megaphone text-warning"></i>
+                                {% elif message.message_type == 'question' %}
+                                    <i class="bi bi-question-circle text-info"></i>
+                                {% elif message.message_type == 'answer' %}
+                                    <i class="bi bi-check-circle text-primary"></i>
+                                {% elif message.message_type == 'welcome' %}
+                                    <i class="bi bi-emoji-smile text-indigo"></i>
+                                {% endif %}
+                                {{ message.message }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    {% if pinned_messages.count > 3 %}
+                        <div class="text-center mt-3">
+                            <a href="#" class="btn btn-sm btn-outline-warning rounded-pill">
+                                <i class="bi bi-pin-angle me-1"></i>
+                                عرض المزيد ({{ pinned_messages.count|add:"-3" }})
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="card-body chat-container" id="chatContainer">
+                    {% for message in chat_messages %}
+                        <div class="d-flex mb-3
+                            {% if message.user == request.user %}sent{% else %}received{% endif %}
+                            chat-message
+                            {% if message.is_pinned %}pinned{% endif %}
+                            {{ message.message_type }}
+                        ">
+                            <div class="w-100">
+                                <div class="message-header">
+                                    <span class="message-sender">{{ message.user.username }}</span>
+                                    <span class="message-time">
+                                        <i class="bi bi-clock"></i>
+                                        {{ message.created_at|date:"j F Y, g:i a" }}
+                                    </span>
+                                </div>
+
+                                <div class="message-content">
+                                    {% if message.message_type == 'dua' %}
+                                        <div class="text-center">
+                                            <i class="bi bi-pray"></i> {{ message.message }}
+                                        </div>
+                                    {% elif message.message_type == 'announcement' %}
+                                        <div>
+                                            <i class="bi bi-megaphone"></i> {{ message.message }}
+                                        </div>
+                                    {% elif message.message_type == 'question' %}
+                                        <div>
+                                            <i class="bi bi-question-circle"></i> {{ message.message }}
+                                        </div>
+                                    {% elif message.message_type == 'answer' %}
+                                        <div>
+                                            <i class="bi bi-check-circle"></i> {{ message.message }}
+                                        </div>
+                                    {% elif message.message_type == 'welcome' %}
+                                        <div class="text-center">
+                                            <i class="bi bi-emoji-smile"></i> {{ message.message }}
+                                        </div>
+                                    {% else %}
+                                        {{ message.message }}
+                                    {% endif %}
+                                </div>
+
+                                {% if message.image %}
+                                    <img src="{{ message.image.url }}" class="img-fluid mt-2 rounded" alt="صورة مرفقة">
+                                {% endif %}
+
+                                {% if message.audio %}
+                                    <audio controls class="w-100 mt-2">
+                                        <source src="{{ message.audio.url }}" type="audio/mpeg">
+                                        متصفحك لا يدعم تشغيل الملفات الصوتية.
+                                    </audio>
+                                {% endif %}
+
+                                {% if is_moderator %}
+                                <div class="message-actions">
+                                    <form method="post" action="{% url 'core:group_chat' group.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="pin">
+                                        <input type="hidden" name="message_id" value="{{ message.id }}">
+                                        <button type="submit" class="message-action-btn">
+                                            <i class="bi bi-pin-angle{% if message.is_pinned %}-fill{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'core:group_chat' group.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="message_id" value="{{ message.id }}">
+                                        <button type="submit" class="message-action-btn text-danger" onclick="return confirm('هل أنت متأكد من حذف هذه الرسالة؟')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted py-5">
+                            <div class="empty-chat-icon mb-4">
+                                <i class="bi bi-chat-dots display-1"></i>
+                                <div class="empty-chat-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                            <h4 class="mb-3">لا توجد رسائل بعد</h4>
+                            <p class="lead">كن أول من يبدأ المحادثة في هذه المجموعة!</p>
+                            <button class="btn btn-primary rounded-pill mt-3" onclick="document.getElementById('messageInput').focus()">
+                                <i class="bi bi-pencil-square me-2"></i>
+                                ابدأ محادثة جديدة
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="chat-input-container">
+                    <form id="chatForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="chat-input-row">
+                            <select name="message_type" class="form-select message-type-select">
+                                <option value="text">💬 رسالة نصية</option>
+                                <option value="dua">🤲 دعاء</option>
+                                <option value="question">❓ سؤال</option>
+                                <option value="answer">✅ إجابة</option>
+                                {% if is_moderator %}
+                                <option value="announcement">📢 إعلان</option>
+                                <option value="welcome">👋 ترحيب</option>
+                                {% endif %}
+                            </select>
+
+                            <textarea name="message" id="messageInput" class="chat-input" placeholder="اكتب رسالتك هنا..." required></textarea>
+
+                            <button type="submit" class="chat-send-btn" id="sendButton">
+                                <i class="bi bi-send"></i>
+                                <span class="send-text">إرسال</span>
+                            </button>
+                        </div>
+
+                        <div class="chat-options">
+                            <div>
+                                <label for="image-upload" class="chat-attachment-btn">
+                                    <i class="bi bi-image"></i>
+                                </label>
+                                <input type="file" name="image" id="image-upload" accept="image/*" style="display: none;">
+
+                                <label for="audio-upload" class="chat-attachment-btn">
+                                    <i class="bi bi-mic"></i>
+                                </label>
+                                <input type="file" name="audio" id="audio-upload" accept="audio/*" style="display: none;">
+                            </div>
+
+                            <div id="attachment-preview"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatContainer = document.getElementById('chatContainer');
+        const imageUpload = document.getElementById('image-upload');
+        const audioUpload = document.getElementById('audio-upload');
+        const attachmentPreview = document.getElementById('attachment-preview');
+
+        // Auto-scroll to bottom of chat
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const chatForm = document.getElementById('chatForm');
+
+        // Focus on message input when page loads
+        messageInput.focus();
+
+        // Enable sending message with Enter key (Shift+Enter for new line)
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (messageInput.value.trim() !== '') {
+                    chatForm.submit();
+                }
+            }
+        });
+
+        // Animate send button on hover
+        sendButton.addEventListener('mouseenter', function() {
+            this.classList.add('send-btn-hover');
+        });
+
+        sendButton.addEventListener('mouseleave', function() {
+            this.classList.remove('send-btn-hover');
+        });
+
+        // Auto-resize textarea as user types
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Show preview of selected image
+        imageUpload.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    attachmentPreview.innerHTML = `
+                        <div class="selected-attachment">
+                            <img src="${e.target.result}" style="max-height: 50px; max-width: 100px; border-radius: 5px;">
+                            <button type="button" class="btn btn-sm btn-link text-danger" onclick="clearAttachment('image')">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        // Show preview of selected audio
+        audioUpload.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                attachmentPreview.innerHTML = `
+                    <div class="selected-attachment">
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-file-earmark-music me-1"></i>
+                            ${this.files[0].name}
+                        </span>
+                        <button type="button" class="btn btn-sm btn-link text-danger" onclick="clearAttachment('audio')">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        });
+
+        // Clear attachment preview
+        window.clearAttachment = function(type) {
+            if (type === 'image') {
+                imageUpload.value = '';
+            } else if (type === 'audio') {
+                audioUpload.value = '';
+            }
+            attachmentPreview.innerHTML = '';
+        }
+
+        // Add loading state to send button when form is submitted
+        chatForm.addEventListener('submit', function() {
+            sendButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري الإرسال...';
+            sendButton.disabled = true;
+        });
+    });
+</script>
+{% endblock %}

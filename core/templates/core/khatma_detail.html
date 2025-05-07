@@ -1,171 +1,797 @@
 {% extends "core/base.html" %}
 
+{% block extra_head %}
+<style>
+    /* Enhanced Khatma Detail Styling */
+    .khatma-header {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .khatma-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: cover;
+        opacity: 0.05;
+        z-index: 0;
+    }
+
+    .khatma-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .khatma-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .khatma-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255,255,255,0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .khatma-meta-item i {
+        font-size: 1.2rem;
+    }
+
+    .khatma-description {
+        margin-top: 1.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        position: relative;
+        z-index: 1;
+        background: rgba(255,255,255,0.1);
+        padding: 1.5rem;
+        border-radius: 10px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .khatma-progress-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        text-align: center;
+        position: relative;
+        z-index: 2;
+        margin-top: -3rem;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .progress-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #2c3e50;
+    }
+
+    .progress-circular {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 1.5rem;
+    }
+
+    .progress-circular svg {
+        transform: rotate(-90deg);
+    }
+
+    .progress-circular circle {
+        fill: none;
+        stroke-width: 10;
+        stroke-linecap: round;
+    }
+
+    .progress-circular .progress-bg {
+        stroke: #f0f0f0;
+    }
+
+    .progress-circular .progress-bar {
+        stroke: #4CAF50;
+        transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .progress-value {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #4CAF50;
+    }
+
+    .progress-label {
+        font-size: 1rem;
+        color: #7f8c8d;
+        margin-bottom: 1.5rem;
+    }
+
+    .join-btn {
+        background: linear-gradient(135deg, #4CAF50, #8BC34A);
+        border: none;
+        border-radius: 50px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .join-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+    }
+
+    .join-btn i {
+        margin-right: 0.5rem;
+    }
+
+    .khatma-info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .khatma-info-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #2c3e50;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid rgba(76, 175, 80, 0.2);
+    }
+
+    .khatma-info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .khatma-info-item:hover {
+        background: rgba(76, 175, 80, 0.05);
+    }
+
+    .khatma-info-item i {
+        width: 30px;
+        color: #4CAF50;
+        font-size: 1.1rem;
+    }
+
+    .khatma-info-label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+        color: #34495e;
+    }
+
+    .khatma-info-value {
+        color: #7f8c8d;
+    }
+
+    .memorial-badge {
+        background: linear-gradient(135deg, #9C27B0, #673AB7);
+        color: white;
+        padding: 0.25rem 1rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
-    <div class="card mb-4">
-        <div class="card-header">
-            <h2 class="card-title mb-0">{{ khatma.title }}</h2>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    <p class="mb-2"><strong>الوصف:</strong> {{ khatma.description }}</p>
-                    {% if khatma.deceased %}
-                        <p class="mb-2"><strong>إهداء إلى:</strong> {{ khatma.deceased.name }}</p>
-                    {% endif %}
-                    <p class="mb-2"><strong>تاريخ البدء:</strong> {{ khatma.start_date }}</p>
-                    {% if khatma.end_date %}
-                        <p class="mb-2"><strong>تاريخ الانتهاء المتوقع:</strong> {{ khatma.end_date }}</p>
-                    {% endif %}
-                    <p class="mb-2"><strong>التكرار:</strong> {{ khatma.get_frequency_display }}</p>
-                    <p class="mb-2"><strong>منشئ الختمة:</strong> {{ khatma.creator.username }}</p>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">تقدم الختمة</h5>
-                            <div class="progress mb-3">
-                                <div class="progress-bar" role="progressbar"
-                                    style="width: {% widthratio completed_parts total_parts 100 %}%;"
-                                    aria-valuenow="{% widthratio completed_parts total_parts 100 %}"
-                                    aria-valuemin="0" aria-valuemax="100">
-                                    {{ completed_parts }}/{{ total_parts }}
-                                </div>
-                            </div>
-                            {% if not is_participant and khatma.creator != user %}
-                                <form method="post">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-primary">انضم للختمة</button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+    <!-- Enhanced Khatma Header -->
+    <div class="khatma-header">
+        <h1 class="khatma-title">{{ khatma.title }}</h1>
+
+        <div class="khatma-meta">
+            <div class="khatma-meta-item">
+                <i class="bi bi-person-circle"></i>
+                <span>{{ khatma.creator.username }}</span>
             </div>
+            <div class="khatma-meta-item">
+                <i class="bi bi-calendar-event"></i>
+                <span>{{ khatma.start_date|date:"Y-m-d" }}</span>
+            </div>
+            <div class="khatma-meta-item">
+                <i class="bi bi-repeat"></i>
+                <span>{{ khatma.get_frequency_display }}</span>
+            </div>
+            {% if khatma.deceased %}
+            <div class="khatma-meta-item">
+                <i class="bi bi-heart"></i>
+                <span>إهداء لروح {{ khatma.deceased.name }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="khatma-description">
+            {{ khatma.description|linebreaks }}
         </div>
     </div>
 
     <div class="row">
-        {% for part in parts %}
-            {% if part.part %}
-            <div class="col-md-3 mb-3">
-                <div class="card h-100 {% if part.is_completed %}bg-light{% endif %}">
-                    <div class="card-body">
-                        <h5 class="card-title">الجزء {{ part.part.part_number }}</h5>
-                        {% if part.participant %}
-                            <p class="mb-2">
-                                <small>يقرأه: {{ part.participant.username }}</small>
-                            </p>
-                        {% endif %}
-                        {% if part.is_completed %}
-                            <div class="text-success">
-                                <i class="fas fa-check-circle"></i> تم الإكمال
-                                {% if part.completed_at %}
-                                    <br>
-                                    <small>{{ part.completed_at|date:"Y-m-d" }}</small>
-                                {% endif %}
-                            </div>
-                        {% else %}
-                            {% if is_participant or khatma.creator == user %}
-                                <div class="btn-group">
-                                    <a href="{% url 'core:assign_part' khatma.id part.part.part_number %}"
-                                       class="btn btn-outline-primary btn-sm">
-                                        {% if part.participant %}تحديث{% else %}{% endif %}
-                                    </a>
-                                    <a href="{% url 'core:quran_part' part.part.part_number %}"
-                                       class="btn btn-outline-success btn-sm" target="_blank">
-                                        قراءة
-                                    </a>
-                                </div>
-                            {% endif %}
-                        {% endif %}
+        <div class="col-lg-4">
+            <!-- Progress Card -->
+            <div class="khatma-progress-container">
+                <h3 class="progress-title">تقدم الختمة</h3>
 
-                        {# --- Quran Text Section --- #}
-                        <div class="mt-3 quran-text-section">
-                            {% if part.ayahs %}
-                                <div class="quran-ayats">
-                                    {% regroup part.ayahs by surah as surah_ayahs %}
-                                    {% for surah in surah_ayahs %}
-                                        <div class="mb-2">
-                                            <strong>سورة {{ surah.grouper.name_arabic }}</strong>
-                                            <div class="ayahs-list" style="direction: rtl; text-align: right;">
-                                                {% for ayah in surah.list %}
-                                                    <span class="ayah-text">{{ ayah.text_uthmani }}</span>
-                                                    <span class="ayah-number">&#x06DD;{{ ayah.ayah_number_in_surah }}</span>
+                <div class="progress-circular">
+                    <svg width="150" height="150" viewBox="0 0 150 150">
+                        <circle class="progress-bg" cx="75" cy="75" r="65" stroke-dasharray="408" stroke-dashoffset="0"></circle>
+                        <circle class="progress-bar" cx="75" cy="75" r="65"
+                                stroke-dasharray="408"
+                                stroke-dashoffset="{{ 408|add:'-'|add:408|add:'*'|add:completed_parts|add:'/'|add:total_parts|add:'*'|add:1 }}"></circle>
+                    </svg>
+                    <div class="progress-value">{{ completed_parts }}/{{ total_parts }}</div>
+                </div>
+
+                <div class="progress-label">
+                    تم إكمال {{ completed_parts }} جزء من أصل {{ total_parts }} جزء
+                </div>
+
+                {% if not is_participant and khatma.creator != user %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="join-btn">
+                            <i class="bi bi-person-plus"></i> انضم للختمة
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+
+            <!-- Khatma Info Card -->
+            <div class="khatma-info-card">
+                <h3 class="khatma-info-title">معلومات الختمة</h3>
+
+                <div class="khatma-info-item">
+                    <i class="bi bi-person-circle"></i>
+                    <span class="khatma-info-label">المنشئ:</span>
+                    <span class="khatma-info-value">{{ khatma.creator.username }}</span>
+                </div>
+
+                <div class="khatma-info-item">
+                    <i class="bi bi-calendar-event"></i>
+                    <span class="khatma-info-label">تاريخ البدء:</span>
+                    <span class="khatma-info-value">{{ khatma.start_date|date:"Y-m-d" }}</span>
+                </div>
+
+                {% if khatma.end_date %}
+                <div class="khatma-info-item">
+                    <i class="bi bi-calendar-check"></i>
+                    <span class="khatma-info-label">تاريخ الانتهاء المتوقع:</span>
+                    <span class="khatma-info-value">{{ khatma.end_date|date:"Y-m-d" }}</span>
+                </div>
+                {% endif %}
+
+                <div class="khatma-info-item">
+                    <i class="bi bi-repeat"></i>
+                    <span class="khatma-info-label">التكرار:</span>
+                    <span class="khatma-info-value">{{ khatma.get_frequency_display }}</span>
+                </div>
+
+                {% if khatma.deceased %}
+                <div class="khatma-info-item">
+                    <i class="bi bi-heart"></i>
+                    <span class="khatma-info-label">إهداء إلى:</span>
+                    <span class="khatma-info-value">{{ khatma.deceased.name }}</span>
+                    <span class="memorial-badge"><i class="bi bi-heart-fill"></i> ختمة تذكارية</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="khatma-info-card">
+                <h3 class="khatma-info-title">
+                    <i class="bi bi-book"></i> أجزاء القرآن
+                    <span class="badge bg-primary rounded-pill ms-2">{{ total_parts }} جزء</span>
+                </h3>
+
+                <div class="row g-3">
+                    {% for part in parts %}
+                        {% if part.part %}
+                        <div class="col-md-4 col-sm-6">
+                            <div class="card h-100 quran-part-card {% if part.is_completed %}completed{% endif %}">
+                                <div class="card-body p-0">
+                                    <div class="part-header {% if part.is_completed %}completed{% endif %}">
+                                        <div class="part-number">{{ part.part.part_number }}</div>
+                                        <h5 class="part-title">الجزء {{ part.part.part_number }}</h5>
+                                        {% if part.is_completed %}
+                                            <div class="completion-badge">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="part-content p-3">
+                                        {% if part.participant %}
+                                            <div class="participant-info">
+                                                <i class="bi bi-person-circle"></i>
+                                                <span>{{ part.participant.username }}</span>
+                                            </div>
+                                        {% else %}
+                                            <div class="participant-info empty">
+                                                <i class="bi bi-person-dash"></i>
+                                                <span>غير مخصص</span>
+                                            </div>
+                                        {% endif %}
+
+                                        {% if part.is_completed %}
+                                            <div class="completion-info">
+                                                <i class="bi bi-calendar-check"></i>
+                                                <span>{% if part.completed_at %}{{ part.completed_at|date:"Y-m-d" }}{% else %}تم الإكمال{% endif %}</span>
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="part-actions mt-3">
+                                            {% if is_participant or khatma.creator == user %}
+                                                {% if not part.is_completed %}
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <a href="{% url 'core:assign_part' khatma.id part.part.part_number %}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-person-plus"></i>
+                                                            {% if part.participant %}تحديث{% else %}تخصيص{% endif %}
+                                                        </a>
+
+                                                        <form method="post" action="{% url 'core:assign_part' khatma.id part.part.part_number %}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="notes" value="تم إكمال الجزء من خلال صفحة تفاصيل الختمة">
+                                                            <button type="submit" class="btn btn-sm btn-success mark-complete-btn">
+                                                                <i class="bi bi-check-circle"></i> إكمال الجزء
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="completed-badge">
+                                                        <i class="bi bi-check-circle-fill"></i> تم الإكمال
+                                                        {% if part.completed_at %}
+                                                            <div class="completed-date">{{ part.completed_at|date:"Y-m-d" }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+
+                                            <a href="{% url 'core:quran_part' part.part.part_number %}" class="btn btn-sm btn-outline-success mt-2" target="_blank">
+                                                <i class="bi bi-book"></i> قراءة
+                                            </a>
+                                        </div>
+
+                                        {% if part.ayahs %}
+                                            <div class="quran-preview mt-3">
+                                                {% regroup part.ayahs by surah as surah_ayahs %}
+                                                {% for surah in surah_ayahs|slice:":1" %}
+                                                    <div class="surah-name">سورة {{ surah.grouper.name_arabic }}</div>
+                                                    <div class="ayah-preview" dir="rtl">
+                                                        {{ surah.list.0.text_uthmani|truncatechars:100 }}
+                                                    </div>
                                                 {% endfor %}
                                             </div>
-                                        </div>
-                                    {% endfor %}
+                                        {% endif %}
+                                    </div>
                                 </div>
-                            {% else %}
-                                <div class="text-muted">لا توجد آيات لهذا الجزء.</div>
-                            {% endif %}
+                            </div>
                         </div>
-                        {# --- End Quran Text Section --- #}
-                    </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </div>
-            {% endif %}
-        {% endfor %}
+        </div>
     </div>
+
+    <style>
+        /* Quran Part Cards Styling */
+        .quran-part-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .quran-part-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .quran-part-card.completed {
+            border: 2px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .part-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 1rem;
+            position: relative;
+            text-align: center;
+        }
+
+        .part-header.completed {
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+        }
+
+        .part-number {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+
+        .part-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .completion-badge {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .participant-info, .completion-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .participant-info.empty {
+            color: #aaa;
+        }
+
+        .participant-info i, .completion-info i {
+            font-size: 1rem;
+            color: #3498db;
+        }
+
+        .completion-info i {
+            color: #4CAF50;
+        }
+
+        .part-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .quran-preview {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .surah-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .ayah-preview {
+            font-family: 'Amiri', 'Traditional Arabic', serif;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #555;
+            text-align: right;
+        }
+
+        /* Mark Complete Button Styling */
+        .mark-complete-btn {
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .mark-complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            background: linear-gradient(135deg, #43A047, #7CB342);
+        }
+
+        .completed-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #4CAF50;
+            font-weight: 600;
+            background: rgba(76, 175, 80, 0.1);
+            padding: 0.5rem;
+            border-radius: 8px;
+            border: 1px dashed rgba(76, 175, 80, 0.3);
+        }
+
+        .completed-badge i {
+            font-size: 1.2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .completed-date {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+        }
+    </style>
 </div>
 
 <!-- Social Posts Section -->
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4>المنشورات</h4>
-                    {% if is_participant or khatma.creator == user %}
-                    <button class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus-circle"></i> إنشاء منشور
-                    </button>
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    {% if posts %}
-                        {% for post in posts %}
-                            <div class="card mb-3">
-                                <div class="card-header d-flex justify-content-between">
-                                    <div>
-                                        <strong>{{ post.user.username }}</strong>
-                                        {% if post.post_type == 'memorial' %}
-                                            <span class="badge bg-info ms-2">منشور تأبيني</span>
-                                        {% endif %}
-                                    </div>
-                                    <small class="text-muted">{{ post.created_at|date:"Y-m-d H:i" }}</small>
-                                </div>
-                                <div class="card-body">
-                                    <p>{{ post.content }}</p>
+<div class="container mt-5">
+    <div class="khatma-info-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="khatma-info-title mb-0">
+                <i class="bi bi-chat-square-text"></i> المنشورات والتفاعلات
+            </h3>
+            {% if is_participant or khatma.creator == user %}
+            <button class="btn create-post-btn">
+                <i class="bi bi-plus-circle"></i> إنشاء منشور
+            </button>
+            {% endif %}
+        </div>
 
-                                    <!-- Reactions -->
-                                    <div class="d-flex justify-content-between align-items-center mt-3">
-                                        <div class="reaction-buttons">
-                                            <button class="btn btn-sm btn-outline-primary me-2">
-                                                <i class="fas fa-thumbs-up"></i>
-                                                إعجاب ({{ post.like_count|default:"0" }})
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-success me-2">
-                                                <i class="fas fa-heart"></i>
-                                                دعاء ({{ post.pray_count|default:"0" }})
-                                            </button>
-                                        </div>
-                                        <button class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-comment"></i> التعليقات
-                                        </button>
-                                    </div>
+        {% if posts %}
+            <div class="posts-container">
+                {% for post in posts %}
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-author">
+                                <div class="author-avatar">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div class="author-info">
+                                    <div class="author-name">{{ post.user.username }}</div>
+                                    <div class="post-date">{{ post.created_at|date:"Y-m-d H:i" }}</div>
                                 </div>
                             </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="alert alert-info text-center">
-                            لا توجد منشورات حتى الآن
+                            {% if post.post_type == 'memorial' %}
+                                <div class="post-badge memorial">
+                                    <i class="bi bi-heart-fill"></i> منشور تأبيني
+                                </div>
+                            {% endif %}
                         </div>
-                    {% endif %}
-                </div>
+
+                        <div class="post-content">
+                            {{ post.content|linebreaks }}
+                        </div>
+
+                        <div class="post-actions">
+                            <button class="post-action-btn like">
+                                <i class="bi bi-hand-thumbs-up"></i>
+                                <span>إعجاب</span>
+                                <span class="count">{{ post.like_count|default:"0" }}</span>
+                            </button>
+                            <button class="post-action-btn pray">
+                                <i class="bi bi-heart"></i>
+                                <span>دعاء</span>
+                                <span class="count">{{ post.pray_count|default:"0" }}</span>
+                            </button>
+                            <button class="post-action-btn comment">
+                                <i class="bi bi-chat-dots"></i>
+                                <span>تعليق</span>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
-        </div>
+        {% else %}
+            <div class="empty-posts">
+                <div class="empty-icon">
+                    <i class="bi bi-chat-square"></i>
+                </div>
+                <h4>لا توجد منشورات حتى الآن</h4>
+                <p>كن أول من يشارك في هذه الختمة</p>
+                {% if is_participant or khatma.creator == user %}
+                <button class="btn create-post-btn mt-3">
+                    <i class="bi bi-plus-circle"></i> إنشاء منشور جديد
+                </button>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
 </div>
+
+<style>
+    /* Social Posts Styling */
+    .create-post-btn {
+        background: linear-gradient(135deg, #FF5722, #FF9800);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .create-post-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(255, 87, 34, 0.4);
+        color: white;
+    }
+
+    .posts-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .post-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .post-header {
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .post-author {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .author-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #3498db;
+    }
+
+    .author-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .post-date {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+    }
+
+    .post-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .post-badge.memorial {
+        background: linear-gradient(135deg, #9C27B0, #673AB7);
+        color: white;
+    }
+
+    .post-content {
+        padding: 1.5rem;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #34495e;
+    }
+
+    .post-actions {
+        display: flex;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .post-action-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: none;
+        border: none;
+        color: #7f8c8d;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .post-action-btn:hover {
+        background: rgba(0,0,0,0.02);
+    }
+
+    .post-action-btn.like:hover {
+        color: #3498db;
+    }
+
+    .post-action-btn.pray:hover {
+        color: #e74c3c;
+    }
+
+    .post-action-btn.comment:hover {
+        color: #2ecc71;
+    }
+
+    .post-action-btn .count {
+        position: absolute;
+        top: 0.25rem;
+        right: 0.25rem;
+        background: #f0f0f0;
+        border-radius: 50px;
+        padding: 0.1rem 0.4rem;
+        font-size: 0.7rem;
+        color: #555;
+    }
+
+    .empty-posts {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: #ecf0f1;
+        margin-bottom: 1rem;
+    }
+
+    .empty-posts h4 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-posts p {
+        color: #7f8c8d;
+        margin-bottom: 1.5rem;
+    }
+</style>
 {% endblock %}

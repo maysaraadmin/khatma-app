@@ -26,8 +26,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # Required for django-allauth
     'core.apps.CoreConfig',
+
+    # django-allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
+
+# django-allauth settings
+SITE_ID = 1
+SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'localhost:8000')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -38,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.ErrorHandlerMiddleware',  # Custom error handling middleware
+    'allauth.account.middleware.AccountMiddleware',  # Required for django-allauth
 ]
 
 ROOT_URLCONF = 'khatma.urls'
@@ -128,6 +140,45 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'core:index'
 LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
+
+# django-allauth Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    # Default Django backend
+    'django.contrib.auth.backends.ModelBackend',
+
+    # django-allauth backend
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# django-allauth settings
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_UNIQUE_EMAIL = True
+
+# New django-allauth 0.60.0+ settings
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}  # Replaces ACCOUNT_AUTHENTICATION_METHOD
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # Replaces ACCOUNT_EMAIL_REQUIRED and ACCOUNT_USERNAME_REQUIRED
+
+# Keep these for backward compatibility during transition
+# They will be removed in a future version
+ACCOUNT_EMAIL_REQUIRED = True  # Deprecated
+ACCOUNT_USERNAME_REQUIRED = True  # Deprecated
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'  # Deprecated
+
+# Custom adapters
+SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'
+
+# Social account settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
 
 # Logging Configuration
 LOGGING = {

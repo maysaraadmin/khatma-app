@@ -1,5 +1,35 @@
 {% extends "core/base.html" %}
 
+{% block extra_css %}
+<style>
+  .separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  .separator::before,
+  .separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .separator::before {
+    margin-right: 1em;
+  }
+
+  .separator::after {
+    margin-left: 1em;
+  }
+
+  .separator-text {
+    padding: 0 10px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
@@ -79,6 +109,18 @@
           <div class="text-center mt-3">
             <span class="text-muted">هل لديك حساب بالفعل؟</span>
             <a href="{% url 'login' %}" class="text-primary">تسجيل الدخول</a>
+          </div>
+
+          <div class="mt-4">
+            <div class="separator text-center mb-3">
+              <span class="separator-text">أو</span>
+            </div>
+            <div class="d-grid gap-2">
+              <a href="{% url 'socialaccount_signup' %}?process=connect&next={% url 'core:index' %}" class="btn btn-outline-secondary">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" width="20" height="20" class="me-2">
+                إنشاء حساب باستخدام جوجل
+              </a>
+            </div>
           </div>
         </div>
       </div>

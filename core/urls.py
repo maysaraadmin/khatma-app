@@ -1,6 +1,9 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+from django.contrib import admin
 from . import views
+from .views_social import CustomSocialSignupView
+from .admin_views import admin_dashboard
 
 app_name = 'core'
 
@@ -51,6 +54,7 @@ urlpatterns = [
     path('groups/<int:group_id>/add-member/', views.add_group_member, name='add_group_member'),
     path('groups/<int:group_id>/remove-member/<int:user_id>/', views.remove_group_member, name='remove_group_member'),
     path('groups/<int:group_id>/create-khatma/', views.create_group_khatma, name='create_group_khatma'),
+    path('groups/<int:group_id>/chat/', views.group_chat, name='group_chat'),
 
     # Notifications
     path('notifications/', views.notifications, name='notifications'),

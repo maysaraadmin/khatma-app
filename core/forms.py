@@ -8,6 +8,7 @@ from .models import (
     Deceased,
     Profile,
     KhatmaChat,
+    GroupChat,
     UserAchievement,
     KhatmaInteraction,
     Participant,
@@ -608,6 +609,22 @@ class KhatmaChatForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 3,
                 'placeholder': 'اكتب رسالتك هنا...'
+            })
+        }
+
+class GroupChatForm(forms.ModelForm):
+    """Form for sending messages in group chat"""
+    class Meta:
+        model = GroupChat
+        fields = ['message', 'message_type']
+        widgets = {
+            'message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'اكتب رسالتك هنا...'
+            }),
+            'message_type': forms.Select(attrs={
+                'class': 'form-select'
             })
         }
 

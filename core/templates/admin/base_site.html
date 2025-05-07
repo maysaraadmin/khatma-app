@@ -1,0 +1,226 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #2c3e50;
+        --secondary: #34495e;
+        --accent: #16a085;
+        --primary-fg: #fff;
+
+        --body-fg: #333;
+        --body-bg: #f8f9fa;
+        --body-quiet-color: #666;
+        --body-loud-color: #000;
+
+        --header-color: #fff;
+        --header-branding-color: var(--accent);
+        --header-bg: var(--primary);
+        --header-link-color: #eee;
+
+        --breadcrumbs-fg: #e9ecef;
+        --breadcrumbs-link-fg: var(--body-bg);
+        --breadcrumbs-bg: var(--primary);
+
+        --link-fg: #2c3e50;
+        --link-hover-color: #16a085;
+        --link-selected-fg: #16a085;
+
+        --hairline-color: #e9ecef;
+        --border-color: #ced4da;
+
+        --error-fg: #ba2121;
+
+        --message-success-bg: #dff0d8;
+        --message-success-border: #d6e9c6;
+        --message-success-text: #3c763d;
+
+        --message-warning-bg: #fcf8e3;
+        --message-warning-border: #faebcc;
+        --message-warning-text: #8a6d3b;
+
+        --message-error-bg: #f2dede;
+        --message-error-border: #ebccd1;
+        --message-error-text: #a94442;
+
+        --button-bg: var(--primary);
+        --button-fg: var(--primary-fg);
+        --button-hover-bg: var(--secondary);
+        --default-button-bg: #e9ecef;
+        --default-button-fg: #333;
+        --close-button-bg: #888;
+        --close-button-hover-bg: #747474;
+    }
+
+    body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+    }
+
+    #header {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .module h2, .module caption, .inline-group h2 {
+        background: var(--primary);
+    }
+
+    #user-tools {
+        font-size: 0.9rem;
+    }
+
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        border-radius: 4px;
+    }
+
+    .button.default, input[type=submit].default, .submit-row input.default {
+        background: var(--accent);
+    }
+
+    .button.default:active, input[type=submit].default:active,
+    .button.default:focus, input[type=submit].default:focus,
+    .button.default:hover, input[type=submit].default:hover {
+        background: #138a72;
+    }
+
+    .dashboard .module table th {
+        width: 100%;
+    }
+
+    .dashboard .module table td {
+        white-space: nowrap;
+    }
+
+    .dashboard .module table td a {
+        display: block;
+        padding: 8px;
+        transition: background 0.15s;
+    }
+
+    .dashboard .module table td a:hover {
+        background: #f5f5f5;
+    }
+
+    /* RTL Support for Arabic */
+    html[dir="rtl"] .dashboard .module table th,
+    html[dir="rtl"] .dashboard .module table td {
+        text-align: right;
+    }
+
+    /* Custom Dashboard Styling */
+    .dashboard-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-card {
+        flex: 1;
+        min-width: 200px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 20px;
+        text-align: center;
+    }
+
+    .dashboard-card h3 {
+        margin-top: 0;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .dashboard-card .count {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--accent);
+        margin: 10px 0;
+    }
+
+    .dashboard-card .description {
+        color: var(--body-quiet-color);
+        font-size: 0.9rem;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 767px) {
+        #header {
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 30px;
+        }
+
+        #user-tools {
+            margin-top: 10px;
+        }
+
+        .dashboard-card {
+            min-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        {{ site_header|default:_('Django administration') }}
+    </a>
+</h1>
+{% endblock %}
+
+{% block usertools %}
+{{ block.super }}
+{% endblock %}
+
+{% block nav-global %}
+<div class="module">
+    <ul class="nav-global">
+        <li><a href="{% url 'admin_dashboard' %}">لوحة التحكم</a></li>
+        <li><a href="{% url 'admin:index' %}">الإدارة</a></li>
+        <li><a href="{% url 'core:index' %}">العودة إلى الموقع</a></li>
+    </ul>
+</div>
+<style>
+    .nav-global {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        background: var(--primary);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .nav-global li {
+        flex: 1;
+    }
+
+    .nav-global a {
+        display: block;
+        padding: 10px 15px;
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .nav-global a:hover {
+        background: var(--secondary);
+    }
+
+    @media (max-width: 767px) {
+        .nav-global {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block welcome-msg %}
+    <strong>{% firstof user.get_short_name user.get_username %}</strong>
+{% endblock %}

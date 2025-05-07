@@ -1,6 +1,36 @@
 <!-- core/templates/registration/login.html -->
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+  .separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  .separator::before,
+  .separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .separator::before {
+    margin-right: 1em;
+  }
+
+  .separator::after {
+    margin-left: 1em;
+  }
+
+  .separator-text {
+    padding: 0 10px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
@@ -30,6 +60,18 @@
             <div class="mt-2">
               <span class="text-muted">ليس لديك حساب؟</span>
               <a href="{% url 'core:register' %}" class="text-primary">إنشاء حساب جديد</a>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="separator text-center mb-3">
+              <span class="separator-text">أو</span>
+            </div>
+            <div class="d-grid gap-2">
+              <a href="/accounts/google/login/" class="btn btn-outline-secondary">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" width="20" height="20" class="me-2">
+                تسجيل الدخول باستخدام حساب جوجل
+              </a>
             </div>
           </div>
         </div>

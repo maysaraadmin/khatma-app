@@ -48,6 +48,10 @@ class ReadingGroup(models.Model):
         """Get count of completed khatmas in the group"""
         return self.khatmas.filter(is_completed=True).count()
 
+    def get_recent_messages(self, limit=10):
+        """Get recent chat messages for this group"""
+        return self.chat_messages.order_by('-created_at')[:limit]
+
 class GroupMembership(models.Model):
     """Model for group membership with roles"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="المستخدم")
@@ -417,6 +421,41 @@ class KhatmaChat(models.Model):
     # Media attachments
     image = models.ImageField(upload_to='khatma_chat_images/', null=True, blank=True, verbose_name="صورة")
     audio = models.FileField(upload_to='khatma_chat_audio/', null=True, blank=True, verbose_name="تسجيل صوتي")
+
+    class Meta:
+        verbose_name = "رسالة دردشة الختمة"
+        verbose_name_plural = "رسائل دردشة الختمة"
+        ordering = ['-created_at']
+
+class GroupChat(models.Model):
+    """Chat messages for reading groups"""
+    MESSAGE_TYPES = [
+        ('text', 'نص'),
+        ('dua', 'دعاء'),
+        ('announcement', 'إعلان'),
+        ('question', 'سؤال'),
+        ('answer', 'إجابة'),
+        ('welcome', 'ترحيب')
+    ]
+
+    group = models.ForeignKey(ReadingGroup, on_delete=models.CASCADE, related_name='chat_messages', verbose_name="المجموعة")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="المستخدم")
+    message = models.TextField(verbose_name="الرسالة")
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES, default='text', verbose_name="نوع الرسالة")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="تاريخ الإنشاء")
+    is_pinned = models.BooleanField(default=False, verbose_name="مثبتة")
+
+    # Media attachments
+    image = models.ImageField(upload_to='group_chat_images/', null=True, blank=True, verbose_name="صورة")
+    audio = models.FileField(upload_to='group_chat_audio/', null=True, blank=True, verbose_name="تسجيل صوتي")
+
+    class Meta:
+        verbose_name = "رسالة دردشة المجموعة"
+        verbose_name_plural = "رسائل دردشة المجموعة"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.message[:30]}..."
 
     # For replies
     parent_message = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies', verbose_name="رد على")

@@ -8,12 +8,12 @@ from django.db.models import Count
 from .models import (
     # User and Profile
     Profile,
-
+    
     # Quran Models
     QuranPart,
     Surah,
     Ayah,
-
+    
     # Khatma Models
     Khatma,
     Participant,
@@ -23,24 +23,24 @@ from .models import (
     KhatmaComment,
     KhatmaInteraction,
     KhatmaChat,
-
+    
     # Deceased Models
     Deceased,
-
+    
     # Group Models
     ReadingGroup,
     GroupMembership,
     GroupChat,
-
+    
     # Reading Models
     QuranReading,
-
+    
     # Achievement Models
     UserAchievement,
-
+    
     # Notification Models
     Notification,
-
+    
     # Post Models
     PostReaction,
 )
@@ -65,11 +65,11 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'get_account_type')
     list_filter = UserAdmin.list_filter + ('profile__account_type',)
     search_fields = ('username', 'email', 'first_name', 'last_name', 'profile__account_type')
-
+    
     def get_account_type(self, obj):
         return obj.profile.get_account_type_display() if hasattr(obj, 'profile') else '-'
     get_account_type.short_description = 'نوع الحساب'
-
+    
     def get_inline_instances(self, request, obj=None):
         if not obj:
             return []
@@ -115,7 +115,7 @@ class DeceasedAdmin(admin.ModelAdmin):
     search_fields = ('name', 'biography', 'relation', 'added_by__username')
     readonly_fields = ('created_at',)
     date_hierarchy = 'death_date'
-
+    
     def get_khatmas_count(self, obj):
         return obj.khatma_set.count()
     get_khatmas_count.short_description = 'عدد الختمات'
@@ -139,7 +139,7 @@ class KhatmaAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'sharing_link')
     date_hierarchy = 'created_at'
     inlines = [ParticipantInline, PartAssignmentInline]
-
+    
     fieldsets = (
         ('معلومات أساسية', {
             'fields': ('title', 'description', 'creator', 'khatma_type', 'is_public', 'is_completed')
@@ -159,7 +159,7 @@ class KhatmaAdmin(admin.ModelAdmin):
             'fields': ('sharing_link', 'max_participants', 'send_reminders', 'reminder_frequency')
         }),
     )
-
+    
     def get_participants_count(self, obj):
         return obj.participants.count()
     get_participants_count.short_description = 'عدد المشاركين'
@@ -185,7 +185,7 @@ class PartAssignmentAdmin(admin.ModelAdmin):
 class QuranPartAdmin(admin.ModelAdmin):
     list_display = ('part_number', 'get_ayahs_count')
     search_fields = ('part_number',)
-
+    
     def get_ayahs_count(self, obj):
         return obj.ayahs.count()
     get_ayahs_count.short_description = 'عدد الآيات'
@@ -203,7 +203,7 @@ class AyahAdmin(admin.ModelAdmin):
     list_display = ('get_surah_name', 'ayah_number_in_surah', 'quran_part', 'page')
     list_filter = ('surah', 'quran_part', 'page')
     search_fields = ('text_uthmani', 'translation', 'surah__name_arabic')
-
+    
     def get_surah_name(self, obj):
         return obj.surah.name_arabic
     get_surah_name.short_description = 'السورة'
@@ -216,11 +216,11 @@ class NotificationAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'message')
     date_hierarchy = 'created_at'
     actions = ['mark_as_read', 'mark_as_unread']
-
+    
     def mark_as_read(self, request, queryset):
         queryset.update(is_read=True)
     mark_as_read.short_description = "تحديد الإشعارات المحددة كمقروءة"
-
+    
     def mark_as_unread(self, request, queryset):
         queryset.update(is_read=False)
     mark_as_unread.short_description = "تحديد الإشعارات المحددة كغير مقروءة"
@@ -232,7 +232,7 @@ class ReadingGroupAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'created_at')
     search_fields = ('name', 'description', 'creator__username')
     date_hierarchy = 'created_at'
-
+    
     def get_members_count(self, obj):
         return obj.members.count()
     get_members_count.short_description = 'عدد الأعضاء'
@@ -270,7 +270,12 @@ class GroupChatAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
 
 
-# Temporarily removed QuranReadingAdmin
+@admin.register(QuranReading)
+class QuranReadingAdmin(admin.ModelAdmin):
+    list_display = ('participant', 'khatma', 'part_number', 'status', 'recitation_method', 'start_date', 'completion_date')
+    list_filter = ('status', 'recitation_method', 'start_date', 'completion_date')
+    search_fields = ('participant__username', 'khatma__title', 'notes', 'reciter')
+    date_hierarchy = 'start_date'
 
 
 # Register remaining models
@@ -279,4 +284,3 @@ admin.site.register(PublicKhatma)
 admin.site.register(KhatmaComment)
 admin.site.register(KhatmaInteraction)
 admin.site.register(PostReaction)
-admin.site.register(QuranReading)

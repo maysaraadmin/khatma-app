@@ -1,0 +1,41 @@
+{% extends 'core/base.html' %}
+
+{% block title %}خطأ في تسجيل الدخول - ختمة{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="card-title mb-3">خطأ في تسجيل الدخول</h2>
+                    <p class="card-text fs-5 mb-4">
+                        عذراً، حدث خطأ أثناء محاولة تسجيل الدخول باستخدام حساب جوجل.
+                        يرجى المحاولة مرة أخرى لاحقاً أو استخدام طريقة تسجيل الدخول العادية.
+                    </p>
+                    
+                    <div class="alert alert-info mt-4">
+                        <h5 class="alert-heading">ملاحظة:</h5>
+                        <p>
+                            تسجيل الدخول باستخدام حساب جوجل يتطلب إعداداً خاصاً من قبل مدير النظام.
+                            إذا استمرت المشكلة، يرجى التواصل مع الدعم الفني.
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'login' %}" class="btn btn-primary me-2">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> تسجيل الدخول العادي
+                        </a>
+                        <a href="{% url 'core:index' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-house-fill me-1"></i> العودة للصفحة الرئيسية
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
