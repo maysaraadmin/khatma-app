@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}الإنجازات{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">إنجازاتي</h1>
+    
+    <div class="row">
+        {% for achievement in achievements %}
+            <div class="col-md-3 mb-3">
+                <div class="card {% if achievement.achieved %}border-success{% else %}border-secondary{% endif %}">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ achievement.name }}</h5>
+                        <p class="card-text">{{ achievement.description }}</p>
+                        {% if achievement.achieved %}
+                            <span class="badge bg-success">مكتمل</span>
+                        {% else %}
+                            <span class="badge bg-secondary">قيد التقدم</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-4">
+        <p class="text-muted">
+            استمر في القراءة والمشاركة لإحراز المزيد من الإنجازات!
+        </p>
+    </div>
+</div>
+{% endblock %}

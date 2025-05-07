@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .profile-section {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="profile-header text-center">
+                <h1 class="display-4">{{ user.username }} - ملف المستخدم</h1>
+                <p class="lead">{{ user_profile.get_account_type_display }}</p>
+                <a href="{% url 'core:edit_profile' %}" class="btn btn-light mt-3">
+                    <i class="fas fa-edit"></i> تعديل الملف الشخصي
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="profile-section">
+                <h3>المعلومات الشخصية</h3>
+                <hr>
+                <p><strong>اسم المستخدم:</strong> {{ user.username }}</p>
+                <p><strong>البريد الإلكتروني:</strong> {{ user.email|default:'-' }}</p>
+                <p><strong>نوع الحساب:</strong> {{ user_profile.get_account_type_display }}</p>
+                <p><strong>الموقع:</strong> {{ user_profile.location|default:'-' }}</p>
+                <p><strong>تاريخ الميلاد:</strong> {{ user_profile.birth_date|default:'-' }}</p>
+                <p><strong>النبذة:</strong> {{ user_profile.bio|default:'-' }}</p>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="profile-section">
+                <h3>الختمات</h3>
+                <hr>
+                {% if user_khatmas %}
+                    <div class="list-group">
+                        {% for khatma in user_khatmas %}
+                            <a href="{% url 'khatma_detail' khatma.id %}" class="list-group-item list-group-item-action">
+                                {{ khatma.title }} 
+                                <span class="badge bg-primary float-end">
+                                    {{ khatma.get_progress_percentage }}%
+                                </span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">لم تقم بإنشاء أي ختمات بعد</p>
+                {% endif %}
+            </div>
+
+            <div class="profile-section mt-4">
+                <h3>الإنجازات</h3>
+                <hr>
+                {% if user_achievements %}
+                    <div class="list-group">
+                        {% for achievement in user_achievements %}
+                            <div class="list-group-item">
+                                {{ achievement.get_achievement_type_display }}
+                                <span class="badge bg-success float-end">
+                                    {{ achievement.points }} نقطة
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">لا توجد إنجازات حتى الآن</p>
+                {% endif %}
+            </div>
+
+            <div class="profile-section mt-4">
+                <h3>الإشعارات الأخيرة</h3>
+                <hr>
+                {% if user_notifications %}
+                    <div class="list-group">
+                        {% for notification in user_notifications %}
+                            <div class="list-group-item {% if not notification.is_read %}list-group-item-info{% endif %}">
+                                {{ notification.message }}
+                                <small class="text-muted float-end">
+                                    {{ notification.created_at|timesince }} منذ
+                                </small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">لا توجد إشعارات</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Optional: Add any profile-specific JavaScript here
+</script>
+{% endblock %}

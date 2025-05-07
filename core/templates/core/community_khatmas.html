@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .khatma-category {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .khatma-card {
+        transition: transform 0.3s ease;
+    }
+    .khatma-card:hover {
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4 text-center">🌐 مجتمع ختمة</h1>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>فلترة الختمات</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="khatma_type" id="all_khatmas" checked>
+                        <label class="form-check-label" for="all_khatmas">
+                            كل الختمات
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="khatma_type" id="memorial_khatmas">
+                        <label class="form-check-label" for="memorial_khatmas">
+                            ختمات تذكارية
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="khatma_type" id="regular_khatmas">
+                        <label class="form-check-label" for="regular_khatmas">
+                            ختمات عادية
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h5>إنشاء ختمة جديدة</h5>
+                </div>
+                <div class="card-body text-center">
+                    <a href="{% url 'core:create_khatma' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus"></i> إنشاء ختمة
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="khatma-category">
+                <h3>الختمات العامة</h3>
+                <div class="row">
+                    {% for khatma in community_khatmas %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card khatma-card shadow-sm">
+                                <div class="card-header d-flex justify-content-between">
+                                    <h5>{{ khatma.title }}</h5>
+                                    <span class="badge bg-{{ khatma.khatma_type|yesno:'success,info' }}">
+                                        {{ khatma.get_khatma_type_display }}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-muted">{{ khatma.description|truncatewords:15 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-users"></i> {{ khatma.total_participants }} مشارك
+                                        </small>
+                                        <a href="{% url 'core:khatma_detail' khatma.id %}" class="btn btn-sm btn-outline-primary">
+                                            التفاصيل
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">
+                                لا توجد ختمات عامة حاليًا
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="khatma-category">
+                <h3>الختمات التذكارية</h3>
+                <div class="row">
+                    {% for khatma in memorial_khatmas %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card khatma-card shadow-sm">
+                                <div class="card-header">
+                                    <h5>{{ khatma.title }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info" role="alert">
+                                        <strong>إهداء:</strong> {{ khatma.deceased.name }}
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-users"></i> {{ khatma.total_participants }} مشارك
+                                        </small>
+                                        <a href="{% url 'core:khatma_detail' khatma.id %}" class="btn btn-sm btn-outline-primary">
+                                            التفاصيل
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">
+                                لا توجد ختمات تذكارية حاليًا
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Optional: Add filtering functionality for khatmas
+    document.addEventListener('DOMContentLoaded', function() {
+        const allKhatmas = document.querySelectorAll('.khatma-card');
+        const radioButtons = document.querySelectorAll('input[name="khatma_type"]');
+        
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const selectedType = this.id;
+                
+                allKhatmas.forEach(khatma => {
+                    switch(selectedType) {
+                        case 'memorial_khatmas':
+                            khatma.closest('.khatma-category').style.display = 
+                                khatma.querySelector('.badge').textContent.includes('تذكاري') ? 'block' : 'none';
+                            break;
+                        case 'regular_khatmas':
+                            khatma.closest('.khatma-category').style.display = 
+                                khatma.querySelector('.badge').textContent.includes('عادي') ? 'block' : 'none';
+                            break;
+                        default:
+                            khatma.closest('.khatma-category').style.display = 'block';
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

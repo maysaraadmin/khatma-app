@@ -1,0 +1,462 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ khatma.title }} - لوحة التحكم{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        direction: rtl;
+        background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="%233498db" fill-opacity="0.03" d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z"></path></svg>');
+    }
+
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .khatma-header {
+        background: linear-gradient(120deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 15px;
+        margin-bottom: 2.5rem;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .khatma-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: cover;
+        opacity: 0.05;
+        z-index: 0;
+    }
+
+    .khatma-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 1;
+    }
+
+    .khatma-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .progress-container {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        height: 20px;
+        width: 100%;
+        margin: 1rem 0;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+        position: relative;
+    }
+
+    .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-weight: bold;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        z-index: 2;
+    }
+
+    .tab-container {
+        margin-bottom: 2rem;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+        display: flex;
+        flex-wrap: wrap;
+        padding-left: 0;
+        margin-bottom: 0;
+        list-style: none;
+    }
+
+    .nav-tabs .nav-item {
+        margin-bottom: -2px;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-top-left-radius: 0.25rem;
+        border-top-right-radius: 0.25rem;
+        color: #6c757d;
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #1e3c72;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #1e3c72;
+        background-color: transparent;
+        border-color: transparent transparent #1e3c72;
+    }
+
+    .tab-content {
+        padding: 2rem 0;
+    }
+
+    .tab-pane {
+        display: none;
+    }
+
+    .tab-pane.active {
+        display: block;
+    }
+
+    /* Parts Grid Styles */
+    .parts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .part-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .part-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .part-card-header {
+        background-color: #1e3c72;
+        color: white;
+        padding: 0.75rem 1rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .part-card-body {
+        padding: 1rem;
+        min-height: 100px;
+    }
+
+    .part-card-footer {
+        padding: 0.75rem 1rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    /* Reading Plan Styles */
+    .reading-plan {
+        background-color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+    }
+
+    .reading-plan-day {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .reading-plan-day:last-child {
+        border-bottom: none;
+    }
+
+    .day-number {
+        background-color: #1e3c72;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-left: 1rem;
+    }
+
+    .day-date {
+        color: #6c757d;
+    }
+
+    .day-parts {
+        font-weight: bold;
+    }
+
+    /* Surah Grid Styles */
+    .surah-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .surah-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .surah-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .surah-card-header {
+        background-color: #1e3c72;
+        color: white;
+        padding: 0.75rem 1rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .surah-card-body {
+        padding: 1rem;
+        min-height: 150px;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+    }
+
+    .surah-badge {
+        display: inline-block;
+        background-color: #f0fff0;
+        color: #2a5298;
+        border-radius: 50px;
+        padding: 0.25rem 0.75rem;
+        margin: 0.25rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .surah-badge:hover {
+        background-color: #2a5298;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+
+        .khatma-header {
+            padding: 1.5rem 1rem;
+        }
+
+        .khatma-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 0.75rem 1rem;
+        }
+
+        .parts-grid, .surah-grid {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="khatma-header">
+        <h1>{{ khatma.title }}</h1>
+        <p>{{ khatma.description }}</p>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    <span>تاريخ البدء: {{ khatma.start_date }}</span>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    <span>تاريخ الانتهاء: {{ khatma.end_date }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" style="width: {{ progress_percentage }}%"></div>
+            <div class="progress-text">{{ completed_parts }}/{{ total_parts }} ({{ progress_percentage }}%)</div>
+        </div>
+        
+        <div class="d-flex justify-content-center mt-3">
+            {% if not is_participant and khatma.creator != user %}
+                <form method="post" action="{% url 'core:join_khatma' khatma.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-light me-2">
+                        <i class="fas fa-user-plus"></i> انضم للختمة
+                    </button>
+                </form>
+            {% endif %}
+            
+            {% if is_participant or khatma.creator == user %}
+                <a href="#" class="btn btn-light me-2">
+                    <i class="fas fa-comments"></i> المحادثة
+                </a>
+            {% endif %}
+            
+            <a href="{% url 'core:index' %}" class="btn btn-outline-light">
+                <i class="fas fa-home"></i> الرئيسية
+            </a>
+        </div>
+    </div>
+
+    <div class="tab-container">
+        <ul class="nav nav-tabs" id="khatmaTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="parts-tab" data-bs-toggle="tab" data-bs-target="#parts" type="button" role="tab" aria-controls="parts" aria-selected="true">
+                    <i class="fas fa-book-open"></i> الأجزاء
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reading-plan-tab" data-bs-toggle="tab" data-bs-target="#reading-plan" type="button" role="tab" aria-controls="reading-plan" aria-selected="false">
+                    <i class="fas fa-calendar-alt"></i> خطة القراءة
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="surahs-tab" data-bs-toggle="tab" data-bs-target="#surahs" type="button" role="tab" aria-controls="surahs" aria-selected="false">
+                    <i class="fas fa-quran"></i> السور
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="khatmaTabsContent">
+            <!-- Parts Tab -->
+            <div class="tab-pane fade show active" id="parts" role="tabpanel" aria-labelledby="parts-tab">
+                <div class="parts-grid">
+                    {% for part in parts %}
+                        <div class="part-card">
+                            <div class="part-card-header">الجزء {{ part.part.part_number }}</div>
+                            <div class="part-card-body">
+                                {% if part.participant %}
+                                    <p class="mb-2">
+                                        <i class="fas fa-user"></i> يقرأه: {{ part.participant.username }}
+                                    </p>
+                                {% else %}
+                                    <p class="mb-2 text-muted">
+                                        <i class="fas fa-user-slash"></i> لم يتم اختياره بعد
+                                    </p>
+                                {% endif %}
+                                
+                                {% if part.is_completed %}
+                                    <div class="text-success">
+                                        <i class="fas fa-check-circle"></i> تم الإكمال
+                                        {% if part.completed_at %}
+                                            <br>
+                                            <small>{{ part.completed_at|date:"Y-m-d" }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="part-card-footer">
+                                {% if is_participant or khatma.creator == user %}
+                                    {% if not part.is_completed %}
+                                        <a href="{% url 'core:assign_part' khatma.id part.part.part_number %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            {% if part.participant %}تحديث{% else %}اختر{% endif %}
+                                        </a>
+                                        <a href="{% url 'core:quran_part' part.part.part_number %}"
+                                           class="btn btn-sm btn-outline-success" target="_blank">
+                                            قراءة
+                                        </a>
+                                    {% else %}
+                                        <span class="text-success"><i class="fas fa-check-circle"></i> مكتمل</span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Reading Plan Tab -->
+            <div class="tab-pane fade" id="reading-plan" role="tabpanel" aria-labelledby="reading-plan-tab">
+                <div class="reading-plan">
+                    {% for day in reading_plan %}
+                        <div class="reading-plan-day">
+                            <div class="d-flex align-items-center">
+                                <div class="day-number">{{ day.day }}</div>
+                                <div>
+                                    <div class="day-date">{{ day.date|date:"Y-m-d" }}</div>
+                                    <div class="day-parts">
+                                        {% if day.start_part_int == day.end_part_int %}
+                                            الجزء {{ day.start_part_int }}
+                                        {% else %}
+                                            الأجزاء {{ day.start_part_int }} - {{ day.end_part_int }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{% url 'core:quran_part' day.start_part_int %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                قراءة
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Surahs Tab -->
+            <div class="tab-pane fade" id="surahs" role="tabpanel" aria-labelledby="surahs-tab">
+                <div class="surah-grid">
+                    {% for part_num, surahs_list in part_to_surah_mapping.items %}
+                        <div class="surah-card">
+                            <div class="surah-card-header">الجزء {{ part_num }}</div>
+                            <div class="surah-card-body">
+                                {% for surah_number, surah_name in surahs_list %}
+                                    <span class="surah-badge">{{ surah_name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

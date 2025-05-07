@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}البحث العام{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">البحث العام</h1>
+    
+    <form method="GET" action="{% url 'global_search' %}" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="ابحث في الختمات، المتوفين، المشاركين" value="{{ query }}">
+            <select name="type" class="form-select" style="max-width: 200px;">
+                <option value="all" {% if search_type == 'all' %}selected{% endif %}>الكل</option>
+                <option value="khatmas" {% if search_type == 'khatmas' %}selected{% endif %}>الختمات</option>
+                <option value="deceased" {% if search_type == 'deceased' %}selected{% endif %}>المتوفين</option>
+                <option value="participants" {% if search_type == 'participants' %}selected{% endif %}>المشاركين</option>
+            </select>
+            <button type="submit" class="btn btn-primary">بحث</button>
+        </div>
+    </form>
+
+    {% if query %}
+        <div class="row">
+            {% if results.khatmas %}
+                <div class="col-md-4">
+                    <h3>الختمات</h3>
+                    <div class="list-group">
+                        {% for khatma in results.khatmas %}
+                            <a href="{% url 'khatma_detail' khatma.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ khatma.title }}</h5>
+                                    <small>{{ khatma.status }}</small>
+                                </div>
+                                <p class="mb-1">{{ khatma.description }}</p>
+                                <small>عدد الأجزاء: {{ khatma.total_parts }}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if results.deceased %}
+                <div class="col-md-4">
+                    <h3>المتوفين</h3>
+                    <div class="list-group">
+                        {% for deceased in results.deceased %}
+                            <a href="{% url 'deceased_detail' deceased.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ deceased.name }}</h5>
+                                    <small>{{ deceased.date_of_death }}</small>
+                                </div>
+                                <p class="mb-1">{{ deceased.description }}</p>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if results.participants %}
+                <div class="col-md-4">
+                    <h3>المشاركين</h3>
+                    <div class="list-group">
+                        {% for participant in results.participants %}
+                            <a href="{% url 'user_profile' participant.username %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ participant.full_name }}</h5>
+                                    <small>{{ participant.username }}</small>
+                                </div>
+                                <p class="mb-1">الختمة: {{ participant.khatma }}</p>
+                                <small>تاريخ الانضمام: {{ participant.joined_date }}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if not results.khatmas and not results.deceased and not results.participants %}
+            <div class="alert alert-info text-center" role="alert">
+                لا توجد نتائج للبحث
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ deceased.name }} - تفاصيل المتوفى{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-lg mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-heart me-2"></i>
+                        معلومات المتوفى
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if deceased.photo %}
+                            <img src="{{ deceased.photo.url }}" alt="{{ deceased.name }}" class="img-fluid rounded-circle" style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 200px; height: 200px;">
+                                <i class="bi bi-person-fill text-muted" style="font-size: 5rem;"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h4 class="text-center mb-3">{{ deceased.name }}</h4>
+                    
+                    <div class="info-item mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-calendar-date me-2 text-primary"></i>
+                            <strong>تاريخ الوفاة:</strong>
+                        </div>
+                        <div class="ms-4 mt-1">
+                            {% if deceased.death_date %}
+                                {{ deceased.death_date|date:"j F Y" }}
+                            {% else %}
+                                <span class="text-muted">غير محدد</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-clock-history me-2 text-primary"></i>
+                            <strong>تاريخ الإضافة:</strong>
+                        </div>
+                        <div class="ms-4 mt-1">
+                            {{ deceased.created_at|date:"j F Y" }}
+                        </div>
+                    </div>
+                    
+                    {% if deceased.biography %}
+                    <div class="info-item">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-file-text me-2 text-primary"></i>
+                            <strong>نبذة عن المتوفى:</strong>
+                        </div>
+                        <div class="ms-4 mt-2 biography-text">
+                            {{ deceased.biography|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'core:deceased_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            العودة للقائمة
+                        </a>
+                        <a href="{% url 'core:create_khatma' %}?deceased={{ deceased.id }}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            إنشاء ختمة
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-book me-2"></i>
+                        الختمات المرتبطة
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if memorial_khatmas %}
+                        <div class="list-group">
+                            {% for khatma in memorial_khatmas %}
+                                <a href="{% url 'core:khatma_detail' khatma.id %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ khatma.title }}</h5>
+                                        <small>{{ khatma.created_at|date:"j F Y" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ khatma.description|truncatechars:100 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-people me-1"></i>
+                                            {{ khatma.participants.count }} مشارك
+                                        </small>
+                                        <span class="badge {% if khatma.is_completed %}bg-success{% else %}bg-primary{% endif %}">
+                                            {% if khatma.is_completed %}
+                                                مكتملة
+                                            {% else %}
+                                                جارية
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            لا توجد ختمات مرتبطة بهذا المتوفى حتى الآن.
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{% url 'core:create_khatma' %}?deceased={{ deceased.id }}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                إنشاء ختمة جديدة
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .biography-text {
+        text-align: justify;
+        line-height: 1.8;
+    }
+    
+    .info-item {
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+</style>
+{% endblock %}

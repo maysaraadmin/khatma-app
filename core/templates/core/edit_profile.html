@@ -1,0 +1,67 @@
+{% extends 'core/base.html' %}
+
+{% block extra_css %}
+<style>
+    .edit-profile-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="edit-profile-container">
+        <h2 class="text-center mb-4">تعديل الملف الشخصي</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="bio" class="form-label">النبذة الشخصية</label>
+                {{ form.bio }}
+            </div>
+            
+            <div class="mb-3">
+                <label for="location" class="form-label">الموقع</label>
+                {{ form.account_type }}
+            </div>
+            
+            <div class="mb-3">
+                <label for="birth_date" class="form-label">تاريخ الميلاد</label>
+                {{ form.preferred_language }}
+            </div>
+            
+            <div class="mb-3">
+                <label for="account_type" class="form-label">نوع الحساب</label>
+                {{ form.profile_picture }}
+                    {% for value, label in profile.ACCOUNT_TYPE_CHOICES %}
+                        <option value="{{ value }}" 
+                                {% if profile.account_type == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> حفظ التغييرات
+                </button>
+                <a href="{% url 'user_profile' %}" class="btn btn-secondary">
+                    إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Optional: Add form validation or other JavaScript
+</script>
+{% endblock %}

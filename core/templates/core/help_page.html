@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}المساعدة{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">مركز المساعدة</h1>
+
+    <div class="accordion" id="helpAccordion">
+        {% for section in faq_sections %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ forloop.counter }}"
+                            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                            aria-controls="collapse{{ forloop.counter }}">
+                        {{ section.title }}
+                    </button>
+                </h2>
+                <div id="collapse{{ forloop.counter }}"
+                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                     aria-labelledby="heading{{ forloop.counter }}"
+                     data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        {% for qa in section.questions %}
+                            <div class="card mb-2">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        {{ qa.question }}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>{{ qa.answer }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-4">
+        <h3>هل لديك سؤال آخر؟</h3>
+        <a href="{% url 'core:contact_us' %}" class="btn btn-primary">تواصل معنا</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Optional: Add some interactive behavior to the accordion
+    document.addEventListener('DOMContentLoaded', function() {
+        const accordionItems = document.querySelectorAll('.accordion-item');
+
+        accordionItems.forEach(item => {
+            const header = item.querySelector('.accordion-header button');
+            header.addEventListener('click', function() {
+                // Optional: Add any additional interaction logic here
+                console.log('Accordion section clicked');
+            });
+        });
+    });
+</script>
+{% endblock %}

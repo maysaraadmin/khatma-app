@@ -1,0 +1,204 @@
+{% extends 'core/base.html' %}
+
+{% block title %}سور القرآن الكريم - {{ khatma.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        direction: rtl;
+        background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="%233498db" fill-opacity="0.03" d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z"></path></svg>');
+    }
+
+    .quran-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .part-header {
+        background: linear-gradient(120deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 15px;
+        margin-bottom: 2.5rem;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .part-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: cover;
+        opacity: 0.05;
+        z-index: 0;
+    }
+
+    .part-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 1;
+    }
+
+    .part-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .surah-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .part-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .part-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .part-card-header {
+        background-color: #1e3c72;
+        color: white;
+        padding: 0.75rem 1rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .part-card-body {
+        padding: 1rem;
+        min-height: 150px;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+    }
+
+    .surah-badge {
+        display: inline-block;
+        background-color: #f0fff0;
+        color: #2a5298;
+        border-radius: 50px;
+        padding: 0.25rem 0.75rem;
+        margin: 0.25rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .surah-badge:hover {
+        background-color: #2a5298;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-primary {
+        background-color: #1e3c72;
+        border-color: #1e3c72;
+    }
+
+    .btn-primary:hover {
+        background-color: #2a5298;
+        border-color: #2a5298;
+    }
+
+    .btn-outline-primary {
+        color: #1e3c72;
+        border-color: #1e3c72;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #1e3c72;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .quran-container {
+            padding: 1rem;
+        }
+
+        .part-header {
+            padding: 1.5rem 1rem;
+        }
+
+        .part-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .surah-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .part-card-body {
+            min-height: 120px;
+        }
+
+        .surah-badge {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            margin: 0.1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quran-container">
+    <div class="part-header">
+        <h1>سور القرآن الكريم</h1>
+        <p>{{ khatma.title }}</p>
+    </div>
+
+    <div class="surah-grid">
+        {% for part_num, surahs_list in part_to_surah_mapping.items %}
+            <div class="part-card">
+                <div class="part-card-header">الجزء {{ part_num }}</div>
+                <div class="part-card-body">
+                    {% for surah_number, surah_name in surahs_list %}
+                        <span class="surah-badge">{{ surah_name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="action-buttons">
+        <a href="{% url 'core:khatma_reading_plan' %}?khatma_id={{ khatma.id }}" class="btn btn-primary">
+            <i class="fas fa-calendar-alt"></i> خطة القراءة
+        </a>
+        <a href="{% url 'core:khatma_detail' khatma.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-eye"></i> عرض الختمة
+        </a>
+        <a href="{% url 'core:index' %}" class="btn btn-outline-primary">
+            <i class="fas fa-home"></i> الرئيسية
+        </a>
+    </div>
+</div>
+{% endblock %}

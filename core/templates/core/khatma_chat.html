@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        max-height: 70vh;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+    }
+    .chat-message {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 80%;
+    }
+    .chat-message.sent {
+        background-color: #e2f3ff;
+        align-self: flex-end;
+        margin-left: auto;
+    }
+    .chat-message.received {
+        background-color: #f1f0f0;
+        align-self: flex-start;
+    }
+    .chat-message.pinned {
+        border: 2px solid #ffc107;
+    }
+    .chat-message.achievement {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .chat-message.progress {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">💬 دردشة ختمة: {{ khatma.title }}</h4>
+                    <div>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-users"></i> {{ participants_count }} مشارك
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-body chat-container" id="chatContainer">
+                    {% for message in chat_messages %}
+                        <div class="d-flex mb-3 
+                            {% if message.user == request.user %}sent{% else %}received{% endif %}
+                            chat-message 
+                            {% if message.is_pinned %}pinned{% endif %}
+                            {% if message.message_type == 'achievement' %}achievement{% endif %}
+                            {% if message.message_type == 'progress' %}progress{% endif %}
+                        ">
+                            <div>
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ message.user.username }}</strong>
+                                    <small class="text-muted">{{ message.created_at|timesince }} منذ</small>
+                                </div>
+                                
+                                {% if message.message_type == 'dua' %}
+                                    <div class="text-center text-success">
+                                        <i class="fas fa-pray"></i> {{ message.message }}
+                                    </div>
+                                {% elif message.message_type == 'achievement' %}
+                                    <div class="text-center">
+                                        <i class="fas fa-trophy"></i> {{ message.message }}
+                                    </div>
+                                {% elif message.message_type == 'progress' %}
+                                    <div class="text-center">
+                                        <i class="fas fa-check-circle"></i> {{ message.message }}
+                                    </div>
+                                {% else %}
+                                    {{ message.message }}
+                                {% endif %}
+                                
+                                {% if message.image %}
+                                    <img src="{{ message.image.url }}" class="img-fluid mt-2 rounded" alt="Chat Image">
+                                {% endif %}
+                                
+                                {% if message.audio %}
+                                    <audio controls class="mt-2">
+                                        <source src="{{ message.audio.url }}" type="audio/mpeg">
+                                        متصفحك لا يدعم تشغيل الصوت
+                                    </audio>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="alert alert-info text-center">
+                            لا توجد رسائل في الدردشة حتى الآن
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="card-footer">
+                    <form id="chatForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <select name="message_type" class="form-select" style="max-width: 150px;">
+                                <option value="text">رسالة نصية</option>
+                                <option value="dua">دعاء</option>
+                            </select>
+                            
+                            <input type="file" name="image" class="form-control" accept="image/*" style="max-width: 200px;">
+                            <input type="file" name="audio" class="form-control" accept="audio/*" style="max-width: 200px;">
+                            
+                            <textarea name="message" class="form-control" placeholder="اكتب رسالتك هنا..." required></textarea>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> إرسال
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatContainer = document.getElementById('chatContainer');
+        
+        // Auto-scroll to bottom of chat
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+        // Optional: Real-time chat updates using WebSockets or AJAX
+        // You can implement this later with Django Channels or AJAX
+    });
+</script>
+{% endblock %}

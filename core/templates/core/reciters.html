@@ -1,0 +1,19 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">قراء القرآن الكريم</h1>
+    <div class="row">
+        {% for reciter in reciters %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ reciter }}</h5>
+                    <a href="{% url 'core:reciter_surahs' reciter %}" class="btn btn-primary">استماع</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

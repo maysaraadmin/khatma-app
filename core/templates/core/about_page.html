@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}عن {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h1>{{ app_name }}</h1>
+                </div>
+                <div class="card-body">
+                    <p class="lead text-center">{{ app_description }}</p>
+
+                    <hr>
+
+                    <h3 class="text-center mb-4">مميزات التطبيق</h3>
+                    <div class="row">
+                        {% for feature in features %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">{{ feature.name }}</h5>
+                                        <p class="card-text">{{ feature.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <hr>
+
+                    <div class="text-center">
+                        <p class="text-muted">
+                            تم تطوير {{ app_name }} بهدف تسهيل قراءة القرآن الكريم والترحم على الموتى
+                        </p>
+                        <a href="{% url 'core:contact_us' %}" class="btn btn-primary">تواصل معنا</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

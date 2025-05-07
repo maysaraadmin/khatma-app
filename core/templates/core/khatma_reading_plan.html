@@ -1,0 +1,352 @@
+{% extends 'core/base.html' %}
+
+{% block title %}خطة القراءة - {{ khatma.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reading-plan-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .plan-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .plan-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: cover;
+        opacity: 0.05;
+        z-index: 0;
+    }
+
+    .plan-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .plan-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+    }
+
+    .plan-summary {
+        background-color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .plan-summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .plan-summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .plan-summary-label {
+        font-weight: bold;
+        color: #1e3c72;
+    }
+
+    .plan-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+        background-color: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .plan-table th {
+        background-color: #1e3c72;
+        color: white;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .plan-table td {
+        padding: 1rem;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+    }
+
+    .plan-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .plan-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .part-badge {
+        display: inline-block;
+        background-color: #e6f0ff;
+        color: #1e3c72;
+        border-radius: 50px;
+        padding: 0.25rem 0.75rem;
+        margin: 0.25rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .part-badge:hover {
+        background-color: #1e3c72;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .surah-badge {
+        display: inline-block;
+        background-color: #f0fff0;
+        color: #2a5298;
+        border-radius: 50px;
+        padding: 0.25rem 0.75rem;
+        margin: 0.25rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .surah-badge:hover {
+        background-color: #2a5298;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .surah-list {
+        max-width: 300px;
+        text-align: right;
+    }
+
+    .surah-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .part-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .part-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .part-card-header {
+        background-color: #1e3c72;
+        color: white;
+        padding: 0.75rem 1rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .part-card-body {
+        padding: 1rem;
+        min-height: 150px;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-primary {
+        background-color: #1e3c72;
+        border-color: #1e3c72;
+    }
+
+    .btn-primary:hover {
+        background-color: #2a5298;
+        border-color: #2a5298;
+    }
+
+    .btn-outline-primary {
+        color: #1e3c72;
+        border-color: #1e3c72;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #1e3c72;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .reading-plan-container {
+            padding: 1rem;
+        }
+
+        .plan-header {
+            padding: 1.5rem;
+        }
+
+        .plan-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .plan-table th, .plan-table td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .part-badge {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            margin: 0.1rem;
+        }
+
+        .surah-badge {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            margin: 0.1rem;
+        }
+
+        .surah-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .part-card-body {
+            min-height: 120px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reading-plan-container">
+    <div class="plan-header">
+        <h1>خطة القراءة للختمة</h1>
+        <p>{{ khatma.title }}</p>
+    </div>
+
+    <div class="plan-summary">
+        <div class="plan-summary-item">
+            <span class="plan-summary-label">تاريخ البدء:</span>
+            <span>{{ start_date|date:"Y-m-d" }}</span>
+        </div>
+        <div class="plan-summary-item">
+            <span class="plan-summary-label">تاريخ الانتهاء:</span>
+            <span>{{ end_date|date:"Y-m-d" }}</span>
+        </div>
+        <div class="plan-summary-item">
+            <span class="plan-summary-label">مدة الختمة:</span>
+            <span>{{ days_duration }} يوم</span>
+        </div>
+        <div class="plan-summary-item">
+            <span class="plan-summary-label">عدد الأجزاء في اليوم:</span>
+            <span>{{ parts_per_day|floatformat:2 }}</span>
+        </div>
+    </div>
+
+    <h2 class="text-center mb-4">جدول القراءة اليومي</h2>
+
+    <div class="table-responsive">
+        <table class="plan-table">
+            <thead>
+                <tr>
+                    <th>اليوم</th>
+                    <th>التاريخ</th>
+                    <th>الأجزاء</th>
+                    <th>السور</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in reading_plan %}
+                <tr>
+                    <td>{{ day.day }}</td>
+                    <td>{{ day.date|date:"Y-m-d" }}</td>
+                    <td>
+                        {% if day.start_part == day.end_part %}
+                            <span class="part-badge">الجزء {{ day.start_part }}</span>
+                        {% else %}
+                            {% for part in day.parts %}
+                                <a href="{% url 'core:quran_part' part %}" class="part-badge">الجزء {{ part }}</a>
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                    <td class="surah-list">
+                        {% if day.surahs %}
+                            {% for surah_number, surah_name in day.surahs %}
+                                <span class="surah-badge">{{ surah_name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card mt-5 mb-5">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">سور القرآن الكريم</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-4">فيما يلي قائمة بجميع سور القرآن الكريم (114 سورة)</p>
+
+            <div class="surah-grid">
+                {% for part_num, surahs_list in part_to_surah_mapping.items %}
+                    <div class="part-card">
+                        <div class="part-card-header">الجزء {{ part_num }}</div>
+                        <div class="part-card-body">
+                            {% for surah_number, surah_name in surahs_list %}
+                                <span class="surah-badge">{{ surah_name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <a href="{% url 'core:khatma_quran_chapters' %}?khatma_id={{ khatma.id }}" class="btn btn-primary">
+            <i class="fas fa-book-open"></i> عرض سور القرآن
+        </a>
+        <a href="{% url 'core:khatma_detail' khatma.id %}" class="btn btn-primary">
+            <i class="fas fa-eye"></i> عرض الختمة
+        </a>
+        <a href="{% url 'core:index' %}" class="btn btn-outline-primary">
+            <i class="fas fa-home"></i> الرئيسية
+        </a>
+    </div>
+</div>
+{% endblock %}

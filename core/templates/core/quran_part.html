@@ -1,0 +1,666 @@
+{% extends 'core/base.html' %}
+
+{% block title %}الجزء {{ part.part_number }} - القرآن الكريم{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        direction: rtl;
+        background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="%234CAF50" fill-opacity="0.03" d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z"></path></svg>');
+    }
+
+    .quran-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+    }
+
+    /* Decorative elements */
+    .quran-container::before {
+        content: '';
+        position: fixed;
+        top: 20%;
+        right: 5%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(76, 175, 80, 0.03) 0%, transparent 70%);
+        border-radius: 50%;
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .quran-container::after {
+        content: '';
+        position: fixed;
+        bottom: 10%;
+        left: 5%;
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(76, 175, 80, 0.03) 0%, transparent 70%);
+        border-radius: 50%;
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .part-header {
+        background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        margin-bottom: 3rem;
+        text-align: center;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+        animation: fadeIn 1s ease-out;
+    }
+
+    .part-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: cover;
+        opacity: 0.07;
+        z-index: 0;
+    }
+
+    .part-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+        z-index: 1;
+    }
+
+    .part-header h1 {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        text-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 1;
+        animation: fadeInUp 1s ease-out;
+    }
+
+    .part-header p {
+        font-size: 1.3rem;
+        opacity: 0.95;
+        margin-bottom: 1.75rem;
+        position: relative;
+        z-index: 1;
+        animation: fadeInUp 1s ease-out 0.2s both;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .part-navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        position: relative;
+        z-index: 1;
+        animation: fadeInUp 1s ease-out 0.4s both;
+    }
+
+    .nav-btn {
+        background-color: rgba(255,255,255,0.15);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 0.75rem 1.75rem;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        font-weight: 500;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nav-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 100%;
+        background-color: rgba(255,255,255,0.1);
+        transition: width 0.3s ease;
+        z-index: -1;
+    }
+
+    .nav-btn:hover {
+        background-color: rgba(255,255,255,0.25);
+        color: white;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .nav-btn:hover::before {
+        width: 100%;
+    }
+
+    .nav-btn i {
+        transition: all 0.3s ease;
+    }
+
+    .nav-btn:hover i.fa-arrow-right {
+        transform: translateX(-5px);
+    }
+
+    .nav-btn:hover i.fa-arrow-left {
+        transform: translateX(5px);
+    }
+
+    .surah-section {
+        background-color: white;
+        border-radius: 20px;
+        padding: 3rem;
+        margin-bottom: 3.5rem;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .surah-section:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+
+    .surah-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(76, 175, 80, 0.05) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .surah-section::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(circle, rgba(76, 175, 80, 0.03) 0%, transparent 70%);
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    .surah-section:hover::after {
+        opacity: 1;
+    }
+
+    .surah-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        position: relative;
+    }
+
+    .surah-header::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        right: 0;
+        width: 120px;
+        height: 3px;
+        background: linear-gradient(to left, #4CAF50, transparent);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    .surah-section:hover .surah-header::after {
+        width: 180px;
+    }
+
+    .surah-title {
+        font-size: 2.5rem;
+        color: #2E7D32;
+        margin: 0;
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        position: relative;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .surah-number-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+        color: white;
+        font-size: 1.2rem;
+        border-radius: 50%;
+        box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2);
+        transition: all 0.3s ease;
+        padding: 0 8px;
+    }
+
+    .surah-section:hover .surah-number-badge {
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 6px 15px rgba(46, 125, 50, 0.3);
+    }
+
+    .surah-title::before {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        right: 0;
+        width: 0;
+        height: 2px;
+        background-color: #4CAF50;
+        transition: width 0.3s ease;
+        opacity: 0.5;
+    }
+
+    .surah-section:hover .surah-title {
+        transform: translateX(-5px);
+    }
+
+    .surah-section:hover .surah-title::before {
+        width: 50%;
+    }
+
+    .surah-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        color: #6c757d;
+        font-size: 1.1rem;
+        background-color: rgba(76, 175, 80, 0.08);
+        padding: 0.6rem 1.25rem;
+        border-radius: 12px;
+        font-weight: 500;
+        border: 1px solid rgba(76, 175, 80, 0.1);
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.02);
+    }
+
+    .surah-section:hover .surah-info {
+        background-color: rgba(76, 175, 80, 0.12);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.1);
+    }
+
+    .surah-info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.3rem 0.8rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .surah-info-item i {
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+
+    .surah-section:hover .surah-info-item {
+        background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .revelation-type-meccan {
+        color: #ff9800;
+        border-right: 3px solid #ff9800;
+    }
+
+    .revelation-type-medinan {
+        color: #2196F3;
+        border-right: 3px solid #2196F3;
+    }
+
+    .ayahs-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .ayah {
+        margin-bottom: 2.5rem;
+        position: relative;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(76, 175, 80, 0.1);
+        background-color: #fcfcfc;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .ayah:last-child {
+        margin-bottom: 0;
+        border-bottom: none;
+    }
+
+
+
+    .ayah-content {
+        padding: 0.5rem 1.5rem 1.5rem;
+    }
+
+    .ayah-text-container {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1rem;
+        border: 1px solid rgba(76, 175, 80, 0.08);
+    }
+
+    .ayah-text {
+        font-size: 2.2rem;
+        font-family: 'Amiri', 'Traditional Arabic', serif;
+        color: #333;
+        line-height: 2.2;
+        text-align: center;
+        position: relative;
+        padding: 1rem 0;
+        word-spacing: 0.1em;
+        letter-spacing: 0.01em;
+        max-width: 90%;
+        margin: 0 auto;
+    }
+
+    .surah-section:hover .ayah-text {
+        color: #222;
+    }
+
+
+
+    .ayah-translation {
+        font-size: 1.1rem;
+        color: #6c757d;
+        line-height: 1.8;
+        position: relative;
+        padding: 0.75rem 1rem;
+        background-color: rgba(76, 175, 80, 0.03);
+        border-radius: 8px;
+        border-right: 3px solid rgba(76, 175, 80, 0.2);
+        margin: 0 0.5rem;
+    }
+
+    .translation-label {
+        font-weight: 600;
+        color: #2E7D32;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        background-color: rgba(76, 175, 80, 0.08);
+        border-radius: 4px;
+    }
+
+
+
+    @media (max-width: 768px) {
+        .quran-container {
+            padding: 1rem;
+        }
+
+        .part-header {
+            padding: 2rem 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .part-header h1 {
+            font-size: 2.2rem;
+        }
+
+        .part-header p {
+            font-size: 1.1rem;
+        }
+
+        .part-navigation {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .surah-section {
+            padding: 1.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .surah-title {
+            font-size: 1.8rem;
+            gap: 8px;
+        }
+
+        .surah-number-badge {
+            min-width: 32px;
+            height: 32px;
+            font-size: 1rem;
+        }
+
+        .surah-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .surah-info {
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .surah-info-item {
+            width: 100%;
+            padding: 0.3rem 0.6rem;
+        }
+
+
+
+        .ayahs-container {
+            gap: 1.5rem;
+        }
+
+        .ayah {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+        }
+
+
+
+        .ayah-content {
+            padding: 0.5rem 0.75rem 1rem;
+        }
+
+        .ayah-text-container {
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ayah-text {
+            font-size: 1.8rem;
+            line-height: 2.2;
+            max-width: 100%;
+            padding: 0.5rem 0;
+            word-spacing: normal;
+            letter-spacing: normal;
+        }
+
+
+
+        .ayah-translation {
+            font-size: 1rem;
+            line-height: 1.7;
+            padding: 0.6rem 0.75rem;
+            margin: 0;
+        }
+
+        .translation-label {
+            font-size: 0.85rem;
+            padding: 0.15rem 0.4rem;
+        }
+    }
+
+    /* Tablet optimizations */
+    @media (min-width: 769px) and (max-width: 992px) {
+        .part-header h1 {
+            font-size: 3rem;
+        }
+
+        .surah-section {
+            padding: 2.5rem;
+        }
+
+        .surah-title {
+            font-size: 2.2rem;
+        }
+
+
+
+        .ayah {
+            margin-bottom: 2rem;
+        }
+
+        .ayah-text-container {
+            padding: 0.9rem;
+        }
+
+        .ayah-text {
+            font-size: 2rem;
+            line-height: 2.4;
+            max-width: 95%;
+        }
+
+        .ayah-content {
+            padding: 0.5rem 1.25rem 1.25rem;
+        }
+
+        .ayah-translation {
+            font-size: 1.05rem;
+            line-height: 1.75;
+            padding: 0.7rem 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quran-container">
+    <div class="part-header">
+        <h1>الجزء {{ part.part_number }}</h1>
+        <p>{{ surahs|length }} سورة في هذا الجزء</p>
+
+        <div class="part-navigation">
+            {% if prev_part %}
+            <a href="{% url 'core:quran_part' prev_part %}" class="nav-btn">
+                <i class="bi bi-arrow-right"></i> الجزء السابق
+            </a>
+            {% else %}
+            <span></span>
+            {% endif %}
+
+            {% if next_part %}
+            <a href="{% url 'core:quran_part' next_part %}" class="nav-btn">
+                الجزء التالي <i class="bi bi-arrow-left"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% for surah_data in surahs %}
+    <div class="surah-section">
+        <div class="surah-header">
+            <h2 class="surah-title">
+                <span class="surah-number-badge">{{ surah_data.surah.surah_number }}</span>
+                {{ surah_data.surah.name_arabic }}
+            </h2>
+            <div class="surah-info">
+                <div class="surah-info-item revelation-type-{{ surah_data.surah.revelation_type }}">
+                    <i class="bi {% if surah_data.surah.revelation_type == 'meccan' %}bi-geo-alt{% else %}bi-building{% endif %}"></i>
+                    <span>
+                        {% if surah_data.surah.revelation_type == 'meccan' %}
+                            مكية
+                        {% else %}
+                            مدنية
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="surah-info-item">
+                    <i class="bi bi-book"></i>
+                    <span>{{ surah_data.surah.verses_count }} آية</span>
+                </div>
+
+            </div>
+        </div>
+
+
+
+        <div class="ayahs-container">
+            {% for ayah in surah_data.ayahs %}
+            <div class="ayah">
+                <div class="ayah-content">
+                    <div class="ayah-text-container">
+                        <div class="ayah-text">
+                            {% if ayah.ayah_number_in_surah == 1 and surah_data.surah.surah_number != 9 %}
+                                {{ ayah.text_uthmani|cut:"بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ"|cut:"بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ" }}
+                            {% else %}
+                                {{ ayah.text_uthmani }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if ayah.translation %}
+                    <div class="ayah-translation">
+                        <div class="translation-label">التفسير:</div>
+                        {{ ayah.translation }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

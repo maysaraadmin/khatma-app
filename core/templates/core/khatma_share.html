@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}مشاركة ختمة{% endblock %}
+
+{% block extra_head %}
+<meta property="og:title" content="{{ khatma.title }}">
+<meta property="og:description" content="{{ khatma.get_share_text }}">
+<meta property="og:url" content="{{ share_url }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-share-fill me-2"></i>
+                        مشاركة الختمة
+                    </h3>
+                </div>
+                <div class="card-body text-center">
+                    <h4>{{ khatma.title }}</h4>
+                    
+                    <div class="alert alert-info mt-3" role="alert">
+                        {{ share_text }}
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>روابط المشاركة</h5>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="share-link" value="{{ share_url }}" readonly>
+                            <button class="btn btn-secondary" type="button" onclick="copyLink()">
+                                <i class="bi bi-clipboard me-2"></i>
+                                نسخ الرابط
+                            </button>
+                        </div>
+                        
+                        <div class="social-share mt-3">
+                            <h6>شارك عبر</h6>
+                            <div class="btn-group" role="group">
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}" 
+                                   target="_blank" class="btn btn-outline-primary">
+                                    <i class="bi bi-facebook"></i> فيسبوك
+                                </a>
+                                <a href="https://twitter.com/intent/tweet?text={{ share_text|urlencode }}&url={{ share_url|urlencode }}" 
+                                   target="_blank" class="btn btn-outline-info">
+                                    <i class="bi bi-twitter"></i> تويتر
+                                </a>
+                                <a href="https://wa.me/?text={{ share_text|urlencode }}%0A{{ share_url|urlencode }}" 
+                                   target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-whatsapp"></i> واتساب
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyLink() {
+    const linkInput = document.getElementById('share-link');
+    linkInput.select();
+    document.execCommand('copy');
+    
+    // Optional: Show a tooltip or toast
+    alert('تم نسخ الرابط بنجاح');
+}
+</script>
+{% endblock %}

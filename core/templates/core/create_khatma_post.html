@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">نشر منشور جديد - {{ khatma.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="content" class="form-label">محتوى المنشور</label>
+                            <textarea class="form-control" id="content" name="content" rows="4" 
+                                      placeholder="اكتب دعاءً أو رسالة للمشاركة"></textarea>
+                        </div>
+                        
+                        {% if khatma.deceased %}
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="is_memorial" name="is_memorial">
+                                <label class="form-check-label" for="is_memorial">
+                                    منشور تأبيني للمتوفى {{ khatma.deceased.name }}
+                                </label>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-send"></i> نشر المنشور
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

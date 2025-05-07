@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block title %}الجزء {{ part.part_number }} | قارئ القرآن{% endblock %}
+
+{% block extra_head %}
+<style>
+    .verse-number {
+        font-size: 0.6em;
+        color: #28a745;
+        vertical-align: top;
+        margin-right: 5px;
+    }
+    
+    .quran-text {
+        direction: rtl;
+        text-align: justify;
+        padding: 10px;
+        font-family: 'Amiri Quran', serif;
+        font-size: 1.5rem;
+        line-height: 2.5;
+    }
+    
+    .bismillah {
+        color: #343a40;
+        font-size: 1.8rem;
+        text-align: center;
+        margin: 1rem 0;
+    }
+    
+    /* Add Amiri font for Arabic */
+    @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap');
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">الجزء {{ part.part_number }}</h3>
+                        <div class="btn-group">
+                            {% if part.part_number > 1 %}
+                                <a href="{% url 'core:quran_reader' part_id=previous_part.part_number %}" class="btn btn-light">
+                                    <i class="fas fa-chevron-right"></i>
+                                    الجزء السابق
+                                </a>
+                            {% endif %}
+                            {% if part.part_number < 30 %}
+                                <a href="{% url 'core:quran_reader' part_id=next_part.part_number %}" class="btn btn-light">
+                                    الجزء التالي
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% for surah_num, ayahs in ayahs_by_surah.items %}
+                        <div class="surah-container mb-4">
+                            <h4 class="text-center mb-3">
+                                {{ surah_details|get_item:surah_num|get_item:"surah_number" }}.
+                                {{ surah_details|get_item:surah_num|get_item:"name_arabic" }}
+                            </h4>
+                            
+                            {% if surah_num != 1 and surah_num != 9 %}
+                                <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+                            {% endif %}
+                            
+                            <div class="quran-text">
+                                {% for ayah in ayahs %}
+                                    <span class="ayah">
+                                        {{ ayah.text_uthmani }}
+                                        <span class="verse-number">({{ ayah.ayah_number_in_surah }})</span>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i>
+                            تم القراءة
+                        </button>
+                    </form>
+                    {% if 'khatma' in request.GET and 'part_assignment' in request.GET %}
+                        <a href="{% url 'core:khatma_detail' request.GET.khatma %}" class="btn btn-secondary">
+                            العودة إلى الختمة
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

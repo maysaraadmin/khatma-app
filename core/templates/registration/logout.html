@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="card-title mb-4">تأكيد تسجيل الخروج</h3>
+                    <p class="card-text">هل أنت متأكد من رغبتك في تسجيل الخروج؟</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">نعم، تسجيل الخروج</button>
+                        <a href="{% url 'core:index' %}" class="btn btn-secondary">لا، العودة</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'core/base.html' %}
+
+{% block title %}الملف الشخصي{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2>الملف الشخصي</h2>
+                    <span class="badge bg-primary">{{ user.username }}</span>
+                </div>
+                <div class="card-body">
+                    <h4>الختمات</h4>
+                    {% if user_khatmas %}
+                        <div class="list-group">
+                            {% for khatma in user_khatmas %}
+                                <a href="{% url 'core:khatma_detail' khatma.id %}" class="list-group-item list-group-item-action">
+                                    {{ khatma.title }}
+                                    <span class="badge bg-secondary float-end">{{ khatma.participants.count }} مشارك</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">لم تنضم إلى أي ختمات بعد</p>
+                    {% endif %}
+
+                    <hr>
+
+                    <h4>الإنجازات</h4>
+                    {% if user_achievements %}
+                        <div class="row">
+                            {% for achievement in user_achievements %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ achievement.name }}</h5>
+                                            <p class="card-text text-muted">{{ achievement.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">لم تحقق أي إنجازات بعد</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

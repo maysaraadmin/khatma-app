@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إضافة متوفى{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-heart me-2"></i>
+                        إضافة متوفى للتذكر
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                <i class="bi bi-person-fill me-2"></i>
+                                اسم المتوفى
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.death_date.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-date me-2"></i>
+                                تاريخ الوفاة
+                            </label>
+                            {{ form.death_date }}
+                            {% if form.death_date.errors %}
+                                <div class="text-danger">{{ form.death_date.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.photo.id_for_label }}" class="form-label">
+                                <i class="bi bi-image me-2"></i>
+                                صورة المتوفى (اختياري)
+                            </label>
+                            {{ form.photo }}
+                            {% if form.photo.errors %}
+                                <div class="text-danger">{{ form.photo.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.biography.id_for_label }}" class="form-label">
+                                <i class="bi bi-file-text me-2"></i>
+                                نبذة عن المتوفى (اختياري)
+                            </label>
+                            {{ form.biography }}
+                            {% if form.biography.errors %}
+                                <div class="text-danger">{{ form.biography.errors }}</div>
+                            {% endif %}
+                        </div>
+
+
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                إضافة المتوفى
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Optional: Add any client-side validation or interactivity
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            // Basic validation example
+            const nameInput = form.querySelector('#id_name');
+            const deathDateInput = form.querySelector('#id_death_date');
+
+            if (!nameInput.value.trim()) {
+                event.preventDefault();
+                nameInput.classList.add('is-invalid');
+                alert('يرجى إدخال اسم المتوفى');
+            }
+
+            if (!deathDateInput.value) {
+                event.preventDefault();
+                deathDateInput.classList.add('is-invalid');
+                alert('يرجى إدخال تاريخ الوفاة');
+            }
+        });
+    });
+</script>
+{% endblock %}

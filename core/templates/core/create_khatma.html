@@ -1,0 +1,275 @@
+{% extends 'core/base.html' %}
+
+{% block extra_css %}
+<style>
+    .khatma-type-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .khatma-type-card:hover, .khatma-type-card.selected {
+        border-color: #007bff;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .khatma-type-icon {
+        font-size: 3rem;
+        color: #007bff;
+    }
+    .form-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2>🕌 إنشاء ختمة جديدة</h2>
+                    <p class="lead mb-0">اختر نوع الختمة وأدخل التفاصيل</p>
+                </div>
+
+                <div class="card-body">
+                    <form method="post" action="{% url 'core:create_khatma' %}" enctype="multipart/form-data" id="khatmaForm">
+                        {% csrf_token %}
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4 class="text-center mb-3">📝 اختر نوع الختمة</h4>
+                            </div>
+
+                            {% for type_value, type_label in form.fields.khatma_type.choices %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card khatma-type-card text-center py-3" data-type="{{ type_value }}">
+                                    <div class="card-body">
+                                        {% if type_value == 'regular' %}
+                                            <i class="fas fa-quran khatma-type-icon"></i>
+                                        {% elif type_value == 'memorial' %}
+                                            <i class="fas fa-pray khatma-type-icon"></i>
+                                        {% elif type_value == 'ramadan' %}
+                                            <i class="fas fa-moon khatma-type-icon"></i>
+                                        {% elif type_value == 'charity' %}
+                                            <i class="fas fa-hand-holding-heart khatma-type-icon"></i>
+                                        {% elif type_value == 'birth' %}
+                                            <i class="fas fa-baby khatma-type-icon"></i>
+                                        {% elif type_value == 'graduation' %}
+                                            <i class="fas fa-graduation-cap khatma-type-icon"></i>
+                                        {% elif type_value == 'wedding' %}
+                                            <i class="fas fa-ring khatma-type-icon"></i>
+                                        {% endif %}
+                                        <h5 class="mt-2">{{ type_label }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- The actual form field will be used instead of a hidden input -->
+                        <div style="display: none;">
+                            {{ form.khatma_type }}
+                        </div>
+
+                        <div class="form-section" id="khatmaDetailsSection" style="display:none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">عنوان الختمة</label>
+                                    {{ form.title }}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">وصف الختمة</label>
+                                    {{ form.description }}
+                                </div>
+
+                                <div class="col-md-6 mb-3" id="deceasedSection" style="display:none;">
+                                    <label class="form-label">اسم المتوفى</label>
+                                    <select name="deceased" class="form-control">
+                                        <option value="">اختر المتوفى</option>
+                                        {% for deceased in deceased_list %}
+                                        <option value="{{ deceased.id }}">{{ deceased.name }}</option>
+                                        {% endfor %}
+                                        <option value="new">إضافة متوفى جديد</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">تاريخ البدء</label>
+                                    {{ form.start_date }}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">تاريخ الانتهاء</label>
+                                    {{ form.end_date }}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">تكرار الختمة</label>
+                                    {{ form.frequency }}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">هل الختمة عامة؟</label>
+                                    <div class="form-check">
+                                        {{ form.is_public }}
+                                        <label class="form-check-label">نعم، يمكن للآخرين الانضمام</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                                <i class="fas fa-plus-circle"></i> إنشاء الختمة
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const khatmaTypeCards = document.querySelectorAll('.khatma-type-card');
+    const khatmaDetailsSection = document.getElementById('khatmaDetailsSection');
+    const khatmaTypeSelect = document.getElementById('id_khatma_type'); // The actual form field
+    const submitBtn = document.getElementById('submitBtn');
+    const deceasedSection = document.getElementById('deceasedSection');
+    const khatmaForm = document.getElementById('khatmaForm');
+
+    // Debug info
+    console.log('Form elements:', khatmaForm.elements);
+    console.log('Khatma type select:', khatmaTypeSelect);
+
+    khatmaTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            khatmaTypeCards.forEach(c => c.classList.remove('selected'));
+
+            // Add selected class to clicked card
+            this.classList.add('selected');
+
+            // Get the type from the card's data attribute
+            const selectedType = this.dataset.type;
+            console.log('Selected type:', selectedType);
+
+            // Set the actual form field value
+            if (khatmaTypeSelect) {
+                // Find the option with the matching value and select it
+                for (let i = 0; i < khatmaTypeSelect.options.length; i++) {
+                    if (khatmaTypeSelect.options[i].value === selectedType) {
+                        khatmaTypeSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+                console.log('Set khatma type to:', khatmaTypeSelect.value);
+            } else {
+                console.error('Could not find khatma_type select element');
+            }
+
+            // Show details section
+            khatmaDetailsSection.style.display = 'block';
+
+            // Show/hide deceased section for memorial khatmas
+            if (selectedType === 'memorial') {
+                deceasedSection.style.display = 'block';
+            } else {
+                deceasedSection.style.display = 'none';
+            }
+
+            // Enable submit button
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Add form submission validation
+    khatmaForm.addEventListener('submit', function(event) {
+        // Check if a khatma type is selected
+        if (!khatmaTypeSelect || !khatmaTypeSelect.value) {
+            event.preventDefault();
+            alert('الرجاء اختيار نوع الختمة');
+            return false;
+        }
+
+        // Check if title is filled
+        const titleInput = document.getElementById('id_title');
+        if (!titleInput || !titleInput.value.trim()) {
+            event.preventDefault();
+            alert('الرجاء إدخال عنوان الختمة');
+            return false;
+        }
+
+        // If khatma type is memorial, check if deceased is selected
+        if (khatmaTypeSelect.value === 'memorial') {
+            const deceasedSelect = document.querySelector('select[name="deceased"]');
+            if (!deceasedSelect || !deceasedSelect.value) {
+                event.preventDefault();
+                alert('الرجاء اختيار المتوفى للختمة التذكارية');
+                return false;
+            }
+        }
+
+        // Check if start date and end date are filled
+        const startDateInput = document.getElementById('id_start_date');
+        const endDateInput = document.getElementById('id_end_date');
+
+        if (!startDateInput || !startDateInput.value) {
+            event.preventDefault();
+            alert('الرجاء إدخال تاريخ البدء');
+            return false;
+        }
+
+        if (!endDateInput || !endDateInput.value) {
+            event.preventDefault();
+            alert('الرجاء إدخال تاريخ الانتهاء');
+            return false;
+        }
+
+        // Check if end date is after start date
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+
+        if (endDate <= startDate) {
+            event.preventDefault();
+            alert('يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء');
+            return false;
+        }
+
+        // Check if frequency is selected
+        const frequencySelect = document.getElementById('id_frequency');
+        if (!frequencySelect || !frequencySelect.value) {
+            event.preventDefault();
+            alert('الرجاء اختيار تكرار الختمة');
+            return false;
+        }
+
+        // All validations passed
+        return true;
+    });
+
+    // Set default dates if empty
+    const startDateInput = document.getElementById('id_start_date');
+    const endDateInput = document.getElementById('id_end_date');
+
+    if (startDateInput && !startDateInput.value) {
+        const today = new Date();
+        startDateInput.value = today.toISOString().split('T')[0];
+    }
+
+    if (endDateInput && !endDateInput.value) {
+        const today = new Date();
+        const thirtyDaysLater = new Date(today);
+        thirtyDaysLater.setDate(today.getDate() + 30);
+        endDateInput.value = thirtyDaysLater.toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

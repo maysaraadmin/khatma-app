@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إنجازاتي{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">إنجازاتي</h1>
+    
+    {% if user_achievements %}
+        <div class="row">
+            {% for achievement in user_achievements %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ achievement.get_achievement_type_display }}</h5>
+                            <p class="card-text">تاريخ الإنجاز: {{ achievement.achieved_date|date:"d F Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            لم تحصل على أي إنجازات حتى الآن. استمر في القراءة والمشاركة!
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

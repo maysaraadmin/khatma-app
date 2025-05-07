@@ -1,0 +1,89 @@
+{% extends 'core/base.html' %}
+
+{% block title %}سورة {{ surah.name_arabic }} | قارئ القرآن{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2>سورة {{ surah.name_arabic }} ({{ surah.name_english }})</h2>
+                        <div>
+                            <span class="badge bg-light text-dark">
+                                {{ surah.verses_count }} آية
+                            </span>
+                            <span class="badge bg-light text-dark ms-2">
+                                {{ surah.revelation_type|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="bismillah text-center mb-4" style="font-size: 2rem; font-family: 'Amiri', serif;">
+                        {% if surah.number != 1 and surah.number != 9 %}
+                        بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                        {% endif %}
+                    </div>
+                    
+                    <div class="quran-text" style="font-size: 1.5rem; line-height: 2.5; text-align: justify; font-family: 'Amiri', serif;">
+                        {% for verse in verses %}
+                        <span id="verse-{{ verse.number }}" class="verse">
+                            {{ verse.text }} 
+                            <span class="verse-number">({{ verse.number }})</span>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation-buttons d-flex justify-content-between mb-4">
+                {% if surah.number > 1 %}
+                <a href="{% url 'core:surah_view' surah.number|add:'-1' %}" class="btn btn-primary">
+                    <i class="bi bi-arrow-right"></i> السورة السابقة
+                </a>
+                {% else %}
+                <div></div>
+                {% endif %}
+                
+                {% if surah.number < 114 %}
+                <a href="{% url 'core:surah_view' surah.number|add:'1' %}" class="btn btn-primary">
+                    السورة التالية <i class="bi bi-arrow-left"></i>
+                </a>
+                {% else %}
+                <div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .verse-number {
+        font-size: 0.6em;
+        color: #28a745;
+        vertical-align: top;
+        margin-right: 5px;
+    }
+    
+    .quran-text {
+        direction: rtl;
+        text-align: justify;
+        padding: 10px;
+    }
+    
+    .verse {
+        display: inline;
+    }
+    
+    .bismillah {
+        color: #343a40;
+    }
+    
+    /* Add Amiri font for Arabic */
+    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+</style>
+{% endblock %}
