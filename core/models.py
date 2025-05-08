@@ -6,7 +6,7 @@ import uuid
 
 class ReadingGroup(models.Model):
     """Model for Quran reading groups"""
-    name = models.CharField(max_length=200, verbose_name="اسم المجموعة")
+    name = models.CharField(max_length=200, unique=True, verbose_name="اسم المجموعة")
     description = models.TextField(blank=True, null=True, verbose_name="وصف المجموعة")
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_groups', verbose_name="منشئ المجموعة")
     members = models.ManyToManyField(User, through='GroupMembership', related_name='joined_groups', verbose_name="أعضاء المجموعة")
@@ -169,7 +169,7 @@ class Profile(models.Model):
 
 class Deceased(models.Model):
     """Enhanced Deceased model with more details"""
-    name = models.CharField(max_length=200, verbose_name="اسم المتوفى")
+    name = models.CharField(max_length=200, unique=True, verbose_name="اسم المتوفى")
     death_date = models.DateField(verbose_name="تاريخ الوفاة")
     birth_date = models.DateField(null=True, blank=True, verbose_name="تاريخ الميلاد")
     photo = models.ImageField(upload_to='deceased_photos/', null=True, blank=True, verbose_name="صورة المتوفى")
@@ -241,6 +241,12 @@ class Ayah(models.Model):
     quran_part = models.ForeignKey(QuranPart, on_delete=models.CASCADE, related_name='ayahs')
     page = models.IntegerField(null=True, blank=True)
 
+    class Meta:
+        unique_together = ('surah', 'ayah_number_in_surah')
+        verbose_name = "آية"
+        verbose_name_plural = "آيات"
+        ordering = ['surah', 'ayah_number_in_surah']
+
 class Khatma(models.Model):
     FREQUENCY_CHOICES = [
         ('once', 'مرة واحدة'),
@@ -270,7 +276,7 @@ class Khatma(models.Model):
         ('group', 'مجموعة - لأعضاء المجموعة فقط')
     ]
 
-    title = models.CharField(max_length=200, verbose_name="عنوان الختمة")
+    title = models.CharField(max_length=200, unique=True, verbose_name="عنوان الختمة")
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_khatmas', verbose_name="منشئ الختمة")
     description = models.TextField(blank=True, null=True, verbose_name="وصف الختمة")
     khatma_type = models.CharField(max_length=20, choices=KHATMA_TYPE_CHOICES, default='regular', verbose_name="نوع الختمة")
@@ -573,7 +579,7 @@ class KhatmaCommunityPost(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='community_posts', verbose_name="المستخدم")
     post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, verbose_name="نوع المنشور")
-    title = models.CharField(max_length=200, verbose_name="عنوان المنشور")
+    title = models.CharField(max_length=200, unique=True, verbose_name="عنوان المنشور")
     content = models.TextField(verbose_name="محتوى المنشور")
 
     # Related objects
@@ -672,8 +678,8 @@ class PartAssignment(models.Model):
 
 class QuranReciter(models.Model):
     """Model for Quran reciters"""
-    name = models.CharField(max_length=100, verbose_name="اسم القارئ")
-    name_arabic = models.CharField(max_length=100, verbose_name="اسم القارئ بالعربية")
+    name = models.CharField(max_length=100, unique=True, verbose_name="اسم القارئ")
+    name_arabic = models.CharField(max_length=100, unique=True, verbose_name="اسم القارئ بالعربية")
     bio = models.TextField(blank=True, null=True, verbose_name="نبذة عن القارئ")
     photo = models.ImageField(upload_to='reciters/', null=True, blank=True, verbose_name="صورة القارئ")
     style = models.CharField(max_length=100, blank=True, null=True, verbose_name="نمط القراءة")
@@ -825,6 +831,11 @@ class QuranBookmark(models.Model):
     notes = models.TextField(blank=True, null=True, verbose_name="ملاحظات")
     color = models.CharField(max_length=20, default='blue', verbose_name="اللون")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'ayah')
+        verbose_name = "إشارة مرجعية"
+        verbose_name_plural = "إشارات مرجعية"
 
     def __str__(self):
         return f"Bookmark: {self.title} - {self.ayah.surah.name_arabic} {self.ayah.ayah_number_in_surah}"

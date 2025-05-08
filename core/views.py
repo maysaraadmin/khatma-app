@@ -1068,7 +1068,7 @@ def index(request):
         'public_groups': public_groups
     }
 
-    # Use the new template with modern design
+    # Use the modern design template
     return render(request, 'core/index.html', context)
 
 # This function was removed as it was a duplicate of the one below
@@ -1512,7 +1512,7 @@ def khatma_detail(request, khatma_id):
             'participants_count': participants_count,
         }
 
-        return render(request, 'core/khatma_detail_simple.html', context)
+        return render(request, 'core/khatma_dashboard.html', context)
 
     except Exception as e:
         print(f"ERROR: {str(e)}")

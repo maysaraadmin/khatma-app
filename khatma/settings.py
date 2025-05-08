@@ -27,7 +27,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',  # Required for django-allauth
+
+    # Project apps
     'core.apps.CoreConfig',
+    'users.apps.UsersConfig',
+    'quran.apps.QuranConfig',
+    'khatma.apps.KhatmaConfig',
+    'groups.apps.GroupsConfig',
+    'notifications.apps.NotificationsConfig',
 
     # django-allauth
     'allauth',
@@ -52,12 +59,19 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',  # Required for django-allauth
 ]
 
-ROOT_URLCONF = 'khatma.urls'
+ROOT_URLCONF = 'khatma.main_urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'core/templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'core/templates'),
+            os.path.join(BASE_DIR, 'users/templates'),
+            os.path.join(BASE_DIR, 'quran/templates'),
+            os.path.join(BASE_DIR, 'khatma/templates'),
+            os.path.join(BASE_DIR, 'groups/templates'),
+            os.path.join(BASE_DIR, 'notifications/templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,6 +139,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'core/static'),
+    os.path.join(BASE_DIR, 'users/static'),
+    os.path.join(BASE_DIR, 'quran/static'),
+    os.path.join(BASE_DIR, 'khatma/static'),
+    os.path.join(BASE_DIR, 'groups/static'),
+    os.path.join(BASE_DIR, 'notifications/static'),
 ]
 
 # Media files configuration

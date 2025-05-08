@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "core/base.html" %}
 
 {% block extra_css %}
 <style>
@@ -20,7 +20,7 @@
 {% block content %}
 <div class="container-fluid">
     <h1 class="mb-4 text-center">🌐 مجتمع ختمة</h1>
-    
+
     <div class="row">
         <div class="col-md-3">
             <div class="card mb-4">
@@ -59,7 +59,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-9">
             <div class="khatma-category">
                 <h3>الختمات العامة</h3>
@@ -95,7 +95,7 @@
                     {% endfor %}
                 </div>
             </div>
-            
+
             <div class="khatma-category">
                 <h3>الختمات التذكارية</h3>
                 <div class="row">
@@ -140,19 +140,19 @@
     document.addEventListener('DOMContentLoaded', function() {
         const allKhatmas = document.querySelectorAll('.khatma-card');
         const radioButtons = document.querySelectorAll('input[name="khatma_type"]');
-        
+
         radioButtons.forEach(radio => {
             radio.addEventListener('change', function() {
                 const selectedType = this.id;
-                
+
                 allKhatmas.forEach(khatma => {
                     switch(selectedType) {
                         case 'memorial_khatmas':
-                            khatma.closest('.khatma-category').style.display = 
+                            khatma.closest('.khatma-category').style.display =
                                 khatma.querySelector('.badge').textContent.includes('تذكاري') ? 'block' : 'none';
                             break;
                         case 'regular_khatmas':
-                            khatma.closest('.khatma-category').style.display = 
+                            khatma.closest('.khatma-category').style.display =
                                 khatma.querySelector('.badge').textContent.includes('عادي') ? 'block' : 'none';
                             break;
                         default:

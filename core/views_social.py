@@ -7,13 +7,13 @@ from .models import Profile
 class GoogleLoginView(View):
     """
     Custom view for handling Google login.
-    Shows a friendly error page explaining that Google login is not fully configured.
+    Redirects to the proper allauth Google login URL.
     """
     def get(self, request):
         """
-        Show a friendly error page.
+        Redirect to the allauth Google login URL.
         """
-        return render(request, 'core/social_login_error.html')
+        return redirect('socialaccount_login', provider='google')
 
 class CustomSocialSignupView(SignupView):
     """

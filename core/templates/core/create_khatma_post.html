@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "core/base.html" %}
 
 {% block content %}
 <div class="container">
@@ -11,13 +11,13 @@
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        
+
                         <div class="mb-3">
                             <label for="content" class="form-label">محتوى المنشور</label>
-                            <textarea class="form-control" id="content" name="content" rows="4" 
+                            <textarea class="form-control" id="content" name="content" rows="4"
                                       placeholder="اكتب دعاءً أو رسالة للمشاركة"></textarea>
                         </div>
-                        
+
                         {% if khatma.deceased %}
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="is_memorial" name="is_memorial">
@@ -26,7 +26,7 @@
                                 </label>
                             </div>
                         {% endif %}
-                        
+
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">
                                 <i class="bi bi-send"></i> نشر المنشور

@@ -1,5 +1,5 @@
 <!-- core/templates/registration/login.html -->
-{% extends "base.html" %}
+{% extends "core/base.html" %}
 
 {% block extra_css %}
 <style>
@@ -68,7 +68,7 @@
               <span class="separator-text">أو</span>
             </div>
             <div class="d-grid gap-2">
-              <a href="/accounts/google/login/" class="btn btn-outline-secondary">
+              <a href="{% url 'socialaccount_login' 'google' %}" class="btn btn-outline-secondary">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" width="20" height="20" class="me-2">
                 تسجيل الدخول باستخدام حساب جوجل
               </a>
