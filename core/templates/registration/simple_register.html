@@ -1,0 +1,83 @@
+{% extends "core/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
+          <h2 class="card-title text-center mb-4 fw-bold text-primary">إنشاء حساب</h2>
+          
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <p>{{ field }}: {{ error }}</p>
+              {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+          
+          <form method="post" novalidate>
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label for="id_username" class="form-label">اسم المستخدم</label>
+              {{ form.username.errors }}
+              <input type="text" name="username" id="id_username" class="form-control" required>
+              <small class="text-muted">مطلوب. 150 حرف أو أقل. أحرف وأرقام و @/./+/-/_ فقط.</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="id_email" class="form-label">البريد الإلكتروني</label>
+              {{ form.email.errors }}
+              <input type="email" name="email" id="id_email" class="form-control" required>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="id_first_name" class="form-label">الاسم الأول</label>
+                {{ form.first_name.errors }}
+                <input type="text" name="first_name" id="id_first_name" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_last_name" class="form-label">اسم العائلة</label>
+                {{ form.last_name.errors }}
+                <input type="text" name="last_name" id="id_last_name" class="form-control">
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="id_password1" class="form-label">كلمة المرور</label>
+              {{ form.password1.errors }}
+              <input type="password" name="password1" id="id_password1" class="form-control" required>
+              <small class="text-muted">
+                يجب أن تكون كلمة المرور 8 أحرف على الأقل وليست مشابهة للمعلومان الشخصية.
+              </small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="id_password2" class="form-label">تأكيد كلمة المرور</label>
+              {{ form.password2.errors }}
+              <input type="password" name="password2" id="id_password2" class="form-control" required>
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg">إنشاء حساب</button>
+            </div>
+          </form>
+          
+          <div class="text-center mt-3">
+            <span class="text-muted">هل لديك حساب بالفعل؟</span>
+            <a href="{% url 'login' %}" class="text-primary">تسجيل الدخول</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

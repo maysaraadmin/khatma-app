@@ -33,11 +33,12 @@ class ExtendedUserCreationForm(UserCreationForm):
 
         if commit:
             user.save()
-            # Create associated Profile
+            # Create associated Profile with minimal fields to avoid database issues
             Profile.objects.create(
                 user=user,
                 preferred_language='ar',  # Default to Arabic
-                account_type=self.cleaned_data.get('account_type', 'individual')
+                account_type=self.cleaned_data.get('account_type', 'individual'),
+                family_group=None  # Explicitly set to None to avoid issues
             )
 
         return user

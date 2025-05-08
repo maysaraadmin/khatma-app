@@ -59,6 +59,16 @@
               <input type="email" name="email" id="id_email" class="form-control" required>
               <div class="invalid-feedback">يرجى إدخال بريد إلكتروني صحيح</div>
             </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="id_first_name" class="form-label">الاسم الأول</label>
+                <input type="text" name="first_name" id="id_first_name" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_last_name" class="form-label">اسم العائلة</label>
+                <input type="text" name="last_name" id="id_last_name" class="form-control">
+              </div>
+            </div>
             <div class="mb-3">
               <label for="id_password1" class="form-label">كلمة المرور</label>
               <input type="password" name="password1" id="id_password1" class="form-control" required>
@@ -93,8 +103,8 @@
                 </div>
                 <div class="col-md-4">
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="account_type" id="charity" value="charity">
-                    <label class="form-check-label" for="charity">
+                    <input class="form-check-input" type="radio" name="account_type" id="organization" value="organization">
+                    <label class="form-check-label" for="organization">
                       <i class="bi bi-building-fill me-2"></i>مؤسسة خيرية
                     </label>
                   </div>
