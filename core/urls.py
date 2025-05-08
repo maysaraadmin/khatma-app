@@ -16,4 +16,12 @@ urlpatterns = [
 
     # Social features
     path('community/', views.community, name='community'),
+    path('community/khatmas/', views.community_khatmas, name='community_khatmas'),
+    path('community/leaderboard/', views.community_leaderboard, name='community_leaderboard'),
+
+    # Group features
+    path('groups/', views.group_list, name='group_list'),
+
+    # Khatma features
+    path('khatma/create/', views.create_khatma, name='create_khatma'),
 ]

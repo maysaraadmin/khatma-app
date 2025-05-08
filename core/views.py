@@ -1998,6 +1998,68 @@ def quran_part_view(request, part_number):
 
     return render(request, 'core/quran_part.html', context)
 
+def community_khatmas(request):
+    """View to display community khatmas"""
+    # Get all public khatmas
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    context = {
+        'khatmas': public_khatmas
+    }
+
+    return render(request, 'core/community_khatmas.html', context)
+
+def group_list(request):
+    """View to display list of reading groups"""
+    # Get all public groups
+    public_groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
+
+    # If user is authenticated, also get their private groups
+    user_groups = []
+    if request.user.is_authenticated:
+        user_groups = ReadingGroup.objects.filter(
+            members=request.user
+        ).exclude(
+            is_public=True
+        ).order_by('-created_at')
+
+    context = {
+        'public_groups': public_groups,
+        'user_groups': user_groups
+    }
+
+    return render(request, 'core/group_list.html', context)
+
+def create_khatma(request):
+    """View to create a new khatma"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    if request.method == 'POST':
+        # Process form submission
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        khatma_type = request.POST.get('khatma_type', 'standard')
+        is_public = request.POST.get('is_public') == 'on'
+
+        # Create the khatma
+        khatma = Khatma.objects.create(
+            title=title,
+            description=description,
+            creator=request.user,
+            khatma_type=khatma_type,
+            is_public=is_public
+        )
+
+        messages.success(request, f'تم إنشاء ختمة {title} بنجاح')
+        return redirect('khatma_detail', khatma_id=khatma.id)
+
+    context = {
+        'khatma_types': Khatma.KHATMA_TYPES
+    }
+
+    return render(request, 'core/create_khatma.html', context)
+
 def help_page(request):
     """View to provide help and support for the Khatma app"""
     context = {
