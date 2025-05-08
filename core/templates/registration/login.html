@@ -1,35 +1,5 @@
-<!-- core/templates/registration/login.html -->
 {% extends "core/base.html" %}
-
-{% block extra_css %}
-<style>
-  .separator {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: #6c757d;
-  }
-
-  .separator::before,
-  .separator::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #dee2e6;
-  }
-
-  .separator::before {
-    margin-right: 1em;
-  }
-
-  .separator::after {
-    margin-left: 1em;
-  }
-
-  .separator-text {
-    padding: 0 10px;
-  }
-</style>
-{% endblock %}
+{% load i18n %}
 
 {% block content %}
 <div class="container py-5">
@@ -38,40 +8,46 @@
       <div class="card shadow-sm border-0 rounded-3">
         <div class="card-body p-4">
           <h2 class="card-title text-center mb-4 fw-bold text-primary">تسجيل الدخول</h2>
-          <form method="post" class="needs-validation" novalidate>
+
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            <p>اسم المستخدم أو كلمة المرور غير صحيحة. الرجاء المحاولة مرة أخرى.</p>
+          </div>
+          {% endif %}
+
+          {% if next %}
+            {% if user.is_authenticated %}
+            <div class="alert alert-warning">
+              <p>ليس لديك صلاحية للوصول إلى هذه الصفحة. للمتابعة، الرجاء تسجيل الدخول بحساب له صلاحية الوصول.</p>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+              <p>الرجاء تسجيل الدخول للوصول إلى هذه الصفحة.</p>
+            </div>
+            {% endif %}
+          {% endif %}
+
+          <form method="post" action="{% url 'login' %}">
             {% csrf_token %}
             <div class="mb-3">
               <label for="id_username" class="form-label">اسم المستخدم</label>
               <input type="text" name="username" id="id_username" class="form-control" required>
-              <div class="invalid-feedback">يرجى إدخال اسم المستخدم</div>
             </div>
             <div class="mb-3">
               <label for="id_password" class="form-label">كلمة المرور</label>
               <input type="password" name="password" id="id_password" class="form-control" required>
-              <div class="invalid-feedback">يرجى إدخال كلمة المرور</div>
             </div>
             <input type="hidden" name="next" value="{{ next }}">
             <div class="d-grid gap-2">
               <button type="submit" class="btn btn-primary btn-lg">تسجيل الدخول</button>
             </div>
           </form>
+
           <div class="text-center mt-3">
             <a href="{% url 'password_reset' %}" class="text-muted">نسيت كلمة المرور؟</a>
             <div class="mt-2">
               <span class="text-muted">ليس لديك حساب؟</span>
-              <a href="{% url 'core:register' %}" class="text-primary">إنشاء حساب جديد</a>
-            </div>
-          </div>
-
-          <div class="mt-4">
-            <div class="separator text-center mb-3">
-              <span class="separator-text">أو</span>
-            </div>
-            <div class="d-grid gap-2">
-              <a href="{% url 'socialaccount_login' 'google' %}" class="btn btn-outline-secondary">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" width="20" height="20" class="me-2">
-                تسجيل الدخول باستخدام حساب جوجل
-              </a>
+              <a href="{% url 'register' %}" class="text-primary">إنشاء حساب جديد</a>
             </div>
           </div>
         </div>
@@ -79,25 +55,4 @@
     </div>
   </div>
 </div>
-
-<script>
-// Example starter JavaScript for disabling form submissions if there are invalid fields
-(function() {
-  'use strict';
-  window.addEventListener('load', function() {
-    // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    var forms = document.getElementsByClassName('needs-validation');
-    // Loop over them and prevent submission
-    var validation = Array.prototype.filter.call(forms, function(form) {
-      form.addEventListener('submit', function(event) {
-        if (form.checkValidity() === false) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        form.classList.add('was-validated');
-      }, false);
-    });
-  }, false);
-})();
-</script>
 {% endblock %}

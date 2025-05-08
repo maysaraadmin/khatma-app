@@ -173,15 +173,14 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
 
-# New django-allauth 0.60.0+ settings
-ACCOUNT_LOGIN_METHODS = {'username', 'email'}  # Replaces ACCOUNT_AUTHENTICATION_METHOD
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # Replaces ACCOUNT_EMAIL_REQUIRED and ACCOUNT_USERNAME_REQUIRED
+# django-allauth 0.60.0+ settings
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 
-# Keep these for backward compatibility during transition
-# They will be removed in a future version
-ACCOUNT_EMAIL_REQUIRED = True  # Deprecated
-ACCOUNT_USERNAME_REQUIRED = True  # Deprecated
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'  # Deprecated
+# The following deprecated settings have been removed:
+# ACCOUNT_EMAIL_REQUIRED
+# ACCOUNT_USERNAME_REQUIRED
+# ACCOUNT_AUTHENTICATION_METHOD
 
 # Custom adapters
 SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'

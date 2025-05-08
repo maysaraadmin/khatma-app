@@ -1,0 +1,69 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+{% load account %}
+
+{% block head_title %}{% trans "تسجيل الدخول" %}{% endblock %}
+
+{% block inner_content %}
+<h2 class="text-center mb-4">{% trans "تسجيل الدخول" %}</h2>
+
+<form class="login" method="post" action="{% url 'account_login' %}">
+  {% csrf_token %}
+
+  {% if form.errors %}
+  <div class="alert alert-danger">
+    {% for field in form %}
+      {% for error in field.errors %}
+        <p>{{ field.label }}: {{ error }}</p>
+      {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+      <p>{{ error }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mb-3">
+    <label for="id_login" class="form-label">{% trans "اسم المستخدم أو البريد الإلكتروني" %}</label>
+    <input type="text" name="login" class="form-control" id="id_login" autocomplete="username" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="id_password" class="form-label">{% trans "كلمة المرور" %}</label>
+    <input type="password" name="password" class="form-control" id="id_password" autocomplete="current-password" required>
+  </div>
+
+  <div class="mb-3 form-check">
+    <input type="checkbox" name="remember" class="form-check-input" id="id_remember">
+    <label class="form-check-label" for="id_remember">{% trans "تذكرني" %}</label>
+  </div>
+
+  {% if redirect_field_value %}
+  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+  {% endif %}
+
+  <div class="d-grid gap-2 mb-3">
+    <button class="btn btn-primary" type="submit">{% trans "تسجيل الدخول" %}</button>
+  </div>
+
+  <div class="text-center">
+    <p>
+      <a href="{% url 'account_reset_password' %}">{% trans "نسيت كلمة المرور؟" %}</a>
+    </p>
+  </div>
+</form>
+
+{% if socialaccount_providers %}
+<div class="mt-4">
+  <hr>
+  <p class="text-center">{% trans "أو تسجيل الدخول باستخدام" %}</p>
+  <div class="d-flex justify-content-center gap-2">
+    {% for provider in socialaccount_providers %}
+    <a href="{% provider_login_url provider.id %}" class="btn btn-outline-secondary">
+      {{ provider.name }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
