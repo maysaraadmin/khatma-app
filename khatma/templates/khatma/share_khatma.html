@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}مشاركة الختمة - {{ khatma.title }} - تطبيق الختمة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="page-header">
+            <h1>مشاركة الختمة</h1>
+            <p class="text-muted">{{ khatma.title }}</p>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right"></i> العودة إلى الختمة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">مشاركة الختمة</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.email_addresses.id_for_label }}" class="form-label">{{ form.email_addresses.label }}</label>
+                        {{ form.email_addresses }}
+                        {% if form.email_addresses.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.email_addresses.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.email_addresses.help_text %}
+                            <div class="form-text">{{ form.email_addresses.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.message.id_for_label }}" class="form-label">{{ form.message.label }}</label>
+                        {{ form.message }}
+                        {% if form.message.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.message.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.message.help_text %}
+                            <div class="form-text">{{ form.message.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.share_on_social }}
+                        <label class="form-check-label" for="{{ form.share_on_social.id_for_label }}">{{ form.share_on_social.label }}</label>
+                        {% if form.share_on_social.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.share_on_social.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.share_on_social.help_text %}
+                            <div class="form-text">{{ form.share_on_social.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-share-alt"></i> مشاركة الختمة
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">رابط المشاركة</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="sharing-link" value="{{ sharing_url }}" readonly>
+                    <button class="btn btn-outline-primary" type="button" id="copy-link-btn">
+                        <i class="fas fa-copy"></i> نسخ
+                    </button>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> يمكنك مشاركة هذا الرابط مع الآخرين للانضمام إلى الختمة.
+                </div>
+                
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <a href="https://wa.me/?text={{ sharing_url|urlencode }}" target="_blank" class="btn btn-success">
+                        <i class="fab fa-whatsapp"></i> واتساب
+                    </a>
+                    <a href="https://t.me/share/url?url={{ sharing_url|urlencode }}&text={{ khatma.title|urlencode }}" target="_blank" class="btn btn-info">
+                        <i class="fab fa-telegram"></i> تيليجرام
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url={{ sharing_url|urlencode }}&text={{ khatma.title|urlencode }}" target="_blank" class="btn btn-primary">
+                        <i class="fab fa-twitter"></i> تويتر
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ sharing_url|urlencode }}" target="_blank" class="btn btn-primary">
+                        <i class="fab fa-facebook"></i> فيسبوك
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">معلومات الختمة</h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ khatma.title }}</h6>
+                <p>{{ khatma.description|truncatechars:150 }}</p>
+                
+                <div class="khatma-info mb-3">
+                    <div><i class="fas fa-user"></i> {{ khatma.creator.username }}</div>
+                    <div><i class="fas fa-tag"></i> {{ khatma.get_khatma_type_display }}</div>
+                    <div><i class="fas fa-users"></i> {{ khatma.participants.count }} مشارك</div>
+                    <div><i class="fas fa-calendar"></i> {{ khatma.created_at|date:"Y-m-d" }}</div>
+                </div>
+                
+                <div class="progress mb-3">
+                    {% with progress=khatma.get_progress_percentage %}
+                        <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress|floatformat:0 }}%</div>
+                    {% endwith %}
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> عرض تفاصيل الختمة
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">نصائح للمشاركة</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success"></i> شارك الختمة مع الأصدقاء والعائلة للحصول على المزيد من المشاركين.
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success"></i> يمكنك مشاركة الختمة على مجموعات الواتساب والتيليجرام.
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success"></i> أضف رسالة شخصية لتشجيع الآخرين على المشاركة.
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success"></i> تابع تقدم الختمة وذكّر المشاركين بأجزائهم.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if request.session.social_share_message %}
+    <div class="modal fade" id="socialShareModal" tabindex="-1" aria-labelledby="socialShareModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="socialShareModalLabel">رسالة المشاركة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="social-share-message" class="form-label">يمكنك نسخ هذه الرسالة ومشاركتها على وسائل التواصل الاجتماعي:</label>
+                        <textarea class="form-control" id="social-share-message" rows="6" readonly>{{ request.session.social_share_message }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="button" class="btn btn-primary" id="copy-message-btn">
+                        <i class="fas fa-copy"></i> نسخ الرسالة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy sharing link to clipboard
+        var copyLinkBtn = document.getElementById('copy-link-btn');
+        var sharingLink = document.getElementById('sharing-link');
+        
+        if (copyLinkBtn && sharingLink) {
+            copyLinkBtn.addEventListener('click', function() {
+                sharingLink.select();
+                document.execCommand('copy');
+                
+                // Change button text temporarily
+                var originalText = copyLinkBtn.innerHTML;
+                copyLinkBtn.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
+                
+                setTimeout(function() {
+                    copyLinkBtn.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+        
+        // Copy social share message to clipboard
+        var copyMessageBtn = document.getElementById('copy-message-btn');
+        var socialShareMessage = document.getElementById('social-share-message');
+        
+        if (copyMessageBtn && socialShareMessage) {
+            copyMessageBtn.addEventListener('click', function() {
+                socialShareMessage.select();
+                document.execCommand('copy');
+                
+                // Change button text temporarily
+                var originalText = copyMessageBtn.innerHTML;
+                copyMessageBtn.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
+                
+                setTimeout(function() {
+                    copyMessageBtn.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+        
+        // Show social share modal if message exists
+        {% if request.session.social_share_message %}
+            var socialShareModal = new bootstrap.Modal(document.getElementById('socialShareModal'));
+            socialShareModal.show();
+        {% endif %}
+    });
+</script>
+{% endblock %}

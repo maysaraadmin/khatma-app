@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ deceased.name }} - تطبيق الختمة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="page-header">
+            <h1>{{ deceased.name }}</h1>
+            <p class="text-muted">معلومات المتوفى</p>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <a href="{% url 'khatma:edit_deceased' deceased_id=deceased.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit"></i> تعديل
+            </a>
+            <a href="{% url 'khatma:create_khatma' %}?deceased={{ deceased.id }}&khatma_type=memorial" class="btn btn-outline-success">
+                <i class="fas fa-book"></i> إنشاء ختمة
+            </a>
+            <a href="{% url 'khatma:delete_deceased' deceased_id=deceased.id %}" class="btn btn-outline-danger">
+                <i class="fas fa-trash"></i> حذف
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">معلومات المتوفى</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        {% if deceased.photo %}
+                            <img src="{{ deceased.photo.url }}" alt="{{ deceased.name }}" class="img-fluid rounded">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                                <i class="fas fa-user fa-5x text-secondary"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">الاسم</th>
+                                    <td>{{ deceased.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">تاريخ الوفاة</th>
+                                    <td>{{ deceased.death_date|date:"Y-m-d" }}</td>
+                                </tr>
+                                {% if deceased.birth_date %}
+                                    <tr>
+                                        <th scope="row">تاريخ الميلاد</th>
+                                        <td>{{ deceased.birth_date|date:"Y-m-d" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">العمر عند الوفاة</th>
+                                        <td>{{ deceased.age_at_death }} سنة</td>
+                                    </tr>
+                                {% endif %}
+                                {% if deceased.relation %}
+                                    <tr>
+                                        <th scope="row">صلة القرابة</th>
+                                        <td>{{ deceased.relation }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if deceased.cause_of_death %}
+                                    <tr>
+                                        <th scope="row">سبب الوفاة</th>
+                                        <td>{{ deceased.cause_of_death }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if deceased.burial_place %}
+                                    <tr>
+                                        <th scope="row">مكان الدفن</th>
+                                        <td>{{ deceased.burial_place }}</td>
+                                    </tr>
+                                {% endif %}
+                                <tr>
+                                    <th scope="row">تاريخ الإضافة</th>
+                                    <td>{{ deceased.created_at|date:"Y-m-d" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if deceased.biography %}
+                    <div class="mt-3">
+                        <h6>نبذة عن المتوفى</h6>
+                        <p>{{ deceased.biography }}</p>
+                    </div>
+                {% endif %}
+                
+                {% if deceased.memorial_day %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-calendar-check"></i> تم تفعيل إنشاء ختمة تذكارية {{ deceased.get_memorial_frequency_display }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">الختمات المرتبطة</h5>
+            </div>
+            <div class="card-body">
+                {% if khatmas %}
+                    <div class="list-group">
+                        {% for khatma in khatmas %}
+                            <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ khatma.title }}</h5>
+                                    <small>{{ khatma.created_at|date:"Y-m-d" }}</small>
+                                </div>
+                                <p class="mb-1">{{ khatma.description|truncatechars:100 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small>{{ khatma.get_khatma_type_display }}</small>
+                                    <span class="badge {% if khatma.is_completed %}bg-success{% else %}bg-primary{% endif %}">
+                                        {% if khatma.is_completed %}مكتملة{% else %}قيد التنفيذ{% endif %}
+                                    </span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> لا توجد ختمات مرتبطة بهذا المتوفى حتى الآن.
+                        <a href="{% url 'khatma:create_khatma' %}?deceased={{ deceased.id }}&khatma_type=memorial" class="alert-link">إنشاء ختمة تذكارية</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">إنشاء ختمة تذكارية</h5>
+            </div>
+            <div class="card-body">
+                <p>يمكنك إنشاء ختمة تذكارية لهذا المتوفى للدعاء له وإهداء ثواب القراءة إليه.</p>
+                <div class="d-grid">
+                    <a href="{% url 'khatma:create_khatma' %}?deceased={{ deceased.id }}&khatma_type=memorial" class="btn btn-primary">
+                        <i class="fas fa-book"></i> إنشاء ختمة تذكارية
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">الدعاء للمتوفى</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-light">
+                    <p class="text-center">اللهم ارحم {{ deceased.name }} وارفع درجته في المهديين، واخلفه في عقبه في الغابرين، واغفر لنا وله يا رب العالمين، وافسح له في قبره ونور له فيه.</p>
+                </div>
+                <div class="alert alert-light">
+                    <p class="text-center">اللهم عامله بما أنت أهله، ولا تعامله بما هو أهله، اللهم اجزه عن الإحسان إحسانا وعن الإساءة عفواً وغفراناً.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">إحصائيات</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        عدد الختمات
+                        <span class="badge bg-primary rounded-pill">{{ khatmas.count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        الختمات المكتملة
+                        <span class="badge bg-success rounded-pill">{{ khatmas.filter.is_completed.count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        الختمات قيد التنفيذ
+                        <span class="badge bg-warning text-dark rounded-pill">{{ khatmas.filter.is_completed.False.count }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}إضافة متوفى جديد - تطبيق الختمة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="page-header">
+            <h1>إضافة متوفى جديد</h1>
+            <p class="text-muted">أضف معلومات متوفى لإنشاء ختمات تذكارية</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.death_date.id_for_label }}" class="form-label">{{ form.death_date.label }}</label>
+                                {{ form.death_date }}
+                                {% if form.death_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.death_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.death_date.help_text %}
+                                    <div class="form-text">{{ form.death_date.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.birth_date.id_for_label }}" class="form-label">{{ form.birth_date.label }}</label>
+                                {{ form.birth_date }}
+                                {% if form.birth_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.birth_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.birth_date.help_text %}
+                                    <div class="form-text">{{ form.birth_date.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.photo.id_for_label }}" class="form-label">{{ form.photo.label }}</label>
+                        {{ form.photo }}
+                        {% if form.photo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.photo.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.photo.help_text %}
+                            <div class="form-text">{{ form.photo.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.relation.id_for_label }}" class="form-label">{{ form.relation.label }}</label>
+                        {{ form.relation }}
+                        {% if form.relation.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.relation.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.relation.help_text %}
+                            <div class="form-text">{{ form.relation.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.cause_of_death.id_for_label }}" class="form-label">{{ form.cause_of_death.label }}</label>
+                                {{ form.cause_of_death }}
+                                {% if form.cause_of_death.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.cause_of_death.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.cause_of_death.help_text %}
+                                    <div class="form-text">{{ form.cause_of_death.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.burial_place.id_for_label }}" class="form-label">{{ form.burial_place.label }}</label>
+                                {{ form.burial_place }}
+                                {% if form.burial_place.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.burial_place.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.burial_place.help_text %}
+                                    <div class="form-text">{{ form.burial_place.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.biography.id_for_label }}" class="form-label">{{ form.biography.label }}</label>
+                        {{ form.biography }}
+                        {% if form.biography.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.biography.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.biography.help_text %}
+                            <div class="form-text">{{ form.biography.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">إعدادات الختمة التذكارية</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3 form-check">
+                                {{ form.memorial_day }}
+                                <label class="form-check-label" for="{{ form.memorial_day.id_for_label }}">{{ form.memorial_day.label }}</label>
+                                {% if form.memorial_day.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.memorial_day.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.memorial_day.help_text %}
+                                    <div class="form-text">{{ form.memorial_day.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div id="memorial-frequency-field" class="mb-3" style="display: none;">
+                                <label for="{{ form.memorial_frequency.id_for_label }}" class="form-label">{{ form.memorial_frequency.label }}</label>
+                                {{ form.memorial_frequency }}
+                                {% if form.memorial_frequency.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.memorial_frequency.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.memorial_frequency.help_text %}
+                                    <div class="form-text">{{ form.memorial_frequency.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> حفظ
+                        </button>
+                        <a href="{% url 'khatma:deceased_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide memorial frequency field based on memorial day checkbox
+        var memorialDayCheckbox = document.getElementById('{{ form.memorial_day.id_for_label }}');
+        var memorialFrequencyField = document.getElementById('memorial-frequency-field');
+        
+        function toggleMemorialFrequency() {
+            if (memorialDayCheckbox.checked) {
+                memorialFrequencyField.style.display = 'block';
+            } else {
+                memorialFrequencyField.style.display = 'none';
+            }
+        }
+        
+        // Initial toggle
+        toggleMemorialFrequency();
+        
+        // Toggle on change
+        memorialDayCheckbox.addEventListener('change', toggleMemorialFrequency);
+    });
+</script>
+{% endblock %}

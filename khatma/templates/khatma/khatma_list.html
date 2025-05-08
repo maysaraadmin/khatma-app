@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}قائمة الختمات - تطبيق الختمة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="page-header">
+            <h1>قائمة الختمات</h1>
+            <p class="text-muted">استعرض الختمات المتاحة أو أنشئ ختمة جديدة</p>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'khatma:create_khatma' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> إنشاء ختمة جديدة
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">بحث وتصفية</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">بحث</label>
+                        <input type="text" class="form-control" id="search" name="search" value="{{ request.GET.search|default:'' }}" placeholder="ابحث عن ختمة...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="khatma_type" class="form-label">نوع الختمة</label>
+                        <select class="form-select" id="khatma_type" name="khatma_type">
+                            <option value="">جميع الأنواع</option>
+                            {% for value, label in form.khatma_type.field.choices %}
+                                <option value="{{ value }}" {% if request.GET.khatma_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">الحالة</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">جميع الحالات</option>
+                            {% for value, label in form.status.field.choices %}
+                                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">بحث</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if page_obj %}
+    <div class="row">
+        {% for khatma in page_obj %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 khatma-card">
+                    <div class="card-header">
+                        <span class="badge {% if khatma.is_completed %}bg-success{% else %}bg-primary{% endif %} float-end">
+                            {% if khatma.is_completed %}مكتملة{% else %}قيد التنفيذ{% endif %}
+                        </span>
+                        <h5 class="card-title mb-0">{{ khatma.title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ khatma.description|truncatechars:100 }}</p>
+                        
+                        <div class="khatma-info mb-3">
+                            <div><i class="fas fa-user"></i> {{ khatma.creator.username }}</div>
+                            <div><i class="fas fa-tag"></i> {{ khatma.get_khatma_type_display }}</div>
+                            <div><i class="fas fa-users"></i> {{ khatma.participants.count }} مشارك</div>
+                            <div><i class="fas fa-calendar"></i> {{ khatma.created_at|date:"Y-m-d" }}</div>
+                        </div>
+                        
+                        <div class="progress khatma-progress">
+                            {% with progress=khatma.get_progress_percentage %}
+                                <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress|floatformat:0 }}%</div>
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-sm btn-outline-primary">عرض التفاصيل</a>
+                        
+                        {% if user.is_authenticated %}
+                            {% if user in khatma.participants.all %}
+                                <span class="badge bg-info float-end mt-1">أنت مشارك</span>
+                            {% elif not khatma.is_completed %}
+                                <a href="{% url 'khatma:join_khatma' khatma_id=khatma.id %}" class="btn btn-sm btn-outline-success float-end">انضم للختمة</a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% include 'includes/pagination.html' with page_obj=page_obj %}
+{% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> لا توجد ختمات متاحة حالياً.
+    </div>
+{% endif %}
+{% endblock %}

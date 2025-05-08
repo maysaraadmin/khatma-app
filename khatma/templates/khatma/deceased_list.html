@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}قائمة المتوفين - تطبيق الختمة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="page-header">
+            <h1>قائمة المتوفين</h1>
+            <p class="text-muted">إدارة قائمة المتوفين لإنشاء ختمات تذكارية</p>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'khatma:create_deceased' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> إضافة متوفى جديد
+        </a>
+    </div>
+</div>
+
+{% if page_obj %}
+    <div class="row">
+        {% for deceased in page_obj %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">{{ deceased.name }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-3">
+                                {% if deceased.photo %}
+                                    <img src="{{ deceased.photo.url }}" alt="{{ deceased.name }}" class="img-fluid rounded" style="max-height: 100px;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 100px;">
+                                        <i class="fas fa-user fa-3x text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <p><strong>تاريخ الوفاة:</strong> {{ deceased.death_date|date:"Y-m-d" }}</p>
+                                {% if deceased.birth_date %}
+                                    <p><strong>تاريخ الميلاد:</strong> {{ deceased.birth_date|date:"Y-m-d" }}</p>
+                                    <p><strong>العمر عند الوفاة:</strong> {{ deceased.age_at_death }} سنة</p>
+                                {% endif %}
+                                {% if deceased.relation %}
+                                    <p><strong>صلة القرابة:</strong> {{ deceased.relation }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if deceased.biography %}
+                            <div class="mt-3">
+                                <h6>نبذة:</h6>
+                                <p>{{ deceased.biography|truncatechars:150 }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if deceased.memorial_day %}
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-calendar-check"></i> تم تفعيل إنشاء ختمة تذكارية {{ deceased.get_memorial_frequency_display }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100">
+                            <a href="{% url 'khatma:deceased_detail' deceased_id=deceased.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> عرض
+                            </a>
+                            <a href="{% url 'khatma:edit_deceased' deceased_id=deceased.id %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-edit"></i> تعديل
+                            </a>
+                            <a href="{% url 'khatma:create_khatma' %}?deceased={{ deceased.id }}&khatma_type=memorial" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-book"></i> إنشاء ختمة
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% include 'includes/pagination.html' with page_obj=page_obj %}
+{% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> لم تقم بإضافة أي متوفى بعد.
+        <a href="{% url 'khatma:create_deceased' %}" class="alert-link">إضافة متوفى جديد</a>
+    </div>
+{% endif %}
+{% endblock %}

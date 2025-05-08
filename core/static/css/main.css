@@ -1,0 +1,280 @@
+/* Main CSS file for Khatma App */
+
+/* General Styles */
+body {
+    font-family: 'Amiri', serif;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card {
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Quran Styles */
+.quran-text {
+    font-family: 'Amiri', serif;
+    font-size: 1.5rem;
+    line-height: 2.5rem;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.surah-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.surah-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.surah-info {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+.ayah {
+    margin-bottom: 1rem;
+}
+
+.ayah-number {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-left: 0.5rem;
+}
+
+.ayah-text {
+    font-size: 1.5rem;
+}
+
+.translation {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+/* Khatma Styles */
+.khatma-card {
+    transition: transform 0.3s;
+}
+
+.khatma-card:hover {
+    transform: translateY(-5px);
+}
+
+.khatma-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.khatma-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.khatma-progress {
+    margin: 1rem 0;
+}
+
+.part-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.part-item {
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s;
+}
+
+.part-item:hover {
+    background-color: #e9ecef;
+}
+
+.part-item.completed {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.part-item.assigned {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
+/* Group Styles */
+.group-card {
+    transition: transform 0.3s;
+}
+
+.group-card:hover {
+    transform: translateY(-5px);
+}
+
+.group-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.group-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.member-list {
+    margin: 1rem 0;
+}
+
+.member-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.member-item:last-child {
+    border-bottom: none;
+}
+
+.member-role {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+}
+
+.role-admin {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.role-moderator {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.role-member {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+/* Notification Styles */
+.notification-item {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.3s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f8f9fa;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* User Profile Styles */
+.profile-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+}
+
+.profile-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.profile-info {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .quran-text {
+        font-size: 1.25rem;
+        line-height: 2rem;
+    }
+    
+    .surah-title {
+        font-size: 2rem;
+    }
+    
+    .part-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}

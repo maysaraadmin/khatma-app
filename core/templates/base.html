@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}تطبيق الختمة{% endblock %}</title>
+    
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Amiri for Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        body {
+            font-family: 'Amiri', serif;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.75rem;
+        }
+        .footer {
+            margin-top: 3rem;
+            padding: 1.5rem 0;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">تطبيق الختمة</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:index' %}">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quran:surah_list' %}">القرآن الكريم</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'khatma:khatma_list' %}">الختمات</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'groups:group_list' %}">المجموعات</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell position-relative">
+                                    {% if unread_notifications_count > 0 %}
+                                        <span class="notification-badge">{{ unread_notifications_count }}</span>
+                                    {% endif %}
+                                </i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <li><h6 class="dropdown-header">الإشعارات</h6></li>
+                                <div id="notifications-dropdown">
+                                    <li><a class="dropdown-item" href="{% url 'notifications:notification_list' %}">تحميل الإشعارات...</a></li>
+                                </div>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'notifications:notification_list' %}">عرض جميع الإشعارات</a></li>
+                                <li><a class="dropdown-item" href="{% url 'notifications:mark_all_read' %}">تحديد الكل كمقروء</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}">الملف الشخصي</a></li>
+                                <li><a class="dropdown-item" href="{% url 'khatma:my_khatmas' %}">ختماتي</a></li>
+                                <li><a class="dropdown-item" href="{% url 'groups:my_groups' %}">مجموعاتي</a></li>
+                                <li><a class="dropdown-item" href="{% url 'quran:bookmarks_list' %}">إشارات القرآن</a></li>
+                                <li><a class="dropdown-item" href="{% url 'notifications:notification_settings' %}">إعدادات الإشعارات</a></li>
+                                {% if user.is_staff %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}">لوحة الإدارة</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}">تسجيل الخروج</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'account_login' %}">تسجيل الدخول</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'account_signup' %}">إنشاء حساب</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>تطبيق الختمة</h5>
+                    <p>تطبيق لتنظيم ختمات القرآن الكريم وتسهيل قراءة القرآن بشكل فردي أو جماعي.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>روابط سريعة</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                        <li><a href="{% url 'quran:surah_list' %}">القرآن الكريم</a></li>
+                        <li><a href="{% url 'khatma:khatma_list' %}">الختمات</a></li>
+                        <li><a href="{% url 'groups:group_list' %}">المجموعات</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>تواصل معنا</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'core:about' %}">عن التطبيق</a></li>
+                        <li><a href="{% url 'core:contact' %}">اتصل بنا</a></li>
+                        <li><a href="{% url 'core:privacy' %}">سياسة الخصوصية</a></li>
+                        <li><a href="{% url 'core:terms' %}">شروط الاستخدام</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p>&copy; {% now "Y" %} تطبيق الختمة. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/static/js/main.js"></script>
+    
+    <script>
+        // Load recent notifications in dropdown
+        $(document).ready(function() {
+            {% if user.is_authenticated %}
+                $.ajax({
+                    url: "{% url 'notifications:get_recent_notifications' %}",
+                    type: "GET",
+                    success: function(data) {
+                        var html = '';
+                        if (data.notifications.length > 0) {
+                            $.each(data.notifications, function(index, notification) {
+                                var readClass = notification.is_read ? '' : 'fw-bold';
+                                html += '<li><a class="dropdown-item ' + readClass + '" href="' + notification.action_url + '">' + 
+                                        notification.message + '</a></li>';
+                            });
+                        } else {
+                            html = '<li><a class="dropdown-item" href="#">لا توجد إشعارات جديدة</a></li>';
+                        }
+                        $('#notifications-dropdown').html(html);
+                    },
+                    error: function() {
+                        $('#notifications-dropdown').html('<li><a class="dropdown-item" href="#">حدث خطأ أثناء تحميل الإشعارات</a></li>');
+                    }
+                });
+            {% endif %}
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

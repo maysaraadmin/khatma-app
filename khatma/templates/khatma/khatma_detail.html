@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ khatma.title }} - تطبيق الختمة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="page-header">
+            <h1>{{ khatma.title }}</h1>
+            <p class="text-muted">{{ khatma.get_khatma_type_display }}</p>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if is_creator %}
+            <div class="btn-group">
+                <a href="{% url 'khatma:edit_khatma' khatma_id=khatma.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> تعديل
+                </a>
+                <a href="{% url 'khatma:share_khatma' khatma_id=khatma.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-share-alt"></i> مشاركة
+                </a>
+                <a href="{% url 'khatma:delete_khatma' khatma_id=khatma.id %}" class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i> حذف
+                </a>
+            </div>
+        {% elif is_participant %}
+            <div class="btn-group">
+                <a href="{% url 'khatma:leave_khatma' khatma_id=khatma.id %}" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> مغادرة الختمة
+                </a>
+                <a href="{% url 'khatma:share_khatma' khatma_id=khatma.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-share-alt"></i> مشاركة
+                </a>
+            </div>
+        {% else %}
+            {% if not khatma.is_completed %}
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> انضم للختمة
+                    </button>
+                </form>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">تفاصيل الختمة</h5>
+            </div>
+            <div class="card-body">
+                {% if khatma.description %}
+                    <p>{{ khatma.description }}</p>
+                    <hr>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>منشئ الختمة:</strong> {{ khatma.creator.username }}</p>
+                        <p><strong>نوع الختمة:</strong> {{ khatma.get_khatma_type_display }}</p>
+                        <p><strong>تكرار الختمة:</strong> {{ khatma.get_frequency_display }}</p>
+                        <p><strong>تاريخ الإنشاء:</strong> {{ khatma.created_at|date:"Y-m-d" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>عدد المشاركين:</strong> {{ khatma.participants.count }}</p>
+                        <p><strong>الحالة:</strong> {% if khatma.is_completed %}<span class="text-success">مكتملة</span>{% else %}<span class="text-primary">قيد التنفيذ</span>{% endif %}</p>
+                        {% if khatma.target_completion_date %}
+                            <p><strong>تاريخ الإكمال المستهدف:</strong> {{ khatma.target_completion_date|date:"Y-m-d" }}</p>
+                        {% endif %}
+                        {% if khatma.completed_at %}
+                            <p><strong>تاريخ الإكمال:</strong> {{ khatma.completed_at|date:"Y-m-d" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if khatma.khatma_type == 'memorial' and khatma.deceased %}
+                    <hr>
+                    <div class="memorial-info">
+                        <h5>معلومات المتوفى</h5>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p><strong>اسم المتوفى:</strong> {{ khatma.deceased.name }}</p>
+                                <p><strong>تاريخ الوفاة:</strong> {{ khatma.deceased.death_date|date:"Y-m-d" }}</p>
+                                {% if khatma.deceased.birth_date %}
+                                    <p><strong>تاريخ الميلاد:</strong> {{ khatma.deceased.birth_date|date:"Y-m-d" }}</p>
+                                    <p><strong>العمر عند الوفاة:</strong> {{ khatma.deceased.age_at_death }} سنة</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 text-center">
+                                {% if khatma.deceased.photo %}
+                                    <img src="{{ khatma.deceased.photo.url }}" alt="{{ khatma.deceased.name }}" class="img-fluid rounded" style="max-height: 150px;">
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if khatma.memorial_prayer %}
+                            <div class="alert alert-light mt-3">
+                                <h6>دعاء للمتوفى</h6>
+                                <p>{{ khatma.memorial_prayer }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">تقدم الختمة</h5>
+            </div>
+            <div class="card-body khatma-progress-container">
+                <div class="progress mb-3" style="height: 25px;">
+                    <div id="khatma-progress-bar" class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%;" aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">{{ progress_percentage|floatformat:0 }}%</div>
+                </div>
+                
+                <p class="text-center">تم إكمال <span id="completed-parts">{{ completed_parts }}</span> من أصل <span id="total-parts">{{ total_parts }}</span> جزء</p>
+                
+                {% if khatma.is_completed %}
+                    <div class="alert alert-success text-center" id="khatma-completed-alert">
+                        <i class="fas fa-check-circle"></i> تم إكمال الختمة بنجاح!
+                    </div>
+                {% elif is_creator and not khatma.is_completed %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'khatma:complete_khatma' khatma_id=khatma.id %}" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> تحديد الختمة كمكتملة
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">أجزاء القرآن</h5>
+            </div>
+            <div class="card-body">
+                <div class="part-grid">
+                    {% for part in parts %}
+                        <div class="part-item {% if part.is_completed %}completed{% elif part.assigned_to %}assigned{% endif %}" data-part-id="{{ part.part_number }}">
+                            <a href="{% url 'khatma:part_detail' khatma_id=khatma.id part_id=part.part_number %}">
+                                <div class="part-number">{{ part.part_number }}</div>
+                                {% if part.is_completed %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% elif part.assigned_to %}
+                                    <div class="assigned-to small">{{ part.assigned_to.username }}</div>
+                                {% else %}
+                                    <i class="far fa-circle text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">المشاركون</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for participant in khatma.participants.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ participant.username }}
+                            {% if participant == khatma.creator %}
+                                <span class="badge bg-primary">منشئ الختمة</span>
+                            {% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted">لا يوجد مشاركون حتى الآن</li>
+                    {% endfor %}
+                </ul>
+                
+                {% if is_creator %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'khatma:khatma_participants' khatma_id=khatma.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-users"></i> إدارة المشاركين
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if is_participant or is_creator %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">الأجزاء المخصصة لك</h5>
+                </div>
+                <div class="card-body">
+                    {% with user_parts=parts|selectattr:"assigned_to"|selectattr:"assigned_to.id"|eq:user.id|list %}
+                        {% if user_parts %}
+                            <ul class="list-group">
+                                {% for part in user_parts %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <a href="{% url 'khatma:part_detail' khatma_id=khatma.id part_id=part.part_number %}">
+                                            الجزء {{ part.part_number }}
+                                        </a>
+                                        {% if part.is_completed %}
+                                            <span class="badge bg-success">تم الإكمال</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">قيد التنفيذ</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-center text-muted">لا توجد أجزاء مخصصة لك حتى الآن</p>
+                            
+                            {% if not khatma.is_completed %}
+                                <div class="text-center mt-3">
+                                    <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignPartModal">
+                                        <i class="fas fa-plus"></i> اختر جزءاً للقراءة
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_participant and not khatma.is_completed %}
+    <!-- Modal for selecting a part -->
+    <div class="modal fade" id="assignPartModal" tabindex="-1" aria-labelledby="assignPartModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignPartModalLabel">اختر جزءاً للقراءة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="part-grid">
+                        {% for part in parts %}
+                            {% if not part.assigned_to and not part.is_completed %}
+                                <div class="part-item">
+                                    <a href="{% url 'khatma:assign_part' khatma_id=khatma.id part_id=part.part_number %}" class="stretched-link">
+                                        <div class="part-number">{{ part.part_number }}</div>
+                                        <i class="far fa-circle text-muted"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    {% if parts|rejectattr:"assigned_to"|rejectattr:"is_completed"|list|length == 0 %}
+                        <p class="text-center text-muted">لا توجد أجزاء متاحة للاختيار</p>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
