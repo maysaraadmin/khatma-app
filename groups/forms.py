@@ -1,5 +1,8 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import ReadingGroup, JoinRequest, GroupChat, GroupAnnouncement, GroupEvent
+from khatma.models import Khatma
 
 
 class ReadingGroupForm(forms.ModelForm):
@@ -7,8 +10,8 @@ class ReadingGroupForm(forms.ModelForm):
     class Meta:
         model = ReadingGroup
         fields = [
-            'name', 'description', 'image', 'is_public', 
-            'allow_join_requests', 'max_members', 
+            'name', 'description', 'image', 'is_public',
+            'allow_join_requests', 'max_members',
             'enable_chat', 'enable_khatma_creation'
         ]
         widgets = {
@@ -51,8 +54,8 @@ class GroupEventForm(forms.ModelForm):
     class Meta:
         model = GroupEvent
         fields = [
-            'title', 'description', 'event_type', 
-            'start_time', 'end_time', 'location', 
+            'title', 'description', 'event_type',
+            'start_time', 'end_time', 'location',
             'is_online', 'meeting_link'
         ]
         widgets = {
@@ -60,21 +63,21 @@ class GroupEventForm(forms.ModelForm):
             'start_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'end_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
-    
+
     def clean(self):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
-        
+
         if start_time and end_time and end_time <= start_time:
             raise forms.ValidationError('يجب أن يكون وقت الانتهاء بعد وقت البدء')
-        
+
         is_online = cleaned_data.get('is_online')
         meeting_link = cleaned_data.get('meeting_link')
-        
+
         if is_online and not meeting_link:
             self.add_error('meeting_link', 'يجب توفير رابط الاجتماع للأحداث عبر الإنترنت')
-        
+
         return cleaned_data
 
 
@@ -85,7 +88,7 @@ class GroupMemberRoleForm(forms.Form):
         ('moderator', 'مشرف'),
         ('admin', 'مدير')
     ]
-    
+
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
         label='الدور',
@@ -119,3 +122,83 @@ class GroupFilterForm(forms.Form):
         required=False,
         label='طلبات الانضمام'
     )
+
+
+class GroupKhatmaForm(forms.ModelForm):
+    """Form for creating a Khatma within a group"""
+    title = forms.CharField(
+        label='عنوان الختمة',
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل عنوان الختمة'})
+    )
+
+    description = forms.CharField(
+        label='وصف الختمة',
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'وصف مختصر للختمة'}),
+        required=False
+    )
+
+    group = forms.ModelChoiceField(
+        label='المجموعة',
+        queryset=ReadingGroup.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    auto_distribute_parts = forms.BooleanField(
+        label='توزيع الأجزاء تلقائياً على أعضاء المجموعة',
+        initial=True,
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    start_date = forms.DateField(
+        label='تاريخ البدء',
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        initial=timezone.now
+    )
+
+    end_date = forms.DateField(
+        label='تاريخ الانتهاء',
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        required=True
+    )
+
+    class Meta:
+        model = Khatma
+        fields = [
+            'title', 'description', 'group', 'auto_distribute_parts',
+            'start_date', 'end_date'
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        group = cleaned_data.get('group')
+
+        # Validate date range
+        if start_date and end_date and start_date >= end_date:
+            raise ValidationError('تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء')
+
+        # Validate group
+        if group and not group.is_active:
+            raise ValidationError('المجموعة المحددة غير نشطة')
+
+        return cleaned_data
+
+    def save(self, user, commit=True):
+        """Save the group Khatma with appropriate settings"""
+        khatma = super().save(commit=False)
+        khatma.creator = user
+        khatma.khatma_type = 'group'
+        khatma.is_group_khatma = True
+        khatma.visibility = 'group'
+
+        if commit:
+            khatma.save()
+
+            # Auto-distribute parts if selected
+            if khatma.auto_distribute_parts and hasattr(khatma, 'distribute_parts_to_group_members'):
+                khatma.distribute_parts_to_group_members()
+
+        return khatma

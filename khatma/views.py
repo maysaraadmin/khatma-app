@@ -9,11 +9,16 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 
-from .models import Khatma, Deceased, Participant, PartAssignment, KhatmaPart, QuranReading
+from .models import (
+    Khatma, Deceased, Participant, PartAssignment, KhatmaPart,
+    QuranReading, PublicKhatma, KhatmaComment, KhatmaInteraction,
+    KhatmaChat
+)
 from .forms import (
     KhatmaCreationForm, KhatmaEditForm, DeceasedForm,
     PartAssignmentForm, QuranReadingForm, KhatmaPartForm,
-    KhatmaShareForm, KhatmaFilterForm
+    KhatmaShareForm, KhatmaFilterForm, KhatmaChatForm,
+    KhatmaInteractionForm
 )
 from quran.models import QuranPart
 
@@ -946,3 +951,246 @@ def part_status_api(request, khatma_id, part_id):
         return JsonResponse({'status': 'success', 'is_completed': part.is_completed})
 
     return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})
+
+
+@login_required
+def khatma_dashboard(request, khatma_id):
+    """View for Khatma dashboard with progress and statistics"""
+    khatma = get_object_or_404(Khatma, id=khatma_id)
+
+    # Check if user is allowed to view this khatma
+    if not (khatma.is_public or khatma.creator == request.user or
+            Participant.objects.filter(khatma=khatma, user=request.user).exists()):
+        messages.error(request, 'ليس لديك صلاحية لعرض هذه الختمة')
+        return redirect('khatma:khatma_list')
+
+    # Get khatma parts
+    parts = KhatmaPart.objects.filter(khatma=khatma).order_by('part_number')
+
+    # Get participants
+    participants = Participant.objects.filter(khatma=khatma)
+
+    # Calculate progress
+    total_parts = 30
+    completed_parts = parts.filter(is_completed=True).count()
+    progress_percentage = (completed_parts / total_parts) * 100 if total_parts > 0 else 0
+
+    # Get recent activity
+    recent_completions = parts.filter(is_completed=True).order_by('-completed_at')[:5]
+
+    context = {
+        'khatma': khatma,
+        'parts': parts,
+        'participants': participants,
+        'total_parts': total_parts,
+        'completed_parts': completed_parts,
+        'progress_percentage': progress_percentage,
+        'recent_completions': recent_completions,
+        'is_participant': Participant.objects.filter(khatma=khatma, user=request.user).exists(),
+        'is_creator': khatma.creator == request.user
+    }
+
+    return render(request, 'khatma/khatma_dashboard.html', context)
+
+
+@login_required
+def khatma_reading_plan(request):
+    """View for creating and managing Khatma reading plans"""
+    # Get user's active khatmas
+    user_khatmas = Khatma.objects.filter(
+        Q(creator=request.user) | Q(participant__user=request.user)
+    ).distinct().order_by('-created_at')
+
+    # Get user's assigned parts
+    assigned_parts = KhatmaPart.objects.filter(
+        assigned_to=request.user,
+        is_completed=False
+    ).select_related('khatma').order_by('khatma__target_completion_date', 'part_number')
+
+    # Get reading history
+    reading_history = QuranReading.objects.filter(
+        participant=request.user
+    ).order_by('-completion_date')[:10]
+
+    context = {
+        'user_khatmas': user_khatmas,
+        'assigned_parts': assigned_parts,
+        'reading_history': reading_history
+    }
+
+    return render(request, 'khatma/reading_plan.html', context)
+
+
+@login_required
+def khatma_part_reading(request, khatma_id, part_id):
+    """View for reading a specific part in a Khatma"""
+    khatma = get_object_or_404(Khatma, id=khatma_id)
+    part = get_object_or_404(KhatmaPart, khatma=khatma, part_number=part_id)
+
+    # Check if user is allowed to read this part
+    if not (khatma.creator == request.user or
+            part.assigned_to == request.user or
+            Participant.objects.filter(khatma=khatma, user=request.user).exists()):
+        messages.error(request, 'ليس لديك صلاحية لقراءة هذا الجزء')
+        return redirect('khatma:khatma_detail', khatma_id=khatma_id)
+
+    # Get the Quran part
+    quran_part = QuranPart.objects.get(part_number=part_id)
+
+    # Get or create reading record
+    reading, created = QuranReading.objects.get_or_create(
+        participant=request.user,
+        khatma=khatma,
+        part_number=part_id,
+        defaults={
+            'status': 'in_progress',
+            'recitation_method': 'reading',
+            'start_date': timezone.now()
+        }
+    )
+
+    if request.method == 'POST':
+        # Handle part completion
+        if 'complete_part' in request.POST:
+            part.is_completed = True
+            part.completed_at = timezone.now()
+            part.save()
+
+            reading.status = 'completed'
+            reading.completion_date = timezone.now()
+            reading.save()
+
+            messages.success(request, f'تم إكمال الجزء {part_id} بنجاح')
+
+            # Create notification for part completion
+            try:
+                from notifications.models import Notification
+                if khatma.creator != request.user:
+                    Notification.objects.create(
+                        user=khatma.creator,
+                        notification_type='part_completed',
+                        message=f'{request.user.username} أكمل الجزء {part_id} في الختمة: {khatma.title}',
+                        related_khatma=khatma
+                    )
+            except (ImportError, AttributeError):
+                pass  # Notifications module not available or creator is None
+
+            return redirect('khatma:khatma_detail', khatma_id=khatma_id)
+
+    context = {
+        'khatma': khatma,
+        'part': part,
+        'quran_part': quran_part,
+        'reading': reading
+    }
+
+    return render(request, 'khatma/part_reading.html', context)
+
+
+@login_required
+def khatma_chat(request, khatma_id):
+    """View for Khatma chat"""
+    khatma = get_object_or_404(Khatma, id=khatma_id)
+
+    # Check if user is allowed to view this khatma
+    if not (khatma.creator == request.user or
+            Participant.objects.filter(khatma=khatma, user=request.user).exists()):
+        messages.error(request, 'ليس لديك صلاحية للوصول إلى محادثة هذه الختمة')
+        return redirect('khatma:khatma_list')
+
+    # Get chat messages
+    chat_messages = KhatmaChat.objects.filter(khatma=khatma).order_by('created_at')
+
+    # Handle new message
+    if request.method == 'POST':
+        form = KhatmaChatForm(request.POST)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.khatma = khatma
+            message.sender = request.user
+            message.save()
+
+            # Create notifications for other participants
+            try:
+                from notifications.models import Notification
+                for participant in Participant.objects.filter(khatma=khatma).exclude(user=request.user):
+                    Notification.objects.create(
+                        user=participant.user,
+                        notification_type='khatma_chat',
+                        message=f'رسالة جديدة من {request.user.username} في محادثة الختمة: {khatma.title}',
+                        related_khatma=khatma
+                    )
+            except (ImportError, AttributeError):
+                pass  # Notifications module not available
+
+            return redirect('khatma:khatma_chat', khatma_id=khatma_id)
+    else:
+        form = KhatmaChatForm()
+
+    context = {
+        'khatma': khatma,
+        'chat_messages': chat_messages,
+        'form': form
+    }
+
+    return render(request, 'khatma/khatma_chat.html', context)
+
+
+@login_required
+def community_khatmas(request):
+    """View for displaying public khatmas in the community"""
+    # Get public khatmas
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    # Filter by type if specified
+    khatma_type = request.GET.get('type')
+    if khatma_type:
+        public_khatmas = public_khatmas.filter(khatma_type=khatma_type)
+
+    # Pagination
+    paginator = Paginator(public_khatmas, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get khatma types for filter
+    khatma_types = dict(Khatma.KHATMA_TYPE_CHOICES)
+
+    context = {
+        'page_obj': page_obj,
+        'khatma_types': khatma_types,
+        'selected_type': khatma_type
+    }
+
+    return render(request, 'khatma/community_khatmas.html', context)
+
+
+@login_required
+def create_khatma_post(request, khatma_id):
+    """View for creating a post about a Khatma"""
+    khatma = get_object_or_404(Khatma, id=khatma_id)
+
+    # Check if user is allowed to create a post for this khatma
+    if not (khatma.creator == request.user or
+            Participant.objects.filter(khatma=khatma, user=request.user).exists()):
+        messages.error(request, 'ليس لديك صلاحية لإنشاء منشور لهذه الختمة')
+        return redirect('khatma:khatma_detail', khatma_id=khatma_id)
+
+    if request.method == 'POST':
+        form = KhatmaInteractionForm(request.POST)
+        if form.is_valid():
+            interaction = form.save(commit=False)
+            interaction.khatma = khatma
+            interaction.user = request.user
+            interaction.save()
+
+            messages.success(request, 'تم إنشاء المنشور بنجاح')
+            return redirect('khatma:khatma_detail', khatma_id=khatma_id)
+    else:
+        form = KhatmaInteractionForm()
+
+    context = {
+        'khatma': khatma,
+        'form': form
+    }
+
+    return render(request, 'khatma/create_khatma_post.html', context)

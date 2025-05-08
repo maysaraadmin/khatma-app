@@ -15,5 +15,5 @@ def unread_notifications(request):
                 pass  # No notification model available
 
     return {
-        'unread_notifications_count': unread_count
+        'unread_count': unread_count  # Changed to match the variable name used in the template
     }

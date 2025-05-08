@@ -13,8 +13,9 @@ from .models import (
 from .forms import (
     ReadingGroupForm, JoinRequestForm, GroupChatForm,
     GroupAnnouncementForm, GroupEventForm, GroupMemberRoleForm,
-    GroupFilterForm
+    GroupFilterForm, GroupKhatmaForm
 )
+from khatma.models import Khatma
 
 
 def group_list(request):
@@ -929,3 +930,215 @@ def process_join_request(request, group_id, request_id, action):
         messages.error(request, 'إجراء غير صالح')
 
     return redirect('groups:manage_join_requests', group_id=group.id)
+
+
+@login_required
+def attend_event(request, group_id, event_id):
+    """View for attending a group event"""
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    event = get_object_or_404(GroupEvent, id=event_id, group=group)
+
+    # Check if user is a member
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        messages.error(request, 'يجب أن تكون عضواً في المجموعة للمشاركة في الفعاليات')
+        return redirect('groups:group_detail', group_id=group.id)
+
+    if request.method == 'POST':
+        # Toggle attendance
+        if request.user in event.attendees.all():
+            event.attendees.remove(request.user)
+            messages.success(request, 'تم إلغاء تسجيل حضورك للفعالية')
+        else:
+            event.attendees.add(request.user)
+            messages.success(request, 'تم تسجيل حضورك للفعالية بنجاح')
+
+        return redirect('groups:group_events', group_id=group.id)
+
+    context = {
+        'group': group,
+        'event': event,
+        'is_attending': request.user in event.attendees.all()
+    }
+
+    return render(request, 'groups/attend_event.html', context)
+
+
+@login_required
+def group_dashboard(request, group_id):
+    """View for group dashboard with statistics and activity"""
+    group = get_object_or_404(ReadingGroup, id=group_id)
+
+    # Check if user is a member
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى لوحة المعلومات')
+        return redirect('groups:group_detail', group_id=group.id)
+
+    # Get group statistics
+    member_count = group.members.count()
+    khatma_count = Khatma.objects.filter(group=group).count()
+    completed_khatma_count = Khatma.objects.filter(group=group, is_completed=True).count()
+    event_count = GroupEvent.objects.filter(group=group).count()
+
+    # Get recent activity
+    announcements = GroupAnnouncement.objects.filter(group=group).order_by('-created_at')[:5]
+    upcoming_events = GroupEvent.objects.filter(
+        group=group,
+        start_time__gte=timezone.now()
+    ).order_by('start_time')[:3]
+    recent_chats = GroupChat.objects.filter(group=group).order_by('-created_at')[:5]
+
+    # Get active khatmas
+    active_khatmas = Khatma.objects.filter(
+        group=group,
+        is_completed=False
+    ).order_by('-created_at')
+
+    context = {
+        'group': group,
+        'member_count': member_count,
+        'khatma_count': khatma_count,
+        'completed_khatma_count': completed_khatma_count,
+        'event_count': event_count,
+        'announcements': announcements,
+        'upcoming_events': upcoming_events,
+        'recent_chats': recent_chats,
+        'active_khatmas': active_khatmas
+    }
+
+    return render(request, 'groups/group_dashboard.html', context)
+
+
+@login_required
+def group_khatmas(request, group_id):
+    """View for listing group khatmas"""
+    group = get_object_or_404(ReadingGroup, id=group_id)
+
+    # Check if user is a member
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى الختمات')
+        return redirect('groups:group_detail', group_id=group.id)
+
+    # Get active and completed khatmas
+    active_khatmas = Khatma.objects.filter(
+        group=group,
+        is_completed=False
+    ).order_by('-created_at')
+
+    completed_khatmas = Khatma.objects.filter(
+        group=group,
+        is_completed=True
+    ).order_by('-completed_at')
+
+    context = {
+        'group': group,
+        'active_khatmas': active_khatmas,
+        'completed_khatmas': completed_khatmas
+    }
+
+    return render(request, 'groups/group_khatmas.html', context)
+
+
+@login_required
+def create_group_khatma(request, group_id):
+    """View for creating a khatma within a group"""
+    group = get_object_or_404(ReadingGroup, id=group_id)
+
+    # Check if user is an admin or moderator
+    membership = get_object_or_404(GroupMembership, user=request.user, group=group)
+    if membership.role not in ['admin', 'moderator']:
+        messages.error(request, 'ليس لديك صلاحية لإنشاء ختمة في هذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+
+    if request.method == 'POST':
+        form = GroupKhatmaForm(request.POST)
+        if form.is_valid():
+            khatma = form.save(commit=False)
+            khatma.creator = request.user
+            khatma.group = group
+            khatma.is_group_khatma = True
+            khatma.khatma_type = 'group'
+            khatma.save()
+
+            # Create notification for group members
+            try:
+                from notifications.models import Notification
+                for member in group.members.all():
+                    if member != request.user:
+                        Notification.objects.create(
+                            user=member,
+                            notification_type='new_group_khatma',
+                            message=f'تم إنشاء ختمة جديدة في مجموعة "{group.name}": {khatma.title}',
+                            related_khatma=khatma,
+                            related_group=group
+                        )
+            except (ImportError, AttributeError):
+                pass  # Notifications module not available
+
+            messages.success(request, 'تم إنشاء الختمة بنجاح')
+            return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+    else:
+        form = GroupKhatmaForm(initial={'group': group})
+
+    context = {
+        'form': form,
+        'group': group
+    }
+
+    return render(request, 'groups/create_group_khatma.html', context)
+
+
+@login_required
+def send_group_chat(request, group_id):
+    """API view for sending a group chat message"""
+    group = get_object_or_404(ReadingGroup, id=group_id)
+
+    # Check if user is a member
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        return JsonResponse({'status': 'error', 'message': 'يجب أن تكون عضواً في المجموعة للمشاركة في المحادثة'})
+
+    # Check if chat is enabled
+    if not group.enable_chat:
+        return JsonResponse({'status': 'error', 'message': 'المحادثة غير مفعلة في هذه المجموعة'})
+
+    if request.method == 'POST':
+        message_text = request.POST.get('message')
+        message_type = request.POST.get('message_type', 'text')
+
+        if not message_text:
+            return JsonResponse({'status': 'error', 'message': 'الرسالة لا يمكن أن تكون فارغة'})
+
+        # Create chat message
+        chat_message = GroupChat.objects.create(
+            group=group,
+            sender=request.user,
+            message=message_text,
+            message_type=message_type
+        )
+
+        # Create notifications for group members
+        try:
+            from notifications.models import Notification
+            for member in group.members.all():
+                if member != request.user:
+                    Notification.objects.create(
+                        user=member,
+                        notification_type='group_chat',
+                        message=f'رسالة جديدة من {request.user.username} في محادثة مجموعة "{group.name}"',
+                        related_group=group
+                    )
+        except (ImportError, AttributeError):
+            pass  # Notifications module not available
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'تم إرسال الرسالة بنجاح',
+            'chat_message': {
+                'id': chat_message.id,
+                'sender': chat_message.sender.username,
+                'message': chat_message.message,
+                'message_type': chat_message.message_type,
+                'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')
+            }
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})

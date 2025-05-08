@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.urls import reverse
 import uuid
 
 
@@ -76,7 +77,7 @@ class Khatma(models.Model):
         ('group', 'مجموعة - لأعضاء المجموعة فقط')
     ]
 
-    title = models.CharField(max_length=200, unique=True, verbose_name="عنوان الختمة")
+    title = models.CharField(max_length=200, verbose_name="عنوان الختمة")
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_khatmas', verbose_name="منشئ الختمة")
     description = models.TextField(blank=True, null=True, verbose_name="وصف الختمة")
     khatma_type = models.CharField(max_length=20, choices=KHATMA_TYPE_CHOICES, default='regular', verbose_name="نوع الختمة")
@@ -239,3 +240,117 @@ class QuranReading(models.Model):
 
     def __str__(self):
         return f"Quran Reading: {self.participant.username} - Part {self.part_number} - {self.status}"
+
+
+class PublicKhatma(models.Model):
+    """Model for public khatmas that can be shared in the community"""
+    KHATMA_STATUS_CHOICES = [
+        ('active', 'نشطة'),
+        ('completed', 'مكتملة'),
+        ('archived', 'مؤرشفة')
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='public_khatmas')
+    title = models.CharField(max_length=200, default="ختمة عامة")
+    description = models.TextField(blank=True)
+    is_memorial = models.BooleanField(default=False)
+    deceased_person = models.ForeignKey(Deceased, on_delete=models.SET_NULL, null=True, blank=True, related_name='memorial_khatmas')
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=KHATMA_STATUS_CHOICES, default='active')
+
+    # Social features
+    allow_comments = models.BooleanField(default=True)
+    allow_interactions = models.BooleanField(default=True)
+
+    def __str__(self):
+        if self.is_memorial and self.deceased_person:
+            return f"ختمة تذكارية: {self.deceased_person.name}"
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('khatma_detail', kwargs={'pk': self.pk})
+
+
+class KhatmaComment(models.Model):
+    """Model for comments on public khatmas"""
+    public_khatma = models.ForeignKey(PublicKhatma, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    dua = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.public_khatma}"
+
+
+class KhatmaInteraction(models.Model):
+    """Model for interactions with public khatmas (likes, prayers, etc.)"""
+    INTERACTION_TYPES = [
+        ('like', 'إعجاب'),
+        ('prayer', 'دعاء'),
+        ('share', 'مشاركة'),
+        ('support', 'دعم'),
+        ('thanks', 'شكر')
+    ]
+
+    public_khatma = models.ForeignKey(PublicKhatma, on_delete=models.CASCADE, related_name='interactions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    interaction_type = models.CharField(max_length=20, choices=INTERACTION_TYPES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('public_khatma', 'user', 'interaction_type')
+
+    def __str__(self):
+        return f"{self.get_interaction_type_display()} by {self.user.username}"
+
+
+class KhatmaChat(models.Model):
+    """Model for chat messages within a khatma"""
+    khatma = models.ForeignKey(Khatma, on_delete=models.CASCADE, related_name='chat_messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_pinned = models.BooleanField(default=False)
+
+    # For attachments
+    has_attachment = models.BooleanField(default=False)
+    attachment = models.FileField(upload_to='khatma_chat_attachments/', null=True, blank=True)
+    attachment_type = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.khatma.title} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class PostReaction(models.Model):
+    """Model for reactions to posts (likes, prayers, etc.)"""
+    REACTION_TYPES = [
+        ('like', 'إعجاب'),
+        ('prayer', 'دعاء'),
+        ('support', 'دعم'),
+        ('thanks', 'شكر')
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='khatma_post_reactions')
+    khatma_chat = models.ForeignKey(KhatmaChat, on_delete=models.CASCADE, related_name='reactions', null=True, blank=True)
+    khatma_comment = models.ForeignKey(KhatmaComment, on_delete=models.CASCADE, related_name='reactions', null=True, blank=True)
+    reaction_type = models.CharField(max_length=20, choices=REACTION_TYPES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = (
+            ('user', 'khatma_chat', 'reaction_type'),
+            ('user', 'khatma_comment', 'reaction_type')
+        )
+
+    def __str__(self):
+        target = self.khatma_chat or self.khatma_comment
+        return f"{self.get_reaction_type_display()} by {self.user.username} on {target}"

@@ -59,7 +59,7 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',  # Required for django-allauth
 ]
 
-ROOT_URLCONF = 'khatma.main_urls'
+ROOT_URLCONF = 'khatma.new_urls'
 
 TEMPLATES = [
     {

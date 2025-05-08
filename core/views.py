@@ -1,422 +1,232 @@
-from collections import defaultdict
-import os
-import shutil
-import traceback
-from django.conf import settings
-from pathlib import Path
-from django.shortcuts import render, redirect, get_object_or_404, reverse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
 from django.contrib import messages
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth import logout
+from django.contrib.auth.models import User
+from django.db.models import Q, Count
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from django.urls import reverse_lazy
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import logging
+import traceback
 
-# Mapping of surah numbers to their Arabic names
-SURAH_NAMES = {
-    '001': 'الفاتحة', '002': 'البقرة', '003': 'آل عمران', '004': 'النساء',
-    '005': 'المائدة', '006': 'الأنعام', '007': 'الأعراف', '008': 'الأنفال',
-    '009': 'التوبة', '010': 'يونس', '011': 'هود', '012': 'يوسف',
-    '013': 'الرعد', '014': 'إبراهيم', '015': 'الحجر', '016': 'النحل',
-    '017': 'الإسراء', '018': 'الكهف', '019': 'مريم', '020': 'طه',
-    '021': 'الأنبياء', '022': 'الحج', '023': 'المؤمنون', '024': 'النور',
-    '025': 'الفرقان', '026': 'الشعراء', '027': 'النمل', '028': 'القصص',
-    '029': 'العنكبوت', '030': 'الروم', '031': 'لقمان', '032': 'السجدة',
-    '033': 'الأحزاب', '034': 'سبأ', '035': 'فاطر', '036': 'يس',
-    '037': 'الصافات', '038': 'ص', '039': 'الزمر', '040': 'غافر',
-    '041': 'فصلت', '042': 'الشورى', '043': 'الزخرف', '044': 'الدخان',
-    '045': 'الجاثية', '046': 'الأحقاف', '047': 'محمد', '048': 'الفتح',
-    '049': 'الحجرات', '050': 'ق', '051': 'الذاريات', '052': 'الطور',
-    '053': 'النجم', '054': 'القمر', '055': 'الرحمن', '056': 'الواقعة',
-    '057': 'الحديد', '058': 'المجادلة', '059': 'الحشر', '060': 'الممتحنة',
-    '061': 'الصف', '062': 'الجمعة', '063': 'المنافقون', '064': 'التغابن',
-    '065': 'الطلاق', '066': 'التحريم', '067': 'الملك', '068': 'القلم',
-    '069': 'الحاقة', '070': 'المعارج', '071': 'نوح', '072': 'الجن',
-    '073': 'المزمل', '074': 'المدثر', '075': 'القيامة', '076': 'الإنسان',
-    '077': 'المرسلات', '078': 'النبأ', '079': 'النازعات', '080': 'عبس',
-    '081': 'التكوير', '082': 'الانفطار', '083': 'المطففين', '084': 'الانشقاق',
-    '085': 'البروج', '086': 'الطارق', '087': 'الأعلى', '088': 'الغاشية',
-    '089': 'الفجر', '090': 'البلد', '091': 'الشمس', '092': 'الليل',
-    '093': 'الضحى', '094': 'الشرح', '095': 'التين', '096': 'العلق',
-    '097': 'القدر', '098': 'البينة', '099': 'الزلزلة', '100': 'العاديات',
-    '101': 'القارعة', '102': 'التكاثر', '103': 'العصر', '104': 'الهمزة',
-    '105': 'الفيل', '106': 'قريش', '107': 'الماعون', '108': 'الكوثر',
-    '109': 'الكافرون', '110': 'النصر', '111': 'المسد', '112': 'الإخلاص',
-    '113': 'الفلق', '114': 'الناس'
-}
+# Import models from other apps
+from users.models import Profile, UserAchievement
+from khatma.models import Khatma, Deceased, PartAssignment, Participant, QuranReading
+from quran.models import QuranPart, Surah, Ayah
+from groups.models import ReadingGroup, GroupMembership
+from notifications.models import Notification
+
 logger = logging.getLogger(__name__)
 
-from .models import (
-    Deceased,
-    QuranPart,
-    Khatma,
-    Participant,
-    PartAssignment,
-    Notification,
-    Surah,
-    Ayah,
-    PostReaction,
-    Profile,
-    PublicKhatma,
-    KhatmaComment,
-    KhatmaInteraction,
-    UserAchievement,
-    KhatmaPart,
-    KhatmaChat,
-    GroupChat,
-    QuranReading,
-    ReadingGroup,
-    GroupMembership,
-)
-from .forms import (
-    DeceasedForm,
-    KhatmaCreationForm,
-    PartAssignmentForm,
-    KhatmaForm,
-    QuranReadingForm,
-    UserProfileForm,
-    UserProfileEditForm,
-    KhatmaInteractionForm,
-    KhatmaChatForm,
-    GroupChatForm,
-    ExtendedUserCreationForm,
-    ReadingGroupForm,
-    GroupMembershipForm,
-    GroupKhatmaForm
-)
-from django.db.models import Q, Count
+def index(request):
+    """Main homepage view"""
+    # Get featured content
+    featured_khatmas = []
+    featured_groups = []
 
-def list_reciters(request):
-    # Debugging: print current working directory and full path
-    current_dir = os.getcwd()
-    reciters_path = Path(os.path.join(current_dir, 'reciters'))
-    available_reciters = [r.name for r in reciters_path.iterdir() if r.is_dir()] if reciters_path.exists() else []
-    return render(request, 'core/reciters.html', {'reciters': available_reciters})
+    # Get user-specific content if logged in
+    if request.user.is_authenticated:
+        from khatma.models import Khatma, Participant
+        from groups.models import ReadingGroup, GroupMembership
 
-# This function was removed as it was a duplicate of the more comprehensive version below
+        # Get user's active khatmas
+        user_khatmas = Khatma.objects.filter(
+            Q(creator=request.user) | Q(participant__user=request.user)
+        ).distinct().order_by('-created_at')[:5]
 
-def reciter_surahs(request, reciter_name):
-    # Ensure logging is configured
-    import logging
-    logger = logging.getLogger(__name__)
+        # Get user's groups
+        user_groups = ReadingGroup.objects.filter(
+            members=request.user
+        ).order_by('-created_at')[:5]
 
-    # Log all available paths for debugging
-    logger.info(f'Attempting to access reciter: {reciter_name}')
-    logger.info(f'Current working directory: {os.getcwd()}')
-    logger.info(f'__file__ location: {__file__}')
+        context = {
+            'user_khatmas': user_khatmas,
+            'user_groups': user_groups,
+            'featured_khatmas': featured_khatmas,
+            'featured_groups': featured_groups
+        }
+    else:
+        # For anonymous users, show only featured content
+        context = {
+            'featured_khatmas': featured_khatmas,
+            'featured_groups': featured_groups
+        }
 
-    # Construct paths with more robust method
-    base_dir = Path(__file__).resolve().parent.parent
+    return render(request, 'core/index.html', context)
 
-    # Try multiple potential paths
-    potential_paths = [
-        base_dir / 'reciters' / reciter_name,  # New directory location
-        base_dir / 'core' / 'reciters' / reciter_name,  # Old directory location
-        base_dir / reciter_name  # Fallback
-    ]
+def about_page(request):
+    """About page view"""
+    return render(request, 'core/about.html')
 
-    # Find the first existing path
-    reciter_path = None
-    for path in potential_paths:
-        logger.info(f'Checking path: {path}')
-        if path.exists():
-            reciter_path = path
-            break
 
-    # If no path found, use the first potential path
-    if not reciter_path:
-        reciter_path = potential_paths[0]
-        logger.warning(f'No existing path found. Using: {reciter_path}')
-        # Attempt to create the directory
-        try:
-            reciter_path.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            logger.error(f'Failed to create reciter directory: {e}')
+def help_page(request):
+    """Help page view"""
+    return render(request, 'core/help.html')
 
-    # Log selected path
-    logger.info(f'Selected reciter path: {reciter_path}')
-    logger.info(f'Reciter path exists: {reciter_path.exists()}')
 
-    # Log reciter path details
-    logger.info(f'Reciter path: {reciter_path}')
-    logger.info(f'Reciter path exists: {reciter_path.exists()}')
+def contact_us(request):
+    """Contact page view"""
+    if request.method == 'POST':
+        # Process contact form
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
 
-    # Get available reciters
-    reciters_path = Path(os.path.join(os.getcwd(), 'reciters'))
-    available_reciters = [r.name for r in reciters_path.iterdir() if r.is_dir()] if reciters_path.exists() else []
+        # Simple validation
+        if not all([name, email, message]):
+            messages.error(request, 'يرجى ملء جميع الحقول المطلوبة')
+            return redirect('core:contact_us')
 
-    # Check if reciter exists
-    if reciter_name not in available_reciters:
-        error_message = f'القارئ {reciter_name} غير موجود'
-        return render(request, 'core/reciter_surahs.html', {
-            'reciter_name': reciter_name,
-            'surahs': [],
-            'error': error_message,
-            'available_reciters': available_reciters
-        })
+        # Here you would typically send an email or save to database
+        # For now, just show a success message
+        messages.success(request, 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً.')
+        return redirect('core:contact_us')
 
-    # Construct reciter path
-    reciter_path = reciters_path / reciter_name
+    return render(request, 'core/contact.html')
 
-    # Validate reciter directory
-    if not os.path.exists(reciter_path):
-        error_message = f'مجلد القارئ غير موجود: {reciter_name}'
-        return render(request, 'core/reciter_surahs.html', {
-            'reciter_name': reciter_name,
-            'surahs': [],
-            'error': error_message,
-            'available_reciters': available_reciters
-        })
+def global_search(request):
+    """Global search view"""
+    query = request.GET.get('q', '')
+    results = {}
 
-    # Ensure media directory for this reciter exists
-    media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(os.getcwd(), 'media'))
-    media_reciter_dir = Path(media_root) / 'reciters' / reciter_name
-    media_reciter_dir.mkdir(parents=True, exist_ok=True)
+    if query:
+        # Import models only when needed
+        from khatma.models import Khatma
+        from groups.models import ReadingGroup
+        from quran.models import Surah
+        from django.contrib.auth.models import User
 
-    # Get all MP3 files in the reciter's directory
-    try:
-        # Use Path for more robust file listing with multiple search strategies
-        mp3_files = []
-        search_strategies = [
-            lambda p: list(p.glob('*.mp3')),  # Direct MP3 files
-            lambda p: list(p.rglob('*.mp3')),  # Recursive search
-            lambda p: [f for f in p.iterdir() if f.suffix.lower() == '.mp3']  # Alternative method
-        ]
+        # Search khatmas
+        khatmas = Khatma.objects.filter(
+            Q(title__icontains=query) | Q(description__icontains=query),
+            is_public=True
+        )[:10]
 
-        # Try each search strategy
-        for strategy in search_strategies:
-            try:
-                found_files = strategy(reciter_path)
-                mp3_files.extend(found_files)
-                if found_files:
-                    break
-            except Exception as strategy_error:
-                logger.warning(f'Search strategy failed: {strategy_error}')
+        # Search groups
+        groups = ReadingGroup.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query),
+            is_public=True
+        )[:10]
 
-        # Explicitly copy all files to media directory
-        copied_files = []
-        for file in mp3_files:
-            try:
-                media_file_path = media_reciter_dir / file.name
-                if not media_file_path.exists():
-                    shutil.copy2(file, media_file_path)
-                    logger.info(f'Copied {file.name} to media directory')
-                copied_files.append(file)
-            except Exception as copy_error:
-                logger.error(f'Error copying {file.name}: {copy_error}')
+        # Search surahs
+        surahs = Surah.objects.filter(
+            Q(name_arabic__icontains=query) | Q(name_english__icontains=query)
+        )[:10]
 
-        # Update mp3_files with successfully copied files
-        mp3_files = copied_files
+        # Search users (if authenticated)
+        users = []
+        if request.user.is_authenticated:
+            users = User.objects.filter(
+                Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query)
+            )[:10]
 
-        # Log comprehensive file discovery information
-        logger.info(f'MP3 File Discovery Report for {reciter_path}:')
-        logger.info(f'- Total files found: {len(mp3_files)}')
+        results = {
+            'khatmas': khatmas,
+            'groups': groups,
+            'surahs': surahs,
+            'users': users,
+            'query': query
+        }
 
-        # Detailed file logging
-        for file in mp3_files:
-            try:
-                logger.info(f'- File: {file.name}')
-                logger.info(f'  Full Path: {file}')
-                logger.info(f'  Size: {file.stat().st_size} bytes')
-                logger.info(f'  Last Modified: {file.stat().st_mtime}')
-            except Exception as file_error:
-                logger.error(f'Error logging file details: {file_error}')
+    return render(request, 'core/search_results.html', results)
+def set_language(request):
+    """View for setting user language preference"""
+    if request.method == 'POST':
+        language = request.POST.get('language')
+        next_url = request.POST.get('next', '/')
 
-        # Validate file list
-        if not mp3_files:
-            logger.warning(f'No MP3 files found in {reciter_path}')
-            return render(request, 'core/reciter_surahs.html', {
-                'reciter_name': reciter_name,
-                'surahs': [],
-                'error': 'لم يتم العثور على ملفات صوتية',
-                'available_reciters': list(reciters_path.iterdir()) if reciters_path.exists() else []
-            })
-    except Exception as e:
-        logger.error(f'Comprehensive error reading directory {reciter_path}: {e}')
-        return render(request, 'core/reciter_surahs.html', {
-            'reciter_name': reciter_name,
-            'surahs': [],
-            'error': f'خطأ شامل في قراءة ملفات الصوت: {e}',
-            'available_reciters': list(reciters_path.iterdir()) if reciters_path.exists() else []
-        })
+        # Set language in session
+        request.session['django_language'] = language
 
-    # Validate MP3 files
-    if not mp3_files:
-        logger.warning(f'No MP3 files found in {reciter_path}')
+        # If user is authenticated, update their profile
+        if request.user.is_authenticated:
+            from users.models import Profile
+            profile, _ = Profile.objects.get_or_create(user=request.user)
+            profile.preferred_language = language
+            profile.save()
 
-        # Try to find MP3 files in subdirectories
-        try:
-            subdirs_mp3_files = list(reciter_path.rglob('*.mp3'))
-            logger.info(f'Found {len(subdirs_mp3_files)} MP3 files in subdirectories')
+        return redirect(next_url)
 
-            if subdirs_mp3_files:
-                mp3_files = subdirs_mp3_files
-            else:
-                return render(request, 'core/reciter_surahs.html', {
-                    'reciter_name': reciter_name,
-                    'surahs': [],
-                    'error': 'لم يتم العثور على أي ملفات صوتية لهذا الراوي',
-                    'available_reciters': list(reciters_path.iterdir()) if reciters_path.exists() else []
-                })
-        except Exception as e:
-            logger.error(f'Error searching subdirectories: {e}')
-            return render(request, 'core/reciter_surahs.html', {
-                'reciter_name': reciter_name,
-                'surahs': [],
-                'error': f'خطأ في البحث عن ملفات الصوت: {e}',
-                'available_reciters': list(reciters_path.iterdir()) if reciters_path.exists() else []
-            })
+    # If not POST, redirect to homepage
+    return redirect('core:index')
 
-    # Sort MP3 files to ensure consistent order
-    # Convert Path objects to strings for processing
-    mp3_files = [str(f.name) for f in mp3_files]
-    mp3_files.sort()
 
-    # Debug log the MP3 files found
-    logger.info(f"Found {len(mp3_files)} MP3 files: {mp3_files[:10]}...")
+def community(request):
+    """Community hub view"""
+    # Import models only when needed
+    from khatma.models import Khatma, PublicKhatma
+    from groups.models import ReadingGroup
 
-    surahs = []
-    for mp3 in mp3_files:
-        try:
-            # Extract surah number from filename
-            # Prioritize filename matching 001.mp3 or 1.mp3 format
-            surah_number = ''
+    # Get public khatmas
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')[:10]
 
-            # Try direct filename without extension
-            filename_without_ext = mp3.split('.')[0]
-            logger.info(f"Processing file: {mp3}, filename without extension: {filename_without_ext}")
+    # Get public groups
+    public_groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')[:10]
 
-            if filename_without_ext.isdigit():
-                surah_number = filename_without_ext.zfill(3)
-                logger.info(f"Extracted surah number: {surah_number}")
-            else:
-                logger.warning(f"Filename is not a digit: {filename_without_ext}")
+    # Get memorial khatmas
+    memorial_khatmas = Khatma.objects.filter(
+        khatma_type='memorial',
+        is_public=True
+    ).order_by('-created_at')[:10]
 
-            # Fallback if no number found
-            if not surah_number:
-                logger.warning(f'Could not extract surah number from {mp3}')
-                surah_number = '000'
+    context = {
+        'public_khatmas': public_khatmas,
+        'public_groups': public_groups,
+        'memorial_khatmas': memorial_khatmas
+    }
 
-            # Ensure surah number is within valid range
-            try:
-                surah_num_int = int(surah_number)
-                if surah_num_int < 1 or surah_num_int > 114:
-                    logger.warning(f'Surah number {surah_number} out of range for {mp3}')
-                    surah_number = '000'
-                else:
-                    logger.info(f"Valid surah number: {surah_number}")
-            except ValueError:
-                logger.warning(f'Invalid surah number {surah_number} for {mp3}')
-                surah_number = '000'
+    return render(request, 'core/community.html', context)
 
-            surah_name = SURAH_NAMES.get(surah_number, f'سورة {surah_number}')
-            logger.info(f"Surah name for {surah_number}: {surah_name}")
 
-            # Construct full file path with multiple fallback options
-            full_file_path = None
-            media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(os.getcwd(), 'media'))
-            base_dir = getattr(settings, 'BASE_DIR', Path(os.getcwd()))
+@login_required
+def logout_view(request):
+    """View for logging out a user"""
+    from django.contrib.auth import logout
 
-            potential_paths = [
-                reciter_path / mp3,  # Direct path
-                Path(media_root) / 'reciters' / reciter_name / mp3,  # Media path
-                Path(base_dir) / 'reciters' / reciter_name / mp3,  # Project root path
-                Path(base_dir) / 'core' / 'reciters' / reciter_name / mp3,  # Core reciters path
-                Path(base_dir) / 'static' / 'reciters' / reciter_name / mp3,  # Static reciters path
-            ]
+    if request.method == 'POST':
+        logout(request)
+        messages.success(request, 'تم تسجيل الخروج بنجاح')
+        return redirect('core:index')
+    else:
+        # For GET requests, show the logout confirmation page
+        return render(request, 'registration/logout.html')
 
-            for potential_path in potential_paths:
-                if potential_path.exists():
-                    full_file_path = potential_path
-                    logger.info(f'Found file at: {full_file_path}')
-                    break
+@login_required
+def profile(request):
+    """User profile view"""
+    # Get user's khatmas
+    from khatma.models import Khatma
+    from users.models import UserAchievement
 
-            # If no path found, log all potential paths
-            if not full_file_path:
-                logger.error('No existing file found for paths:')
-                for path in potential_paths:
-                    logger.error(f'- {path} (exists: {path.exists()})')
-                # Use the first potential path as fallback
-                full_file_path = potential_paths[0]
-                logger.warning(f'Defaulting to: {full_file_path}')
+    user_khatmas = Khatma.objects.filter(participants__user=request.user).distinct()
 
-            # Ensure media directory exists
-            media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(os.getcwd(), 'media'))
-            media_dir = Path(media_root) / 'reciters' / reciter_name
+    # Get user's achievements
+    user_achievements = UserAchievement.objects.filter(user=request.user)
 
-            try:
-                media_dir.mkdir(parents=True, exist_ok=True)
-                media_file_path = media_dir / mp3
+    context = {
+        'user_khatmas': user_khatmas,
+        'user_achievements': user_achievements
+    }
 
-                # Ensure source file is readable
-                if not full_file_path.is_file() or not os.access(full_file_path, os.R_OK):
-                    logger.error(f'Source file is not readable: {full_file_path}')
-                    continue
+    return render(request, 'core/profile.html', context)
 
-                # Copy file if not exists or source is newer
-                if not media_file_path.exists():
-                    shutil.copy2(full_file_path, media_file_path)
-                    logger.info(f'Copied {mp3} to media directory')
-                elif full_file_path.stat().st_mtime > media_file_path.stat().st_mtime:
-                    shutil.copy2(full_file_path, media_file_path)
-                    logger.info(f'Updated {mp3} in media directory')
-            except Exception as copy_error:
-                logger.error(f'Error processing file {mp3}: {copy_error}')
-                continue
+@login_required
+def logout_view(request):
+    """View for logging out a user"""
+    from django.contrib.auth import logout
 
-            # Generate path for template with multiple fallback options
-            template_paths = [
-                f'/media/reciters/{reciter_name}/{mp3}',  # Standard path
-                f'/media/{reciter_name}/{mp3}',  # Alternative media path
-                f'/reciters/{reciter_name}/{mp3}',  # Direct reciters path
-                f'/static/reciters/{reciter_name}/{mp3}',  # Static path
-                f'/media/{mp3}',  # Fallback path
-                f'/{mp3}'  # Last resort
-            ]
+    if request.method == 'POST':
+        logout(request)
+        messages.success(request, 'تم تسجيل الخروج بنجاح')
+        return redirect('core:index')
+    else:
+        # For GET requests, show the logout confirmation page
+        return render(request, 'registration/logout.html')
 
-            # Log all potential paths
-            logger.info(f"Potential paths for {mp3}:")
-            for path in template_paths:
-                logger.info(f"- {path}")
 
-            # Use the first path as default
-            template_path = template_paths[0]
-            logger.info(f"Using path: {template_path}")
-
-            # Only add valid surahs (with valid numbers)
-            if surah_number != '000':
-                surahs.append({
-                    'number': surah_number,
-                    'name': surah_name,
-                    'filename': mp3,
-                    'path': template_path
-                })
-                logger.info(f"Added surah: {surah_number} - {surah_name}")
-            else:
-                logger.warning(f"Skipping invalid surah: {mp3}")
-        except Exception as e:
-            logger.error(f'Error processing surah {mp3}: {e}')
-
-    # Sort surahs by number
-    surahs.sort(key=lambda x: x['number'])
-
-    # Log processed surahs
-    logger.info(f'Processed {len(surahs)} surahs')
-
-    # Debug: log the first few surahs
-    for i, surah in enumerate(surahs[:5]):
-        logger.info(f"Surah {i+1}: {surah['number']} - {surah['name']} - {surah['filename']}")
-
-    return render(request, 'core/reciter_surahs.html', {
-        'reciter_name': reciter_name,
-        'surahs': surahs
-    })
 
 @login_required
 def logout_view(request):

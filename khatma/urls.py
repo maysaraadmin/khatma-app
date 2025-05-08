@@ -12,12 +12,15 @@ urlpatterns = [
     path('<int:khatma_id>/edit/', views.edit_khatma, name='edit_khatma'),
     path('<int:khatma_id>/delete/', views.delete_khatma, name='delete_khatma'),
     path('<int:khatma_id>/complete/', views.complete_khatma, name='complete_khatma'),
+    path('<int:khatma_id>/dashboard/', views.khatma_dashboard, name='khatma_dashboard'),
+    path('reading-plan/', views.khatma_reading_plan, name='khatma_reading_plan'),
 
     # Part management
     path('<int:khatma_id>/part/<int:part_id>/', views.part_detail, name='part_detail'),
     path('<int:khatma_id>/part/<int:part_id>/assign/', views.assign_part, name='assign_part'),
     path('<int:khatma_id>/part/<int:part_id>/complete/', views.complete_part, name='complete_part'),
     path('<int:khatma_id>/part/<int:part_id>/uncomplete/', views.uncomplete_part, name='uncomplete_part'),
+    path('<int:khatma_id>/part/<int:part_id>/read/', views.khatma_part_reading, name='khatma_part_reading'),
 
     # Deceased management
     path('deceased/create/', views.create_deceased, name='create_deceased'),
@@ -32,9 +35,14 @@ urlpatterns = [
     path('<int:khatma_id>/participants/', views.khatma_participants, name='khatma_participants'),
     path('<int:khatma_id>/remove-participant/<int:user_id>/', views.remove_participant, name='remove_participant'),
 
-    # Sharing
+    # Sharing and social features
     path('share/<uuid:sharing_link>/', views.shared_khatma, name='shared_khatma'),
     path('<int:khatma_id>/share/', views.share_khatma, name='share_khatma'),
+    path('<int:khatma_id>/post/create/', views.create_khatma_post, name='create_khatma_post'),
+    path('community/', views.community_khatmas, name='community_khatmas'),
+
+    # Chat functionality
+    path('<int:khatma_id>/chat/', views.khatma_chat, name='khatma_chat'),
 
     # API endpoints
     path('api/khatma/<int:khatma_id>/progress/', views.khatma_progress_api, name='khatma_progress_api'),

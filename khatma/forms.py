@@ -1,13 +1,15 @@
 from django import forms
-from .models import Khatma, Deceased, PartAssignment, QuranReading, KhatmaPart
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from .models import Khatma, Deceased, PartAssignment, QuranReading, KhatmaPart, KhatmaChat, KhatmaInteraction
 
 
 class DeceasedForm(forms.ModelForm):
     """Form for creating and editing deceased persons"""
     class Meta:
         model = Deceased
-        fields = ['name', 'death_date', 'birth_date', 'photo', 'biography', 
-                  'relation', 'cause_of_death', 'burial_place', 
+        fields = ['name', 'death_date', 'birth_date', 'photo', 'biography',
+                  'relation', 'cause_of_death', 'burial_place',
                   'memorial_day', 'memorial_frequency']
         widgets = {
             'death_date': forms.DateInput(attrs={'type': 'date'}),
@@ -20,8 +22,8 @@ class KhatmaCreationForm(forms.ModelForm):
     """Form for creating a new Khatma"""
     class Meta:
         model = Khatma
-        fields = ['title', 'description', 'khatma_type', 'frequency', 
-                  'is_public', 'visibility', 'allow_comments', 
+        fields = ['title', 'description', 'khatma_type', 'frequency',
+                  'is_public', 'visibility', 'allow_comments',
                   'target_completion_date', 'send_reminders', 'reminder_frequency']
         widgets = {
             'target_completion_date': forms.DateInput(attrs={'type': 'date'}),
@@ -31,7 +33,7 @@ class KhatmaCreationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         # Add deceased field if user has added deceased persons
         if self.user:
             self.fields['deceased'] = forms.ModelChoiceField(
@@ -40,7 +42,7 @@ class KhatmaCreationForm(forms.ModelForm):
                 label='المتوفى (للختمات التذكارية)',
                 widget=forms.Select(attrs={'class': 'form-control'})
             )
-            
+
             # Show deceased field only for memorial khatmas
             self.fields['deceased'].widget.attrs['data-show-if'] = 'khatma_type=memorial'
 
@@ -49,8 +51,8 @@ class KhatmaEditForm(forms.ModelForm):
     """Form for editing an existing Khatma"""
     class Meta:
         model = Khatma
-        fields = ['title', 'description', 'khatma_type', 'frequency', 
-                  'is_public', 'visibility', 'allow_comments', 
+        fields = ['title', 'description', 'khatma_type', 'frequency',
+                  'is_public', 'visibility', 'allow_comments',
                   'target_completion_date', 'send_reminders', 'reminder_frequency',
                   'memorial_prayer', 'social_media_hashtags']
         widgets = {
@@ -62,7 +64,7 @@ class KhatmaEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         # Add deceased field if user has added deceased persons and khatma is memorial type
         if self.user and self.instance.khatma_type == 'memorial':
             self.fields['deceased'] = forms.ModelChoiceField(
@@ -79,11 +81,11 @@ class PartAssignmentForm(forms.ModelForm):
     class Meta:
         model = PartAssignment
         fields = ['participant']
-        
+
     def __init__(self, *args, **kwargs):
         self.khatma = kwargs.pop('khatma', None)
         super().__init__(*args, **kwargs)
-        
+
         if self.khatma:
             # Only show participants of this khatma
             self.fields['participant'].queryset = self.khatma.participants.all()
@@ -98,7 +100,7 @@ class QuranReadingForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'rows': 3}),
             'dua': forms.Textarea(attrs={'rows': 3}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         self.khatma = kwargs.pop('khatma', None)
@@ -111,18 +113,18 @@ class KhatmaPartForm(forms.ModelForm):
     class Meta:
         model = KhatmaPart
         fields = ['is_completed']
-        
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         # Add completion date field if part is marked as completed
         self.fields['completion_notes'] = forms.CharField(
             required=False,
             widget=forms.Textarea(attrs={'rows': 2}),
             label='ملاحظات الإكمال'
         )
-        
+
         self.fields['completion_dua'] = forms.CharField(
             required=False,
             widget=forms.Textarea(attrs={'rows': 2}),
@@ -171,3 +173,27 @@ class KhatmaFilterForm(forms.Form):
         label='بحث',
         widget=forms.TextInput(attrs={'placeholder': 'ابحث عن ختمة...'})
     )
+
+
+class KhatmaChatForm(forms.ModelForm):
+    """Form for sending messages in Khatma chat"""
+    class Meta:
+        model = KhatmaChat
+        fields = ['message']
+        widgets = {
+            'message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'اكتب رسالتك هنا...'
+            })
+        }
+
+
+class KhatmaInteractionForm(forms.ModelForm):
+    """Form for social interactions in Khatmas"""
+    class Meta:
+        model = KhatmaInteraction
+        fields = ['interaction_type']
+        widgets = {
+            'interaction_type': forms.Select(attrs={'class': 'form-control'}),
+        }
