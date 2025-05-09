@@ -960,7 +960,7 @@ def khatma_detail(request, khatma_id):
                 'posts': posts
             }
 
-            return render(request, 'core/khatma_detail.html', context)
+            return render(request, 'core/khatma_merged_dashboard.html', context)
         except Exception as e:
             logger.error(f"Error retrieving khatma with ID {khatma_id}: {str(e)}")
             messages.error(request, 'تعذر العثور على الختمة المطلوبة')
@@ -1348,7 +1348,7 @@ def khatma_dashboard(request):
                 'overall_progress': overall_progress
             }
 
-            return render(request, 'core/khatma_dashboard_new.html', context)
+            return render(request, 'core/khatma_merged_dashboard.html', context)
         except Exception as e:
             logger.error(f"Error retrieving khatma data: {str(e)}")
             context = {
@@ -1362,7 +1362,7 @@ def khatma_dashboard(request):
                 'completed_parts': 0,
                 'overall_progress': 0
             }
-            return render(request, 'core/khatma_dashboard_new.html', context)
+            return render(request, 'core/khatma_merged_dashboard.html', context)
     except Exception as e:
         # Log the error
         import logging
@@ -1384,7 +1384,7 @@ def khatma_dashboard(request):
             'overall_progress': 0
         }
 
-        return render(request, 'core/khatma_dashboard_new.html', context)
+        return render(request, 'core/khatma_merged_dashboard.html', context)
 
 
 @login_required

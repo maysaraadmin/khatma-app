@@ -1,0 +1,625 @@
+{% extends 'core/base.html' %}
+
+{% block title %}لوحة تحكم الختمات{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, #5D4037 0%, #8D6E63 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    /* Dashboard Cards */
+    .dashboard-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    }
+    
+    /* Statistics Cards */
+    .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 10px;
+        color: white;
+        margin-bottom: 1.5rem;
+    }
+    .stat-card.primary {
+        background: linear-gradient(135deg, #5D4037 0%, #8D6E63 100%);
+    }
+    .stat-card.success {
+        background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+    }
+    .stat-card.info {
+        background: linear-gradient(135deg, #2196F3 0%, #03A9F4 100%);
+    }
+    .stat-card.warning {
+        background: linear-gradient(135deg, #FF9800 0%, #FFC107 100%);
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .stat-label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+    
+    /* Progress Circle */
+    .progress-circle {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1rem;
+    }
+    .progress-circle svg {
+        width: 100%;
+        height: 100%;
+    }
+    .progress-circle .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    /* Khatma Cards */
+    .khatma-card {
+        border-right: 4px solid #5D4037;
+        transition: all 0.3s ease;
+    }
+    .khatma-card:hover {
+        border-right-color: #2196F3;
+    }
+    .khatma-card.completed {
+        border-right-color: #4CAF50;
+    }
+    .khatma-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+    .khatma-meta {
+        color: #757575;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+    .khatma-progress {
+        height: 8px;
+        border-radius: 4px;
+    }
+    
+    /* Khatma Detail Header */
+    .khatma-header {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .khatma-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('https://i.ibb.co/Jt8JKgf/quran-pattern.png');
+        background-size: cover;
+        opacity: 0.05;
+        z-index: 0;
+    }
+    .khatma-header-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+    .khatma-header-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    .khatma-header-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255,255,255,0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .khatma-description {
+        margin-top: 1.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        position: relative;
+        z-index: 1;
+        background: rgba(255,255,255,0.1);
+        padding: 1.5rem;
+        border-radius: 10px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* Quran Part Cards */
+    .quran-part-card {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border: none;
+        margin-bottom: 1rem;
+    }
+    .quran-part-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .quran-part-card.completed {
+        border: 2px solid rgba(76, 175, 80, 0.3);
+    }
+    .part-header {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        padding: 1rem;
+        position: relative;
+        text-align: center;
+    }
+    .part-header.completed {
+        background: linear-gradient(135deg, #4CAF50, #8BC34A);
+    }
+    .part-number {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        background: rgba(255,255,255,0.2);
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: bold;
+    }
+    .part-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .part-content {
+        padding: 1rem;
+    }
+    .participant-info, .completion-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    .participant-info.empty {
+        color: #aaa;
+    }
+    .part-actions {
+        margin-top: 1rem;
+    }
+    
+    /* Tabs */
+    .nav-tabs .nav-link {
+        color: #5D4037;
+        font-weight: 600;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .nav-tabs .nav-link:hover {
+        border-color: rgba(93, 64, 55, 0.3);
+    }
+    .nav-tabs .nav-link.active {
+        color: #5D4037;
+        border-color: #5D4037;
+        background: transparent;
+    }
+    .tab-content {
+        padding: 1.5rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    {% if error_message %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error_message }}
+    </div>
+    {% endif %}
+
+    {% if khatma %}
+    <!-- Single Khatma Detail View -->
+    <div class="khatma-header">
+        <h1 class="khatma-header-title">{{ khatma.title }}</h1>
+
+        <div class="khatma-header-meta">
+            <div class="khatma-header-meta-item">
+                <i class="bi bi-person-circle"></i>
+                <span>{{ khatma.creator.username }}</span>
+            </div>
+            <div class="khatma-header-meta-item">
+                <i class="bi bi-calendar-event"></i>
+                <span>{{ khatma.start_date|date:"Y-m-d" }}</span>
+            </div>
+            <div class="khatma-header-meta-item">
+                <i class="bi bi-repeat"></i>
+                <span>{{ khatma.get_frequency_display }}</span>
+            </div>
+            {% if khatma.deceased %}
+            <div class="khatma-header-meta-item">
+                <i class="bi bi-heart"></i>
+                <span>إهداء لروح {{ khatma.deceased.name }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if khatma.description %}
+        <div class="khatma-description">
+            {{ khatma.description|linebreaks }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <!-- Progress Card -->
+            <div class="dashboard-card">
+                <h3 class="text-center mb-4">تقدم الختمة</h3>
+
+                <div class="progress-circle">
+                    <svg viewBox="0 0 36 36">
+                        <path class="circle-bg"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="rgba(0,0,0,0.1)"
+                            stroke-width="3" />
+                        <path class="circle"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="#4CAF50"
+                            stroke-width="3"
+                            stroke-dasharray="{{ progress_percentage }}, 100" />
+                    </svg>
+                    <div class="progress-text">{{ progress_percentage|floatformat:0 }}%</div>
+                </div>
+
+                <div class="text-center mb-4">
+                    <div class="fs-5 text-muted">{{ completed_parts }} / {{ total_parts }}</div>
+                    <div class="small text-muted">تم إكمال {{ completed_parts }} جزء من أصل {{ total_parts }} جزء</div>
+                </div>
+
+                {% if not is_participant and khatma.creator != user %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-person-plus"></i> انضم للختمة
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+
+            <!-- Khatma Info Card -->
+            <div class="dashboard-card">
+                <h3 class="mb-3">معلومات الختمة</h3>
+                <hr>
+
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-person-circle me-2 text-primary"></i>
+                        <span class="fw-bold">المنشئ:</span>
+                    </div>
+                    <div class="ms-4">{{ khatma.creator.username }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-calendar-event me-2 text-primary"></i>
+                        <span class="fw-bold">تاريخ البدء:</span>
+                    </div>
+                    <div class="ms-4">{{ khatma.start_date|date:"Y-m-d" }}</div>
+                </div>
+
+                {% if khatma.end_date %}
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-calendar-check me-2 text-primary"></i>
+                        <span class="fw-bold">تاريخ الانتهاء المتوقع:</span>
+                    </div>
+                    <div class="ms-4">{{ khatma.end_date|date:"Y-m-d" }}</div>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-repeat me-2 text-primary"></i>
+                        <span class="fw-bold">التكرار:</span>
+                    </div>
+                    <div class="ms-4">{{ khatma.get_frequency_display }}</div>
+                </div>
+
+                {% if khatma.deceased %}
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-heart me-2 text-primary"></i>
+                        <span class="fw-bold">إهداء إلى:</span>
+                    </div>
+                    <div class="ms-4">
+                        {{ khatma.deceased.name }}
+                        <span class="badge bg-purple ms-2">ختمة تذكارية</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Quran Parts -->
+            <div class="dashboard-card">
+                <h3 class="mb-3">
+                    <i class="bi bi-book"></i> أجزاء القرآن
+                    <span class="badge bg-primary rounded-pill ms-2">{{ total_parts }} جزء</span>
+                </h3>
+                <hr>
+
+                <div class="row g-3">
+                    {% for part in parts %}
+                        <div class="col-md-4 col-sm-6">
+                            <div class="quran-part-card {% if part.is_completed %}completed{% endif %}">
+                                <div class="part-header {% if part.is_completed %}completed{% endif %}">
+                                    <div class="part-number">{{ part.part_number }}</div>
+                                    <h5 class="part-title">الجزء {{ part.part_number }}</h5>
+                                </div>
+
+                                <div class="part-content">
+                                    {% if part.assigned_to %}
+                                        <div class="participant-info">
+                                            <i class="bi bi-person-circle"></i>
+                                            <span>{{ part.assigned_to.username }}</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="participant-info empty">
+                                            <i class="bi bi-person-dash"></i>
+                                            <span>غير مخصص</span>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if part.is_completed %}
+                                        <div class="completion-info">
+                                            <i class="bi bi-calendar-check"></i>
+                                            <span>{% if part.completed_at %}{{ part.completed_at|date:"Y-m-d" }}{% else %}تم الإكمال{% endif %}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="part-actions">
+                                        {% if is_participant or khatma.creator == user %}
+                                            {% if not part.is_completed %}
+                                                <div class="d-flex gap-2 flex-wrap">
+                                                    <a href="{% url 'core:assign_part' khatma.id part.part_number %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-person-plus"></i>
+                                                        {% if part.assigned_to %}تحديث{% else %}تخصيص{% endif %}
+                                                    </a>
+
+                                                    <form method="post" action="{% url 'core:assign_part' khatma.id part.part_number %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="notes" value="تم إكمال الجزء من خلال صفحة تفاصيل الختمة">
+                                                        <button type="submit" class="btn btn-sm btn-success">
+                                                            <i class="bi bi-check-circle"></i> إكمال
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            {% else %}
+                                                <div class="text-success">
+                                                    <i class="bi bi-check-circle-fill"></i> تم الإكمال
+                                                    {% if part.completed_at %}
+                                                        <div class="small text-muted">{{ part.completed_at|date:"Y-m-d" }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+
+                                        <a href="{% url 'core:quran_part' part.part_number %}" class="btn btn-sm btn-outline-success mt-2" target="_blank">
+                                            <i class="bi bi-book"></i> قراءة
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Khatma Dashboard View -->
+    <div class="dashboard-header text-center">
+        <h1 class="display-4">لوحة تحكم الختمات</h1>
+        <p class="lead">متابعة تقدم الختمات وإدارتها</p>
+        <a href="{% url 'core:create_khatma' %}" class="btn btn-light mt-3">
+            <i class="fas fa-plus-circle"></i> إنشاء ختمة جديدة
+        </a>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card primary">
+                <div class="stat-number">{{ total_khatmas }}</div>
+                <div class="stat-label">إجمالي الختمات</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card success">
+                <div class="stat-number">{{ completed_khatmas }}</div>
+                <div class="stat-label">الختمات المكتملة</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card info">
+                <div class="stat-number">{{ completed_parts }}</div>
+                <div class="stat-label">الأجزاء المقروءة</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card warning">
+                <div class="progress-circle">
+                    <svg viewBox="0 0 36 36">
+                        <path class="circle-bg"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.2)"
+                            stroke-width="3" />
+                        <path class="circle"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="#fff"
+                            stroke-width="3"
+                            stroke-dasharray="{{ overall_progress }}, 100" />
+                    </svg>
+                    <div class="progress-text">{{ overall_progress|floatformat:0 }}%</div>
+                </div>
+                <div class="stat-label">التقدم الإجمالي</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- My Khatmas -->
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>ختماتي</h3>
+                    <span class="badge bg-primary">{{ created_khatmas.count }}</span>
+                </div>
+                <hr>
+                {% if created_khatmas %}
+                    <div class="khatma-list">
+                        {% for khatma in created_khatmas %}
+                            <div class="khatma-card p-3 mb-3 {% if khatma.is_completed %}completed{% endif %}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="khatma-title">{{ khatma.title }}</h4>
+                                    <span class="badge {% if khatma.is_completed %}bg-success{% else %}bg-primary{% endif %}">
+                                        {% if khatma.is_completed %}مكتملة{% else %}جارية{% endif %}
+                                    </span>
+                                </div>
+                                <div class="khatma-meta">
+                                    <i class="bi bi-calendar3"></i> {{ khatma.created_at|date:"Y-m-d" }}
+                                    {% if khatma.khatma_type %}
+                                        <span class="mx-2">•</span>
+                                        <i class="bi bi-tag"></i> {{ khatma.get_khatma_type_display }}
+                                    {% endif %}
+                                </div>
+                                <div class="progress khatma-progress mb-2">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ khatma.get_progress_percentage }}%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small>{{ khatma.get_progress_percentage }}% مكتمل</small>
+                                    <a href="{% url 'core:khatma_detail' khatma.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> عرض
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-journal-plus" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="mt-3">لم تقم بإنشاء أي ختمات بعد</p>
+                        <a href="{% url 'core:create_khatma' %}" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle"></i> إنشاء ختمة جديدة
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Participating Khatmas -->
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>مشاركاتي</h3>
+                    <span class="badge bg-info">{{ participating_khatmas.count }}</span>
+                </div>
+                <hr>
+                {% if participating_khatmas %}
+                    <div class="khatma-list">
+                        {% for khatma in participating_khatmas %}
+                            <div class="khatma-card p-3 mb-3 {% if khatma.is_completed %}completed{% endif %}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="khatma-title">{{ khatma.title }}</h4>
+                                    <span class="badge {% if khatma.is_completed %}bg-success{% else %}bg-info{% endif %}">
+                                        {% if khatma.is_completed %}مكتملة{% else %}جارية{% endif %}
+                                    </span>
+                                </div>
+                                <div class="khatma-meta">
+                                    <i class="bi bi-person-circle"></i> {{ khatma.creator.username }}
+                                    <span class="mx-2">•</span>
+                                    <i class="bi bi-calendar3"></i> {{ khatma.created_at|date:"Y-m-d" }}
+                                </div>
+                                <div class="progress khatma-progress mb-2">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ khatma.get_progress_percentage }}%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small>{{ khatma.get_progress_percentage }}% مكتمل</small>
+                                    <a href="{% url 'core:khatma_detail' khatma.id %}" class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i> عرض
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="mt-3">أنت لا تشارك في أي ختمات حالياً</p>
+                        <a href="{% url 'core:community_khatmas' %}" class="btn btn-info mt-2">
+                            <i class="bi bi-search"></i> استكشف الختمات المتاحة
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
