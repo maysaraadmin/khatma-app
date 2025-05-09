@@ -96,7 +96,12 @@ def index(request):
     Home page view.
     """
     try:
-        # Simple welcome message
+        # If user is authenticated, show dashboard
+        if request.user.is_authenticated:
+            dashboard_data = get_dashboard_data(request.user)
+            return render(request, 'core/user_dashboard.html', dashboard_data)
+
+        # Otherwise show welcome page
         return render(request, 'core/welcome.html')
     except Exception as e:
         logger.error(f"Error in index view: {str(e)}")
@@ -454,8 +459,12 @@ def achievements(request):
             if achievement['earned']:
                 achievement['date_earned'] = user_achievements.get(achievement_id=achievement['id']).date_earned
 
-        return render(request, 'core/achievements.html', {
-            'achievements': all_achievements
+        return render(request, 'core/user_achievements.html', {
+            'achievements': all_achievements,
+            'user_achievements': user_achievements,
+            'total_points': 100,  # Placeholder value
+            'level': 1,  # Placeholder value
+            'available_achievements': []  # Placeholder value
         })
     except Exception as e:
         logger.error(f"Error in achievements view: {str(e)}")
