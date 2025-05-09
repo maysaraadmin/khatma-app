@@ -5,41 +5,128 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="text-center mb-4">لوحة الشرف</h1>
-    
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>المستخدم</th>
-                    <th>الصورة الشخصية</th>
-                    <th>عدد الختمات</th>
-                    <th>الأجزاء المقروءة</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in leaderboard %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>
-                            {% if user.profile_picture %}
-                                <img src="{{ user.profile_picture }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
-                            {% else %}
-                                <img src="{% static 'images/default_profile.png' %}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
-                            {% endif %}
-                        </td>
-                        <td>{{ user.total_khatmas }}</td>
-                        <td>{{ user.total_parts_read }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center">لا توجد بيانات للوحة الشرف حتى الآن</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 mb-0">
+                <i class="bi bi-trophy-fill text-warning me-2"></i>
+                لوحة الشرف
+            </h1>
+            <p class="text-muted">تعرف على أكثر الأعضاء نشاطاً في المجتمع</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Top Readers -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-book-fill me-2"></i>
+                        أكثر القراء نشاطاً
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if top_readers %}
+                        <div class="list-group">
+                            {% for user in top_readers %}
+                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="position-relative me-3">
+                                            {% if forloop.counter <= 3 %}
+                                                <span class="position-absolute top-0 start-0 translate-middle badge rounded-pill
+                                                    {% if forloop.counter == 1 %}bg-warning{% elif forloop.counter == 2 %}bg-secondary{% else %}bg-bronze{% endif %}">
+                                                    {{ forloop.counter }}
+                                                </span>
+                                            {% endif %}
+
+                                            {% if user.profile.avatar %}
+                                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-person text-primary"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ user.username }}</h6>
+                                            <small class="text-muted">عضو منذ {{ user.date_joined|date:"Y/m/d" }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ user.completed_parts }} جزء
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            لا توجد بيانات متاحة حالياً.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Creators -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-plus-circle-fill me-2"></i>
+                        أكثر المنشئين نشاطاً
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if top_creators %}
+                        <div class="list-group">
+                            {% for user in top_creators %}
+                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="position-relative me-3">
+                                            {% if forloop.counter <= 3 %}
+                                                <span class="position-absolute top-0 start-0 translate-middle badge rounded-pill
+                                                    {% if forloop.counter == 1 %}bg-warning{% elif forloop.counter == 2 %}bg-secondary{% else %}bg-bronze{% endif %}">
+                                                    {{ forloop.counter }}
+                                                </span>
+                                            {% endif %}
+
+                                            {% if user.profile.avatar %}
+                                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-person text-success"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ user.username }}</h6>
+                                            <small class="text-muted">عضو منذ {{ user.date_joined|date:"Y/m/d" }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill">
+                                        {{ user.created_khatmas }} ختمة
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            لا توجد بيانات متاحة حالياً.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-bronze {
+        background-color: #cd7f32;
+    }
+</style>
 {% endblock %}

@@ -316,27 +316,25 @@ def community_khatmas(request):
         'page_obj': page_obj,
     })
 
-@login_required
 def group_list(request):
-    """View for listing all reading groups"""
-    # Get groups where the user is a member
-    user_groups = ReadingGroup.objects.filter(members=request.user, is_active=True).order_by('-created_at')
+    """View to display list of reading groups"""
+    from groups.models import ReadingGroup
 
-    # Get public groups that the user is not a member of
-    public_groups = ReadingGroup.objects.filter(
-        privacy='public',
-        is_active=True
-    ).exclude(
-        members=request.user
-    ).order_by('-created_at')
+    # Get all public groups
+    public_groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
 
-    # Get groups created by the user
-    created_groups = ReadingGroup.objects.filter(creator=request.user).order_by('-created_at')
+    # If user is authenticated, also get their private groups
+    user_groups = []
+    if request.user.is_authenticated:
+        user_groups = ReadingGroup.objects.filter(
+            members=request.user
+        ).exclude(
+            is_public=True
+        ).order_by('-created_at')
 
     context = {
-        'user_groups': user_groups,
         'public_groups': public_groups,
-        'created_groups': created_groups
+        'user_groups': user_groups
     }
 
     return render(request, 'core/group_list.html', context)
@@ -427,6 +425,8 @@ def group_detail(request, group_id):
 @login_required
 def join_group(request, group_id):
     """View for joining a group"""
+    from groups.models import ReadingGroup, GroupMembership
+
     group = get_object_or_404(ReadingGroup, id=group_id)
 
     # Check if user is already a member
@@ -437,31 +437,19 @@ def join_group(request, group_id):
         else:
             # Reactivate membership
             membership.is_active = True
-            membership.status = 'joined'
             membership.save()
             messages.success(request, 'تم إعادة الانضمام إلى المجموعة بنجاح')
     else:
-        # Check group privacy
-        if group.privacy == 'closed':
-            messages.error(request, 'هذه المجموعة مغلقة ولا يمكن الانضمام إليها')
+        # Check if the group is public
+        if not group.is_public:
+            messages.error(request, 'هذه المجموعة خاصة ولا يمكن الانضمام إليها')
             return redirect('core:group_list')
-        elif group.privacy == 'private':
-            # Create membership with invited status
-            GroupMembership.objects.create(
-                user=request.user,
-                group=group,
-                role='member',
-                status='invited',
-                is_active=False
-            )
-            messages.info(request, 'تم إرسال طلب الانضمام إلى مدير المجموعة')
         else:  # public group
             # Create active membership
             GroupMembership.objects.create(
                 user=request.user,
                 group=group,
                 role='member',
-                status='joined',
                 is_active=True
             )
             messages.success(request, 'تم الانضمام إلى المجموعة بنجاح')
@@ -471,6 +459,8 @@ def join_group(request, group_id):
 @login_required
 def leave_group(request, group_id):
     """View for leaving a group"""
+    from groups.models import ReadingGroup, GroupMembership
+
     group = get_object_or_404(ReadingGroup, id=group_id)
 
     # Check if user is a member
@@ -492,7 +482,6 @@ def leave_group(request, group_id):
 
         # Deactivate membership
         membership.is_active = False
-        membership.status = 'left'
         membership.save()
 
         messages.success(request, 'تم مغادرة المجموعة بنجاح')
@@ -504,6 +493,9 @@ def leave_group(request, group_id):
 @login_required
 def add_group_member(request, group_id):
     """View for adding a member to a group"""
+    from groups.models import ReadingGroup, GroupMembership
+    from groups.forms import GroupMembershipForm
+
     group = get_object_or_404(ReadingGroup, id=group_id)
 
     # Check if user is admin or moderator
@@ -520,8 +512,9 @@ def add_group_member(request, group_id):
         form = GroupMembershipForm(request.POST)
         if form.is_valid():
             # Ensure the group is the current group
-            form.instance.group = group
-            form.save()
+            membership = form.save(commit=False)
+            membership.group = group
+            membership.save()
             messages.success(request, 'تمت إضافة العضو بنجاح')
             return redirect('core:group_detail', group_id=group.id)
     else:
@@ -560,7 +553,6 @@ def remove_group_member(request, group_id, user_id):
 
         # Deactivate membership
         member_membership.is_active = False
-        member_membership.status = 'removed'
         member_membership.save()
 
         messages.success(request, 'تمت إزالة العضو بنجاح')
@@ -893,6 +885,8 @@ def create_khatma_post(request, khatma_id):
 @login_required
 def index(request):
     """Enhanced home page with more personalized content"""
+    from groups.models import ReadingGroup
+
     # Get user's reading groups
     user_groups = ReadingGroup.objects.filter(members=request.user, is_active=True).order_by('-created_at')[:5]
 
@@ -901,7 +895,7 @@ def index(request):
 
     # Get public groups that the user is not a member of
     public_groups = ReadingGroup.objects.filter(
-        privacy='public',
+        is_public=True,
         is_active=True
     ).exclude(
         members=request.user
@@ -1048,19 +1042,34 @@ def user_profile(request):
 
 @login_required
 def create_deceased(request):
-    if request.method == 'POST':
-        form = DeceasedForm(request.POST, request.FILES)
-        if form.is_valid():
-            # Create the deceased person
-            deceased = form.save(commit=False)
-            deceased.added_by = request.user
-            deceased.save()
+    """View to create a new deceased person"""
+    from khatma.models import Deceased
 
-            messages.success(request, f'تم إضافة {deceased.name} بنجاح')
-            return redirect('core:deceased_list')
-    else:
-        form = DeceasedForm()
-    return render(request, 'core/create_deceased.html', {'form': form})
+    if request.method == 'POST':
+        # Process form submission
+        name = request.POST.get('name')
+        death_date = request.POST.get('death_date')
+        relation = request.POST.get('relation', '')
+        photo = request.FILES.get('photo')
+
+        # Simple validation
+        if not name or not death_date:
+            messages.error(request, 'يرجى ملء جميع الحقول المطلوبة')
+            return redirect('core:create_deceased')
+
+        # Create the deceased person
+        deceased = Deceased.objects.create(
+            name=name,
+            death_date=death_date,
+            relation=relation,
+            photo=photo,
+            added_by=request.user
+        )
+
+        messages.success(request, f'تم إضافة {name} بنجاح')
+        return redirect('core:index')
+
+    return render(request, 'core/create_deceased.html')
 
 @login_required
 def deceased_list(request):
@@ -3034,17 +3043,26 @@ def reciter_surahs(request, reciter_name):
 def community_leaderboard(request):
     """View to display community leaderboard"""
     from django.contrib.auth.models import User
-    from django.db.models import Count
+    from django.db.models import Count, Q
 
     # Get top users by created khatmas
     top_creators = User.objects.annotate(
-        created_khatmas=Count('created_khatmas')
-    ).order_by('-created_khatmas')[:10]
+        created_khatmas_count=Count('created_khatmas')
+    ).filter(created_khatmas_count__gt=0).order_by('-created_khatmas_count')[:10]
 
-    # Get top users by joined khatmas
+    # Add the count as a property for the template
+    for user in top_creators:
+        user.created_khatmas = user.created_khatmas_count
+
+    # Get top users by completed parts
     top_readers = User.objects.annotate(
-        joined_khatmas=Count('joined_khatmas')
-    ).order_by('-joined_khatmas')[:10]
+        completed_parts_count=Count('partassignment',
+                                   filter=Q(partassignment__is_completed=True))
+    ).filter(completed_parts_count__gt=0).order_by('-completed_parts_count')[:10]
+
+    # Add the count as a property for the template
+    for user in top_readers:
+        user.completed_parts = user.completed_parts_count
 
     context = {
         'top_readers': top_readers,

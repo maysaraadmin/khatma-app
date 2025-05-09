@@ -41,6 +41,10 @@ class ReadingGroup(models.Model):
         """Get count of active members in this group"""
         return self.members.count()
 
+    def get_active_khatmas_count(self):
+        """Get count of active khatmas in this group"""
+        return self.khatmas.filter(is_completed=False).count()
+
 
 class GroupMembership(models.Model):
     """Model for group membership"""

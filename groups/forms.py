@@ -1,7 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import ReadingGroup, JoinRequest, GroupChat, GroupAnnouncement, GroupEvent
+from django.contrib.auth.models import User
+from .models import ReadingGroup, JoinRequest, GroupChat, GroupAnnouncement, GroupEvent, GroupMembership
 from khatma.models import Khatma
 
 
@@ -79,6 +80,30 @@ class GroupEventForm(forms.ModelForm):
             self.add_error('meeting_link', 'يجب توفير رابط الاجتماع للأحداث عبر الإنترنت')
 
         return cleaned_data
+
+
+class GroupMembershipForm(forms.ModelForm):
+    """Form for adding members to a group"""
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        label='المستخدم',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = GroupMembership
+        fields = ['user', 'role']
+        widgets = {
+            'role': forms.Select(attrs={'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter out users who are already members of the group
+        if 'initial' in kwargs and 'group' in kwargs['initial']:
+            group = kwargs['initial']['group']
+            existing_members = group.members.all()
+            self.fields['user'].queryset = User.objects.exclude(id__in=existing_members.values_list('id', flat=True))
 
 
 class GroupMemberRoleForm(forms.Form):

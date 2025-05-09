@@ -19,49 +19,46 @@
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                            <label for="name" class="form-label">
                                 <i class="bi bi-person-fill me-2"></i>
                                 اسم المتوفى
                             </label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                                <div class="text-danger">{{ form.name.errors }}</div>
-                            {% endif %}
+                            <input type="text" class="form-control" id="name" name="name" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.death_date.id_for_label }}" class="form-label">
+                            <label for="death_date" class="form-label">
                                 <i class="bi bi-calendar-date me-2"></i>
                                 تاريخ الوفاة
                             </label>
-                            {{ form.death_date }}
-                            {% if form.death_date.errors %}
-                                <div class="text-danger">{{ form.death_date.errors }}</div>
-                            {% endif %}
+                            <input type="date" class="form-control" id="death_date" name="death_date" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.photo.id_for_label }}" class="form-label">
+                            <label for="relation" class="form-label">
+                                <i class="bi bi-people me-2"></i>
+                                صلة القرابة (اختياري)
+                            </label>
+                            <select class="form-select" id="relation" name="relation">
+                                <option value="">اختر صلة القرابة</option>
+                                <option value="parent">والد/والدة</option>
+                                <option value="grandparent">جد/جدة</option>
+                                <option value="sibling">أخ/أخت</option>
+                                <option value="spouse">زوج/زوجة</option>
+                                <option value="child">ابن/ابنة</option>
+                                <option value="relative">قريب</option>
+                                <option value="friend">صديق</option>
+                                <option value="other">أخرى</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="photo" class="form-label">
                                 <i class="bi bi-image me-2"></i>
                                 صورة المتوفى (اختياري)
                             </label>
-                            {{ form.photo }}
-                            {% if form.photo.errors %}
-                                <div class="text-danger">{{ form.photo.errors }}</div>
-                            {% endif %}
+                            <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
                         </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.biography.id_for_label }}" class="form-label">
-                                <i class="bi bi-file-text me-2"></i>
-                                نبذة عن المتوفى (اختياري)
-                            </label>
-                            {{ form.biography }}
-                            {% if form.biography.errors %}
-                                <div class="text-danger">{{ form.biography.errors }}</div>
-                            {% endif %}
-                        </div>
-
 
 
                         <div class="d-grid gap-2">
