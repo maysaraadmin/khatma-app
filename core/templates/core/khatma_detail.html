@@ -326,13 +326,12 @@
 
                 <div class="row g-3">
                     {% for part in parts %}
-                        {% if part.part %}
                         <div class="col-md-4 col-sm-6">
                             <div class="card h-100 quran-part-card {% if part.is_completed %}completed{% endif %}">
                                 <div class="card-body p-0">
                                     <div class="part-header {% if part.is_completed %}completed{% endif %}">
-                                        <div class="part-number">{{ part.part.part_number }}</div>
-                                        <h5 class="part-title">الجزء {{ part.part.part_number }}</h5>
+                                        <div class="part-number">{{ part.part_number }}</div>
+                                        <h5 class="part-title">الجزء {{ part.part_number }}</h5>
                                         {% if part.is_completed %}
                                             <div class="completion-badge">
                                                 <i class="bi bi-check-circle-fill"></i>
@@ -364,12 +363,12 @@
                                             {% if is_participant or khatma.creator == user %}
                                                 {% if not part.is_completed %}
                                                     <div class="d-flex gap-2 flex-wrap">
-                                                        <a href="{% url 'core:assign_part' khatma.id part.part.part_number %}" class="btn btn-sm btn-outline-primary">
+                                                        <a href="{% url 'core:assign_part' khatma.id part.part_number %}" class="btn btn-sm btn-outline-primary">
                                                             <i class="bi bi-person-plus"></i>
                                                             {% if part.participant %}تحديث{% else %}تخصيص{% endif %}
                                                         </a>
 
-                                                        <form method="post" action="{% url 'core:assign_part' khatma.id part.part.part_number %}" class="d-inline">
+                                                        <form method="post" action="{% url 'core:assign_part' khatma.id part.part_number %}" class="d-inline">
                                                             {% csrf_token %}
                                                             <input type="hidden" name="notes" value="تم إكمال الجزء من خلال صفحة تفاصيل الختمة">
                                                             <button type="submit" class="btn btn-sm btn-success mark-complete-btn">
@@ -387,7 +386,7 @@
                                                 {% endif %}
                                             {% endif %}
 
-                                            <a href="{% url 'core:quran_part' part.part.part_number %}" class="btn btn-sm btn-outline-success mt-2" target="_blank">
+                                            <a href="{% url 'core:quran_part' part.part_number %}" class="btn btn-sm btn-outline-success mt-2" target="_blank">
                                                 <i class="bi bi-book"></i> قراءة
                                             </a>
                                         </div>
@@ -407,7 +406,6 @@
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
                     {% endfor %}
                 </div>
             </div>

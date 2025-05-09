@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}{{ deceased.name }} - تفاصيل المتوفى{% endblock %}
@@ -24,9 +24,9 @@
                             </div>
                         {% endif %}
                     </div>
-                    
+
                     <h4 class="text-center mb-3">{{ deceased.name }}</h4>
-                    
+
                     <div class="info-item mb-3">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-calendar-date me-2 text-primary"></i>
@@ -40,7 +40,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="info-item mb-3">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-clock-history me-2 text-primary"></i>
@@ -50,7 +50,7 @@
                             {{ deceased.created_at|date:"j F Y" }}
                         </div>
                     </div>
-                    
+
                     {% if deceased.biography %}
                     <div class="info-item">
                         <div class="d-flex align-items-center">
@@ -77,7 +77,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-8">
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white">
@@ -137,12 +137,12 @@
         text-align: justify;
         line-height: 1.8;
     }
-    
+
     .info-item {
         padding-bottom: 0.75rem;
         border-bottom: 1px solid rgba(0,0,0,0.05);
     }
-    
+
     .info-item:last-child {
         border-bottom: none;
         padding-bottom: 0;

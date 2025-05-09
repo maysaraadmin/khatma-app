@@ -21,6 +21,13 @@
 <div class="container-fluid">
     <h1 class="mb-4 text-center">🌐 مجتمع ختمة</h1>
 
+    {% if error_message %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error_message }}
+    </div>
+    {% endif %}
+
     <div class="row">
         <div class="col-md-3">
             <div class="card mb-4">

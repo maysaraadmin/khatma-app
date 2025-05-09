@@ -22,35 +22,40 @@ class ErrorHandlerMiddleware:
         logger.error(f"Exception occurred: {str(exception)}")
         logger.error(traceback.format_exc())
 
+        # Print the exception to the console for debugging
+        print(f"Exception occurred: {str(exception)}")
+        print(traceback.format_exc())
+
         # Handle different types of exceptions
         if isinstance(exception, DatabaseError):
+            error_details = f"{str(exception)}\n\n{traceback.format_exc()}"
             return render(request, 'core/error.html', {
                 'error_title': 'خطأ في قاعدة البيانات',
                 'error_message': 'حدث خطأ أثناء الوصول إلى قاعدة البيانات. الرجاء المحاولة مرة أخرى لاحقاً.',
-                'error_details': str(exception) if request.user.is_staff else None,
+                'error_details': error_details,
             }, status=500)
-        
+
         elif isinstance(exception, IntegrityError):
             return render(request, 'core/error.html', {
                 'error_title': 'خطأ في البيانات',
                 'error_message': 'حدث خطأ في تكامل البيانات. قد يكون هناك تكرار أو قيود أخرى.',
                 'error_details': str(exception) if request.user.is_staff else None,
             }, status=400)
-        
+
         elif isinstance(exception, ValidationError):
             return render(request, 'core/error.html', {
                 'error_title': 'خطأ في التحقق',
                 'error_message': 'البيانات المدخلة غير صالحة. الرجاء التحقق من المدخلات وإعادة المحاولة.',
                 'error_details': str(exception) if request.user.is_staff else None,
             }, status=400)
-        
+
         elif isinstance(exception, PermissionDenied):
             return render(request, 'core/error.html', {
                 'error_title': 'غير مصرح',
                 'error_message': 'ليس لديك صلاحية للوصول إلى هذه الصفحة.',
                 'error_details': None,
             }, status=403)
-        
+
         # Default error handler
         return render(request, 'core/error.html', {
             'error_title': 'خطأ في الخادم',

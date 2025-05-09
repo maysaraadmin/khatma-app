@@ -6,8 +6,8 @@
 {% block content %}
 <div class="container mt-4">
     <h1 class="text-center mb-4">البحث العام</h1>
-    
-    <form method="GET" action="{% url 'global_search' %}" class="mb-4">
+
+    <form method="GET" action="{% url 'core:global_search' %}" class="mb-4">
         <div class="input-group">
             <input type="text" name="q" class="form-control" placeholder="ابحث في الختمات، المتوفين، المشاركين" value="{{ query }}">
             <select name="type" class="form-select" style="max-width: 200px;">
@@ -27,7 +27,7 @@
                     <h3>الختمات</h3>
                     <div class="list-group">
                         {% for khatma in results.khatmas %}
-                            <a href="{% url 'khatma_detail' khatma.id %}" class="list-group-item list-group-item-action">
+                            <a href="{% url 'core:khatma_detail' khatma.id %}" class="list-group-item list-group-item-action">
                                 <div class="d-flex w-100 justify-content-between">
                                     <h5 class="mb-1">{{ khatma.title }}</h5>
                                     <small>{{ khatma.status }}</small>
@@ -45,7 +45,7 @@
                     <h3>المتوفين</h3>
                     <div class="list-group">
                         {% for deceased in results.deceased %}
-                            <a href="{% url 'deceased_detail' deceased.id %}" class="list-group-item list-group-item-action">
+                            <a href="{% url 'core:deceased_detail' deceased.id %}" class="list-group-item list-group-item-action">
                                 <div class="d-flex w-100 justify-content-between">
                                     <h5 class="mb-1">{{ deceased.name }}</h5>
                                     <small>{{ deceased.date_of_death }}</small>
@@ -62,7 +62,7 @@
                     <h3>المشاركين</h3>
                     <div class="list-group">
                         {% for participant in results.participants %}
-                            <a href="{% url 'user_profile' participant.username %}" class="list-group-item list-group-item-action">
+                            <a href="{% url 'core:profile' %}" class="list-group-item list-group-item-action">
                                 <div class="d-flex w-100 justify-content-between">
                                     <h5 class="mb-1">{{ participant.full_name }}</h5>
                                     <small>{{ participant.username }}</small>

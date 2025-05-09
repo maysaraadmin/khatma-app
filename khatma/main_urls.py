@@ -27,7 +27,7 @@ urlpatterns = [
     path('notifications/', include('notifications.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-# Redirect root URL to core index
-urlpatterns += [
-    path('', lambda request: redirect('core:index'), name='root'),
-]
+# Remove the redirect since we're already including core.urls at the root path
+# urlpatterns += [
+#     path('', lambda request: redirect('core:index'), name='root'),
+# ]

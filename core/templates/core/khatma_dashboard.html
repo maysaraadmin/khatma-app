@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block title %}{{ khatma.title }} - لوحة التحكم{% endblock %}
+{% block title %}لوحة تحكم الختمات{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -304,7 +304,7 @@
     <div class="khatma-header">
         <h1>{{ khatma.title }}</h1>
         <p>{{ khatma.description }}</p>
-        
+
         <div class="row">
             <div class="col-md-6 mb-3">
                 <div class="d-flex align-items-center">
@@ -319,12 +319,12 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="progress-container">
             <div class="progress-bar" style="width: {{ progress_percentage }}%"></div>
             <div class="progress-text">{{ completed_parts }}/{{ total_parts }} ({{ progress_percentage }}%)</div>
         </div>
-        
+
         <div class="d-flex justify-content-center mt-3">
             {% if not is_participant and khatma.creator != user %}
                 <form method="post" action="{% url 'core:join_khatma' khatma.id %}">
@@ -334,13 +334,13 @@
                     </button>
                 </form>
             {% endif %}
-            
+
             {% if is_participant or khatma.creator == user %}
                 <a href="#" class="btn btn-light me-2">
                     <i class="fas fa-comments"></i> المحادثة
                 </a>
             {% endif %}
-            
+
             <a href="{% url 'core:index' %}" class="btn btn-outline-light">
                 <i class="fas fa-home"></i> الرئيسية
             </a>
@@ -365,7 +365,7 @@
                 </button>
             </li>
         </ul>
-        
+
         <div class="tab-content" id="khatmaTabsContent">
             <!-- Parts Tab -->
             <div class="tab-pane fade show active" id="parts" role="tabpanel" aria-labelledby="parts-tab">
@@ -383,7 +383,7 @@
                                         <i class="fas fa-user-slash"></i> لم يتم اختياره بعد
                                     </p>
                                 {% endif %}
-                                
+
                                 {% if part.is_completed %}
                                     <div class="text-success">
                                         <i class="fas fa-check-circle"></i> تم الإكمال
@@ -397,7 +397,7 @@
                             <div class="part-card-footer">
                                 {% if is_participant or khatma.creator == user %}
                                     {% if not part.is_completed %}
-                                        <a href="{% url 'core:assign_part' khatma.id part.part.part_number %}" 
+                                        <a href="{% url 'core:assign_part' khatma.id part.part.part_number %}"
                                            class="btn btn-sm btn-outline-primary">
                                             {% if part.participant %}تحديث{% else %}اختر{% endif %}
                                         </a>
@@ -414,7 +414,7 @@
                     {% endfor %}
                 </div>
             </div>
-            
+
             <!-- Reading Plan Tab -->
             <div class="tab-pane fade" id="reading-plan" role="tabpanel" aria-labelledby="reading-plan-tab">
                 <div class="reading-plan">
@@ -440,7 +440,7 @@
                     {% endfor %}
                 </div>
             </div>
-            
+
             <!-- Surahs Tab -->
             <div class="tab-pane fade" id="surahs" role="tabpanel" aria-labelledby="surahs-tab">
                 <div class="surah-grid">

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.utils import timezone
 from users.models import Profile
 from khatma.models import Khatma, PartAssignment, PublicKhatma, KhatmaComment, KhatmaInteraction, KhatmaChat
 from groups.models import ReadingGroup, GroupMembership, GroupChat
@@ -155,3 +156,60 @@ class KhatmaInteractionForm(forms.ModelForm):
     class Meta:
         model = KhatmaInteraction
         fields = ['interaction_type']
+
+
+class KhatmaCreationForm(forms.Form):
+    """Form for creating a new Khatma"""
+    KHATMA_TYPE_CHOICES = [
+        ('regular', 'ختمة عادية'),
+        ('memorial', 'ختمة للمتوفى'),
+        ('ramadan', 'ختمة رمضان'),
+        ('charity', 'ختمة خيرية'),
+        ('birth', 'ختمة مولود'),
+        ('graduation', 'ختمة تخرج'),
+        ('wedding', 'ختمة زواج'),
+    ]
+
+    FREQUENCY_CHOICES = [
+        ('once', 'مرة واحدة'),
+        ('daily', 'يومياً'),
+        ('weekly', 'أسبوعياً'),
+        ('monthly', 'شهرياً'),
+        ('yearly', 'سنوياً'),
+    ]
+
+    title = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_title', 'placeholder': 'أدخل عنوان الختمة'})
+    )
+
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'id': 'id_description', 'rows': 3, 'placeholder': 'أدخل وصف الختمة (اختياري)'})
+    )
+
+    khatma_type = forms.ChoiceField(
+        choices=KHATMA_TYPE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_khatma_type'})
+    )
+
+    start_date = forms.DateField(
+        initial=timezone.now().date(),
+        widget=forms.DateInput(attrs={'class': 'form-control', 'id': 'id_start_date', 'type': 'date'})
+    )
+
+    end_date = forms.DateField(
+        initial=timezone.now().date() + timezone.timedelta(days=30),
+        widget=forms.DateInput(attrs={'class': 'form-control', 'id': 'id_end_date', 'type': 'date'})
+    )
+
+    frequency = forms.ChoiceField(
+        choices=FREQUENCY_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_frequency'})
+    )
+
+    is_public = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_is_public'})
+    )

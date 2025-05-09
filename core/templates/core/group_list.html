@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}مجموعات القراءة{% endblock %}
@@ -20,6 +20,13 @@
             </a>
         </div>
     </div>
+
+    {% if error_message %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error_message }}
+    </div>
+    {% endif %}
 
     <!-- User's Groups -->
     <div class="card shadow-sm mb-4">

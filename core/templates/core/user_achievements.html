@@ -1,29 +1,202 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}إنجازاتي{% endblock %}
+{% block title %}الإنجازات{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="text-center mb-4">إنجازاتي</h1>
-    
-    {% if user_achievements %}
-        <div class="row">
-            {% for achievement in user_achievements %}
-                <div class="col-md-4 mb-3">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">{{ achievement.get_achievement_type_display }}</h5>
-                            <p class="card-text">تاريخ الإنجاز: {{ achievement.achieved_date|date:"d F Y" }}</p>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 mb-0">
+                <i class="bi bi-trophy-fill text-warning me-2"></i>
+                إنجازاتي
+            </h1>
+            <p class="text-muted">عرض جميع الإنجازات التي حققتها</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'core:profile' %}" class="btn btn-outline-primary">
+                <i class="bi bi-person-circle me-1"></i>
+                العودة للملف الشخصي
+            </a>
+        </div>
+    </div>
+
+    {% if error_message %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error_message }}
+    </div>
+    {% endif %}
+
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        إحصائيات
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            عدد الإنجازات
+                            <span class="badge bg-primary rounded-pill">{{ achievements|length }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            مجموع النقاط
+                            <span class="badge bg-success rounded-pill">{{ total_points }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            المستوى
+                            <span class="badge bg-warning text-dark rounded-pill">{{ level }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-trophy me-2"></i>
+                        الإنجازات المكتسبة
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if user_achievements %}
+                        <div class="list-group">
+                            {% for achievement in user_achievements %}
+                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1">{{ achievement.get_achievement_type_display }}</h5>
+                                        <p class="mb-1 text-muted">{{ achievement.description }}</p>
+                                        <small class="text-muted">تم الحصول عليه في {{ achievement.date_earned|date:"j F Y" }}</small>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill">
+                                        {{ achievement.points }} نقطة
+                                    </span>
+                                </div>
+                            {% endfor %}
                         </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            لا توجد إنجازات حتى الآن. شارك في المزيد من الختمات للحصول على إنجازات!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-stars me-2"></i>
+                        الإنجازات المتاحة
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for available in available_achievements %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">{{ available.title }}</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>{{ available.description }}</p>
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ available.progress }}%;" aria-valuenow="{{ available.progress }}" aria-valuemin="0" aria-valuemax="100">{{ available.progress }}%</div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">{{ available.current_value }} / {{ available.target_value }}</small>
+                                            <span class="badge bg-info">{{ available.points }} نقطة</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    لقد حصلت على جميع الإنجازات المتاحة. رائع!
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
-            {% endfor %}
+            </div>
         </div>
-    {% else %}
-        <div class="alert alert-info text-center" role="alert">
-            لم تحصل على أي إنجازات حتى الآن. استمر في القراءة والمشاركة!
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>
+                        جميع الإنجازات
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for achievement in achievements %}
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100 {% if achievement.achieved %}border-success{% else %}border-secondary{% endif %}">
+                                    <div class="card-header {% if achievement.achieved %}bg-success text-white{% else %}bg-light{% endif %}">
+                                        <h5 class="card-title mb-0">{{ achievement.name }}</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">{{ achievement.description }}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            {% if achievement.achieved %}
+                                                <span class="badge bg-success">مكتمل</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">قيد التقدم</span>
+                                            {% endif %}
+                                            <span class="badge bg-info">{{ achievement.points }} نقطة</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    لا توجد إنجازات متاحة حالياً.
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
-    {% endif %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress {
+        height: 20px;
+    }
+    .badge {
+        font-size: 0.9rem;
+    }
+</style>
 {% endblock %}

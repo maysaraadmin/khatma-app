@@ -35,6 +35,23 @@
                 </div>
 
                 <div class="card-body">
+                    {% if error_message %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {{ error_message }}
+                    </div>
+                    {% endif %}
+
+                    {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
                     <form method="post" action="{% url 'core:create_khatma' %}" enctype="multipart/form-data" id="khatmaForm">
                         {% csrf_token %}
 
@@ -74,7 +91,7 @@
                             {{ form.khatma_type }}
                         </div>
 
-                        <div class="form-section" id="khatmaDetailsSection" style="display:none;">
+                        <div class="form-section" id="khatmaDetailsSection">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">عنوان الختمة</label>
@@ -123,7 +140,7 @@
                         </div>
 
                         <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                                 <i class="fas fa-plus-circle"></i> إنشاء الختمة
                             </button>
                         </div>
@@ -185,8 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 deceasedSection.style.display = 'none';
             }
 
-            // Enable submit button
-            submitBtn.disabled = false;
+            // Submit button is already enabled
         });
     });
 

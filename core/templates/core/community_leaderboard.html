@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}لوحة الشرف{% endblock %}
@@ -14,6 +14,13 @@
             <p class="text-muted">تعرف على أكثر الأعضاء نشاطاً في المجتمع</p>
         </div>
     </div>
+
+    {% if error_message %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error_message }}
+    </div>
+    {% endif %}
 
     <div class="row">
         <!-- Top Readers -->
