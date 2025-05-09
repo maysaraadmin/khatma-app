@@ -1,0 +1,21 @@
+{
+  "pylint": {
+    "core": 684,
+    "users": 147,
+    "quran": 243,
+    "khatma": 489,
+    "groups": 342,
+    "notifications": 152,
+    "chat": 117
+  },
+  "flake8": {},
+  "bandit": {
+    "core": 0,
+    "users": 0,
+    "quran": 0,
+    "khatma": 1,
+    "groups": 0,
+    "notifications": 0,
+    "chat": 0
+  }
+}

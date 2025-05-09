@@ -1,10 +1,12 @@
+'''"""This module contains Module functionality."""'''
 from django.apps import AppConfig
 
-
 class UsersConfig(AppConfig):
+    '''"""Class representing UsersConfig."""'''
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'users'
     verbose_name = 'المستخدمين'
 
     def ready(self):
-        import users.signals  # noqa
+        '''"""Function to ready."""'''
+        import users.signals
