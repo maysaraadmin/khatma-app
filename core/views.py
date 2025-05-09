@@ -23,37 +23,51 @@ logger = logging.getLogger(__name__)
 
 def index(request):
     """Main homepage view"""
-    # Get featured content
-    featured_khatmas = []
-    featured_groups = []
+    # Import models only when needed
+    from khatma.models import Khatma, Participant
+    from groups.models import ReadingGroup, GroupMembership
+
+    # Initialize variables
+    user_khatmas = []
+    participating_khatmas = []
+    public_khatmas = []
+    suggested_khatmas = []
+    user_groups = []
+
+    # Get public khatmas for all users
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')[:5]
 
     # Get user-specific content if logged in
     if request.user.is_authenticated:
-        from khatma.models import Khatma, Participant
-        from groups.models import ReadingGroup, GroupMembership
+        # Get khatmas created by the user
+        user_khatmas = Khatma.objects.filter(creator=request.user).order_by('-created_at')[:5]
 
-        # Get user's active khatmas
-        user_khatmas = Khatma.objects.filter(
-            Q(creator=request.user) | Q(participant__user=request.user)
+        # Get khatmas where the user is a participant but not the creator
+        participating_khatmas = Khatma.objects.filter(
+            participant__user=request.user
+        ).exclude(
+            creator=request.user
         ).distinct().order_by('-created_at')[:5]
+
+        # Get suggested khatmas (public khatmas that the user is not part of)
+        suggested_khatmas = Khatma.objects.filter(
+            is_public=True
+        ).exclude(
+            Q(creator=request.user) | Q(participant__user=request.user)
+        ).order_by('-created_at')[:5]
 
         # Get user's groups
         user_groups = ReadingGroup.objects.filter(
             members=request.user
         ).order_by('-created_at')[:5]
 
-        context = {
-            'user_khatmas': user_khatmas,
-            'user_groups': user_groups,
-            'featured_khatmas': featured_khatmas,
-            'featured_groups': featured_groups
-        }
-    else:
-        # For anonymous users, show only featured content
-        context = {
-            'featured_khatmas': featured_khatmas,
-            'featured_groups': featured_groups
-        }
+    context = {
+        'user_khatmas': user_khatmas,
+        'participating_khatmas': participating_khatmas,
+        'public_khatmas': public_khatmas,
+        'suggested_khatmas': suggested_khatmas,
+        'user_groups': user_groups
+    }
 
     return render(request, 'core/index.html', context)
 
@@ -330,37 +344,72 @@ def group_list(request):
 @login_required
 def create_group(request):
     """View for creating a new reading group"""
-    if request.method == 'POST':
-        form = ReadingGroupForm(request.POST, request.FILES)
-        if form.is_valid():
-            group = form.save(user=request.user)
-            messages.success(request, 'تم إنشاء المجموعة بنجاح')
-            return redirect('core:group_detail', group_id=group.id)
-    else:
-        form = ReadingGroupForm()
+    from groups.models import ReadingGroup
 
-    return render(request, 'core/create_group.html', {'form': form})
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    if request.method == 'POST':
+        # Process form submission
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        is_public = request.POST.get('is_public') == 'on'
+
+        # Simple validation
+        if not name:
+            messages.error(request, 'يرجى ملء جميع الحقول المطلوبة')
+            return redirect('core:create_group')
+
+        # Create the group
+        group = ReadingGroup.objects.create(
+            name=name,
+            description=description,
+            creator=request.user,
+            is_public=is_public
+        )
+
+        # Add creator as admin member
+        from groups.models import GroupMembership
+        GroupMembership.objects.create(
+            user=request.user,
+            group=group,
+            role='admin'
+        )
+
+        messages.success(request, f'تم إنشاء مجموعة {name} بنجاح')
+        return redirect('core:group_detail', group_id=group.id)
+
+    return render(request, 'core/create_group.html')
 
 @login_required
 def group_detail(request, group_id):
     """View for displaying group details"""
+    from groups.models import ReadingGroup, GroupMembership
+    from khatma.models import Khatma
+
     group = get_object_or_404(ReadingGroup, id=group_id)
 
     # Check if user is a member of this group
-    is_member = GroupMembership.objects.filter(user=request.user, group=group, is_active=True).exists()
-
-    # Get user's role in the group
+    is_member = False
     user_role = None
-    if is_member:
-        membership = GroupMembership.objects.get(user=request.user, group=group)
-        user_role = membership.role
+    if request.user.is_authenticated:
+        is_member = GroupMembership.objects.filter(user=request.user, group=group).exists()
+        if is_member:
+            membership = GroupMembership.objects.get(user=request.user, group=group)
+            user_role = membership.role
 
     # Get active members
-    active_members = group.members.filter(groupmembership__is_active=True)
+    active_members = group.members.all()
 
-    # Get group khatmas
-    active_khatmas = Khatma.objects.filter(group=group, is_completed=False).order_by('-created_at')
-    completed_khatmas = Khatma.objects.filter(group=group, is_completed=True).order_by('-completed_at')
+    # Get group khatmas (if the khatma model has a group field)
+    active_khatmas = []
+    completed_khatmas = []
+    try:
+        active_khatmas = Khatma.objects.filter(group=group, is_completed=False).order_by('-created_at')
+        completed_khatmas = Khatma.objects.filter(group=group, is_completed=True).order_by('-created_at')
+    except:
+        # If there's an error, it might be because the Khatma model doesn't have a group field
+        pass
 
     context = {
         'group': group,
@@ -1759,6 +1808,9 @@ def quran_part_view(request, part_number):
     # Add debugging information
     print(f"Quran Part View - Part Number: {part_number}")
 
+    # Import models here to avoid circular imports
+    from quran.models import QuranPart, Ayah, Surah
+
     # Check if the part exists
     try:
         part = QuranPart.objects.get(part_number=part_number)
@@ -1861,11 +1913,17 @@ def quran_part_view(request, part_number):
                     verse_counts[surah_number] = max(verse_counts[surah_number], verse_number)
 
             # Update surah verse counts
-            for surah_number, count in verse_counts.items():
-                Surah.objects.filter(surah_number=surah_number).update(verses_count=count)
+            for surah_number, verse_count in verse_counts.items():
+                try:
+                    surah = Surah.objects.get(surah_number=surah_number)
+                    surah.verses_count = verse_count
+                    surah.save()
+                    print(f"Updated Surah {surah_number} with {verse_count} verses")
+                except Surah.DoesNotExist:
+                    print(f"Surah {surah_number} does not exist")
 
-            # Second pass: Create verses for this part
-            verses_created = 0
+            # Second pass: Create ayahs
+            ayahs_to_create = []
             with open(quran_file_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     parts = line.strip().split('|')
@@ -1876,127 +1934,722 @@ def quran_part_view(request, part_number):
                     verse_number = int(parts[1])
                     verse_text = parts[2]
 
-                    # Skip if this surah is not in this part
+                    # Check if this ayah belongs to the current part
                     if surah_number not in surahs_for_this_part:
                         continue
 
-                    # Get the surah
                     try:
                         surah = Surah.objects.get(surah_number=surah_number)
-
-                        # Create verse
-                        Ayah.objects.create(
+                        ayahs_to_create.append(Ayah(
                             surah=surah,
-                            ayah_number_in_surah=verse_number,
-                            text_uthmani=verse_text,
-                            translation='',  # No translation in this format
                             quran_part=part,
-                            page=0  # No page info in this format
-                        )
-                        verses_created += 1
+                            ayah_number_in_surah=verse_number,
+                            text=verse_text
+                        ))
                     except Surah.DoesNotExist:
                         print(f"Surah {surah_number} does not exist")
 
-            print(f"Created {verses_created} verses for part {part_number}")
+            # Bulk create ayahs
+            if ayahs_to_create:
+                Ayah.objects.bulk_create(ayahs_to_create)
+                print(f"Created {len(ayahs_to_create)} ayahs for part {part_number}")
+
+            # Refresh ayahs queryset
+            ayahs = Ayah.objects.filter(quran_part=part).select_related('surah').order_by('surah__surah_number', 'ayah_number_in_surah')
+            print(f"Now found {ayahs.count()} ayahs in part {part_number}")
         else:
             print(f"Quran text file not found at {quran_file_path}")
 
-            # Create some sample ayahs for testing if file not found
-            surahs = Surah.objects.all()
-            if not surahs.exists():
-                print("No surahs found, creating sample surahs")
-                # Create sample surahs
-                surah1 = Surah.objects.create(
-                    surah_number=1,
-                    name_arabic="الفاتحة",
-                    name_english="The Opening",
-                    revelation_type="meccan",
-                    verses_count=7
-                )
-                surah2 = Surah.objects.create(
-                    surah_number=2,
-                    name_arabic="البقرة",
-                    name_english="The Cow",
-                    revelation_type="medinan",
-                    verses_count=286
-                )
-            else:
-                surah1 = Surah.objects.get(surah_number=1)
-                surah2 = Surah.objects.filter(surah_number=2).first() or Surah.objects.first()
-
-            # Create sample ayahs for testing
-            sample_ayahs = [
-                {
-                    "surah": surah1,
-                    "ayah_number_in_surah": 1,
-                    "text_uthmani": "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                    "translation": "In the name of Allah, the Entirely Merciful, the Especially Merciful"
-                },
-                {
-                    "surah": surah1,
-                    "ayah_number_in_surah": 2,
-                    "text_uthmani": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
-                    "translation": "All praise is due to Allah, Lord of the worlds"
-                },
-                {
-                    "surah": surah1,
-                    "ayah_number_in_surah": 3,
-                    "text_uthmani": "الرَّحْمَنِ الرَّحِيمِ",
-                    "translation": "The Entirely Merciful, the Especially Merciful"
-                },
-                {
-                    "surah": surah2,
-                    "ayah_number_in_surah": 1,
-                    "text_uthmani": "الم",
-                    "translation": "Alif, Lam, Meem"
-                },
-                {
-                    "surah": surah2,
-                    "ayah_number_in_surah": 2,
-                    "text_uthmani": "ذَلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ هُدًى لِلْمُتَّقِينَ",
-                    "translation": "This is the Book about which there is no doubt, a guidance for those conscious of Allah"
-                }
-            ]
-
-            for ayah_data in sample_ayahs:
-                Ayah.objects.create(
-                    surah=ayah_data["surah"],
-                    ayah_number_in_surah=ayah_data["ayah_number_in_surah"],
-                    text_uthmani=ayah_data["text_uthmani"],
-                    translation=ayah_data["translation"],
-                    quran_part=part
-                )
-
-        # Refresh the ayahs queryset
-        ayahs = Ayah.objects.filter(quran_part=part).select_related('surah').order_by('surah__surah_number', 'ayah_number_in_surah')
-        print(f"Found {ayahs.count()} ayahs in part {part_number} after import")
-
-    # Group ayahs by surah for better display
-    surahs_in_part = {}
+    # Group ayahs by surah for display
+    surahs_with_ayahs = {}
     for ayah in ayahs:
-        if ayah.surah.id not in surahs_in_part:
-            surahs_in_part[ayah.surah.id] = {
-                'surah': ayah.surah,
-                'ayahs': []
-            }
-        surahs_in_part[ayah.surah.id]['ayahs'].append(ayah)
-
-    # Convert to list for template
-    surahs_list = list(surahs_in_part.values())
-    print(f"Found {len(surahs_list)} surahs in part {part_number}")
-
-    # Get next and previous part numbers for navigation
-    next_part = part_number + 1 if part_number < 30 else None
-    prev_part = part_number - 1 if part_number > 1 else None
+        if ayah.surah not in surahs_with_ayahs:
+            surahs_with_ayahs[ayah.surah] = []
+        surahs_with_ayahs[ayah.surah].append(ayah)
 
     context = {
         'part': part,
-        'surahs': surahs_list,
-        'next_part': next_part,
-        'prev_part': prev_part,
+        'surahs_with_ayahs': surahs_with_ayahs,
+        'part_number': part_number,
+        'next_part': part_number + 1 if part_number < 30 else None,
+        'prev_part': part_number - 1 if part_number > 1 else None,
     }
 
-    return render(request, 'core/quran_part.html', context)
+    return render(request, 'quran/quran_part.html', context)
+
+def quran_reciters(request):
+    """View for listing available Quran reciters"""
+    # Get reciters from the database
+    from quran.models import QuranReciter
+    from django.conf import settings
+
+    reciters = QuranReciter.objects.all().order_by('name_arabic')
+
+    # If no reciters in database, check filesystem
+    if not reciters.exists():
+        # Check for reciters in the filesystem
+        import os
+        reciters_path = os.path.join(settings.BASE_DIR, 'static', 'reciters')
+        fs_reciters = []
+
+        if os.path.exists(reciters_path):
+            for item in os.listdir(reciters_path):
+                if os.path.isdir(os.path.join(reciters_path, item)):
+                    fs_reciters.append(item)
+
+        context = {
+            'reciters': fs_reciters
+        }
+    else:
+        context = {
+            'reciters': [reciter.name_arabic for reciter in reciters]
+        }
+
+    return render(request, 'core/reciters.html', context)
+
+def reciter_surahs(request, reciter_name):
+    """View for displaying surahs available for a specific reciter"""
+    import os
+    import logging
+    from django.conf import settings
+
+    logger = logging.getLogger(__name__)
+    logger.info(f'Attempting to access reciter: {reciter_name}')
+
+    # Construct paths with more robust method
+    base_dir = settings.BASE_DIR
+
+    # Try multiple potential paths
+    potential_paths = [
+        os.path.join(base_dir, 'static', 'reciters', reciter_name),  # New directory location
+        os.path.join(base_dir, 'reciters', reciter_name),  # Alternative location
+        os.path.join(base_dir, 'core', 'reciters', reciter_name),  # Old directory location
+    ]
+
+    # Find the first existing path
+    reciter_path = None
+    for path in potential_paths:
+        logger.info(f'Checking path: {path}')
+        if os.path.exists(path):
+            reciter_path = path
+            break
+
+    # If no path found, use the first potential path
+    if not reciter_path:
+        reciter_path = potential_paths[0]
+        logger.warning(f'No existing path found. Using: {reciter_path}')
+        # Attempt to create the directory
+        try:
+            os.makedirs(reciter_path, exist_ok=True)
+        except Exception as e:
+            logger.error(f'Failed to create reciter directory: {e}')
+
+    # Get available reciters
+    reciters_path = os.path.join(base_dir, 'static', 'reciters')
+    available_reciters = []
+    if os.path.exists(reciters_path):
+        for item in os.listdir(reciters_path):
+            if os.path.isdir(os.path.join(reciters_path, item)):
+                available_reciters.append(item)
+
+    # Check if reciter exists
+    if reciter_name not in available_reciters:
+        error_message = f'القارئ {reciter_name} غير موجود'
+        return render(request, 'core/reciter_surahs.html', {
+            'reciter_name': reciter_name,
+            'surahs': [],
+            'error': error_message,
+            'available_reciters': available_reciters
+        })
+
+    # Get all MP3 files in the reciter's directory
+    mp3_files = []
+    try:
+        for file in os.listdir(reciter_path):
+            if file.endswith('.mp3'):
+                mp3_files.append(file)
+    except Exception as e:
+        logger.error(f'Error reading directory {reciter_path}: {e}')
+        return render(request, 'core/reciter_surahs.html', {
+            'reciter_name': reciter_name,
+            'surahs': [],
+            'error': f'خطأ في قراءة ملفات الصوت: {e}',
+            'available_reciters': available_reciters
+        })
+
+    # Sort MP3 files
+    mp3_files.sort()
+
+    # Surah names in Arabic
+    SURAH_NAMES = {
+        '001': "الفاتحة", '002': "البقرة", '003': "آل عمران", '004': "النساء", '005': "المائدة",
+        '006': "الأنعام", '007': "الأعراف", '008': "الأنفال", '009': "التوبة", '010': "يونس",
+        '011': "هود", '012': "يوسف", '013': "الرعد", '014': "إبراهيم", '015': "الحجر",
+        '016': "النحل", '017': "الإسراء", '018': "الكهف", '019': "مريم", '020': "طه",
+        '021': "الأنبياء", '022': "الحج", '023': "المؤمنون", '024': "النور", '025': "الفرقان",
+        '026': "الشعراء", '027': "النمل", '028': "القصص", '029': "العنكبوت", '030': "الروم",
+        '031': "لقمان", '032': "السجدة", '033': "الأحزاب", '034': "سبأ", '035': "فاطر",
+        '036': "يس", '037': "الصافات", '038': "ص", '039': "الزمر", '040': "غافر",
+        '041': "فصلت", '042': "الشورى", '043': "الزخرف", '044': "الدخان", '045': "الجاثية",
+        '046': "الأحقاف", '047': "محمد", '048': "الفتح", '049': "الحجرات", '050': "ق",
+        '051': "الذاريات", '052': "الطور", '053': "النجم", '054': "القمر", '055': "الرحمن",
+        '056': "الواقعة", '057': "الحديد", '058': "المجادلة", '059': "الحشر", '060': "الممتحنة",
+        '061': "الصف", '062': "الجمعة", '063': "المنافقون", '064': "التغابن", '065': "الطلاق",
+        '066': "التحريم", '067': "الملك", '068': "القلم", '069': "الحاقة", '070': "المعارج",
+        '071': "نوح", '072': "الجن", '073': "المزمل", '074': "المدثر", '075': "القيامة",
+        '076': "الإنسان", '077': "المرسلات", '078': "النبأ", '079': "النازعات", '080': "عبس",
+        '081': "التكوير", '082': "الانفطار", '083': "المطففين", '084': "الانشقاق", '085': "البروج",
+        '086': "الطارق", '087': "الأعلى", '088': "الغاشية", '089': "الفجر", '090': "البلد",
+        '091': "الشمس", '092': "الليل", '093': "الضحى", '094': "الشرح", '095': "التين",
+        '096': "العلق", '097': "القدر", '098': "البينة", '099': "الزلزلة", '100': "العاديات",
+        '101': "القارعة", '102': "التكاثر", '103': "العصر", '104': "الهمزة", '105': "الفيل",
+        '106': "قريش", '107': "الماعون", '108': "الكوثر", '109': "الكافرون", '110': "النصر",
+        '111': "المسد", '112': "الإخلاص", '113': "الفلق", '114': "الناس"
+    }
+
+    # Process MP3 files into surahs
+    surahs = []
+    for mp3 in mp3_files:
+        try:
+            # Extract surah number from filename
+            filename_without_ext = mp3.split('.')[0]
+
+            if filename_without_ext.isdigit():
+                surah_number = filename_without_ext.zfill(3)
+            else:
+                continue
+
+            # Ensure surah number is within valid range
+            surah_num_int = int(surah_number)
+            if surah_num_int < 1 or surah_num_int > 114:
+                continue
+
+            surah_name = SURAH_NAMES.get(surah_number, f'سورة {surah_number}')
+
+            # Generate path for template
+            template_path = f'/static/reciters/{reciter_name}/{mp3}'
+
+            surahs.append({
+                'number': surah_number,
+                'name': surah_name,
+                'filename': mp3,
+                'path': template_path
+            })
+        except Exception as e:
+            logger.error(f'Error processing surah {mp3}: {e}')
+
+    # Sort surahs by number
+    surahs.sort(key=lambda x: x['number'])
+
+    return render(request, 'core/reciter_surahs.html', {
+        'reciter_name': reciter_name,
+        'surahs': surahs
+    })
+
+def community_khatmas(request):
+    """View to display community khatmas"""
+    # Get all public khatmas
+    from khatma.models import Khatma
+
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    context = {
+        'khatmas': public_khatmas
+    }
+
+    return render(request, 'core/community_khatmas.html', context)
+
+def group_list(request):
+    """View to display list of reading groups"""
+    # Get all public groups
+    from groups.models import ReadingGroup
+
+    public_groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
+
+    # If user is authenticated, also get their private groups
+    user_groups = []
+    if request.user.is_authenticated:
+        user_groups = ReadingGroup.objects.filter(
+            members=request.user
+        ).exclude(
+            is_public=True
+        ).order_by('-created_at')
+
+    context = {
+        'public_groups': public_groups,
+        'user_groups': user_groups
+    }
+
+    return render(request, 'core/group_list.html', context)
+
+def create_khatma(request):
+    """View to create a new khatma"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    from khatma.models import Khatma
+
+    if request.method == 'POST':
+        # Process form submission
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        khatma_type = request.POST.get('khatma_type', 'standard')
+        is_public = request.POST.get('is_public') == 'on'
+
+        # Create the khatma
+        khatma = Khatma.objects.create(
+            title=title,
+            description=description,
+            creator=request.user,
+            khatma_type=khatma_type,
+            is_public=is_public
+        )
+
+        messages.success(request, f'تم إنشاء ختمة {title} بنجاح')
+        return redirect('khatma_detail', khatma_id=khatma.id)
+
+    context = {
+        'khatma_types': Khatma.KHATMA_TYPES
+    }
+
+    return render(request, 'core/create_khatma.html', context)
+
+def help_page(request):
+    """View to provide help and support for the Khatma app"""
+    context = {
+        'faq_sections': [
+            {
+                'title': 'إنشاء ختمة',
+                'questions': [
+                    {
+                        'question': 'كيف أنشئ ختمة جديدة؟',
+                        'answer': 'يمكنك إنشاء ختمة جديدة بالنقر على زر "إنشاء ختمة" في الصفحة الرئيسية. قم بتعبئة التفاصيل مثل العنوان، نوع الختمة، والهدف منها.'
+                    },
+                    {
+                        'question': 'ما هي أنواع الختمات المتاحة؟',
+                        'answer': 'يمكنك إنشاء ختمات متنوعة مثل الختمة العادية، الختمة التذكارية، ختمة خيرية، ختمة مولد، وختمة شفاء.'
+                    }
+                ]
+            },
+            {
+                'title': 'المشاركة في ختمة',
+                'questions': [
+                    {
+                        'question': 'كيف أنضم إلى ختمة؟',
+                        'answer': 'يمكنك البحث عن الختمات العامة في صفحة "الختمات المجتمعية" والانضمام إليها بالنقر على زر "انضمام".'
+                    },
+                    {
+                        'question': 'هل يمكنني الانسحاب من ختمة؟',
+                        'answer': 'نعم، يمكنك الانسحاب من ختمة في أي وقت من صفحة تفاصيل الختمة.'
+                    }
+                ]
+            }
+        ]
+    }
+    return render(request, 'core/help_page.html', context)
+
+def contact_us(request):
+    """View to display contact information and form"""
+    if request.method == 'POST':
+        # This would normally process a contact form
+        # For now, just show a success message
+        messages.success(request, 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً.')
+        return redirect('core:contact_us')
+
+    context = {
+        'contact_email': 'support@khatmaapp.com',
+        'contact_phone': '+966 50 123 4567',
+        'social_media': [
+            {
+                'name': 'Twitter',
+                'icon': 'bi-twitter',
+                'url': 'https://twitter.com/khatmaapp'
+            },
+            {
+                'name': 'Facebook',
+                'icon': 'bi-facebook',
+                'url': 'https://facebook.com/khatmaapp'
+            },
+            {
+                'name': 'Instagram',
+                'icon': 'bi-instagram',
+                'url': 'https://instagram.com/khatmaapp'
+            }
+        ]
+    }
+    return render(request, 'core/contact_us.html', context)
+
+def register(request):
+    """View for user registration"""
+    from users.forms import UserRegistrationForm
+    from users.models import Profile
+
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+
+            # Create user profile with selected account type
+            account_type = request.POST.get('account_type', 'individual')
+            profile, created = Profile.objects.get_or_create(
+                user=user,
+                defaults={'account_type': account_type}
+            )
+
+            if not created:
+                profile.account_type = account_type
+                profile.save()
+
+            messages.success(
+                request,
+                'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.'
+            )
+            return redirect('login')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+@login_required
+def user_profile(request):
+    """Enhanced user profile view"""
+    from users.models import Profile
+    from khatma.models import Khatma, PartAssignment
+
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    # Get user's khatmas
+    user_khatmas = Khatma.objects.filter(creator=request.user)
+
+    # Get user's part assignments
+    user_part_assignments = PartAssignment.objects.filter(participant=request.user)
+
+    context = {
+        'user_profile': profile,
+        'user_khatmas': user_khatmas,
+        'user_part_assignments': user_part_assignments,
+    }
+
+    return render(request, 'core/user_profile.html', context)
+
+def community_khatmas(request):
+    """View to display community khatmas"""
+    # Get all public khatmas
+    from khatma.models import Khatma
+
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    context = {
+        'khatmas': public_khatmas
+    }
+
+    return render(request, 'core/community_khatmas.html', context)
+
+def edit_profile(request):
+    """View for editing user profile"""
+    from users.models import Profile
+    from users.forms import UserProfileForm
+
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث الملف الشخصي بنجاح')
+            return redirect('core:profile')
+    else:
+        form = UserProfileForm(instance=profile)
+
+    context = {
+        'form': form,
+        'profile': profile
+    }
+
+    return render(request, 'core/edit_profile.html', context)
+
+def community_khatmas(request):
+    """View to display community khatmas"""
+    # Get all public khatmas
+    from khatma.models import Khatma
+
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    context = {
+        'khatmas': public_khatmas
+    }
+
+    return render(request, 'core/community_khatmas.html', context)
+
+def settings(request):
+    """View for user settings"""
+    from users.models import Profile
+    from users.forms import UserSettingsForm
+
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserSettingsForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم حفظ الإعدادات بنجاح')
+            return redirect('core:settings')
+    else:
+        form = UserSettingsForm(instance=profile)
+
+    context = {
+        'form': form,
+        'profile': profile
+    }
+
+    return render(request, 'core/settings.html', context)
+
+# Add more views as needed
+
+def community_khatmas(request):
+    """View to display community khatmas"""
+    # Get all public khatmas
+    from khatma.models import Khatma
+
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    context = {
+        'khatmas': public_khatmas
+    }
+
+    return render(request, 'core/community_khatmas.html', context)
+
+def group_list(request):
+    """View to display list of reading groups"""
+    # Get all public groups
+    from groups.models import ReadingGroup
+
+    public_groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
+
+    # If user is authenticated, also get their private groups
+    user_groups = []
+    if request.user.is_authenticated:
+        user_groups = ReadingGroup.objects.filter(
+            members=request.user
+        ).exclude(
+            is_public=True
+        ).order_by('-created_at')
+
+    context = {
+        'public_groups': public_groups,
+        'user_groups': user_groups
+    }
+
+    return render(request, 'core/group_list.html', context)
+
+def create_khatma(request):
+    """View to create a new khatma"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    from khatma.models import Khatma
+
+    if request.method == 'POST':
+        # Process form submission
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        khatma_type = request.POST.get('khatma_type', 'standard')
+        is_public = request.POST.get('is_public') == 'on'
+
+        # Create the khatma
+        khatma = Khatma.objects.create(
+            title=title,
+            description=description,
+            creator=request.user,
+            khatma_type=khatma_type,
+            is_public=is_public
+        )
+
+        messages.success(request, f'تم إنشاء ختمة {title} بنجاح')
+        return redirect('khatma_detail', khatma_id=khatma.id)
+
+    context = {
+        'khatma_types': Khatma.KHATMA_TYPES
+    }
+
+    return render(request, 'core/create_khatma.html', context)
+
+def help_page(request):
+    """View to provide help and support for the Khatma app"""
+    context = {
+        'faq_sections': [
+            {
+                'title': 'إنشاء ختمة',
+                'questions': [
+                    {
+                        'question': 'كيف أنشئ ختمة جديدة؟',
+                        'answer': 'يمكنك إنشاء ختمة جديدة بالنقر على زر "إنشاء ختمة" في الصفحة الرئيسية. قم بتعبئة التفاصيل مثل العنوان، نوع الختمة، والهدف منها.'
+                    },
+                    {
+                        'question': 'ما هي أنواع الختمات المتاحة؟',
+                        'answer': 'يمكنك إنشاء ختمات متنوعة مثل الختمة العادية، الختمة التذكارية، ختمة خيرية، ختمة مولد، وختمة شفاء.'
+                    }
+                ]
+            },
+            {
+                'title': 'المشاركة في ختمة',
+                'questions': [
+                    {
+                        'question': 'كيف أنضم إلى ختمة؟',
+                        'answer': 'يمكنك البحث عن الختمات العامة في صفحة "الختمات المجتمعية" والانضمام إليها بالنقر على زر "انضمام".'
+                    },
+                    {
+                        'question': 'هل يمكنني الانسحاب من ختمة؟',
+                        'answer': 'نعم، يمكنك الانسحاب من ختمة في أي وقت من صفحة تفاصيل الختمة.'
+                    }
+                ]
+            }
+        ]
+    }
+    return render(request, 'core/help_page.html', context)
+
+def contact_us(request):
+    """View to display contact information and form"""
+    if request.method == 'POST':
+        # This would normally process a contact form
+        # For now, just show a success message
+        messages.success(request, 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً.')
+        return redirect('core:contact_us')
+
+    context = {
+        'contact_email': 'support@khatmaapp.com',
+        'contact_phone': '+966 50 123 4567',
+        'social_media': [
+            {
+                'name': 'Twitter',
+                'icon': 'bi-twitter',
+                'url': 'https://twitter.com/khatmaapp'
+            },
+            {
+                'name': 'Facebook',
+                'icon': 'bi-facebook',
+                'url': 'https://facebook.com/khatmaapp'
+            },
+            {
+                'name': 'Instagram',
+                'icon': 'bi-instagram',
+                'url': 'https://instagram.com/khatmaapp'
+            }
+        ]
+    }
+    return render(request, 'core/contact_us.html', context)
+
+def register(request):
+    """View for user registration"""
+    from users.forms import UserRegistrationForm
+    from users.models import Profile
+
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+
+            # Create user profile with selected account type
+            account_type = request.POST.get('account_type', 'individual')
+            profile, created = Profile.objects.get_or_create(
+                user=user,
+                defaults={'account_type': account_type}
+            )
+
+            if not created:
+                profile.account_type = account_type
+                profile.save()
+
+            messages.success(
+                request,
+                'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.'
+            )
+            return redirect('login')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+@login_required
+def user_profile(request):
+    """Enhanced user profile view"""
+    from users.models import Profile
+    from khatma.models import Khatma, PartAssignment
+
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    # Get user's khatmas
+    user_khatmas = Khatma.objects.filter(creator=request.user)
+
+    # Get user's part assignments
+    user_part_assignments = PartAssignment.objects.filter(participant=request.user)
+
+    context = {
+        'user_profile': profile,
+        'user_khatmas': user_khatmas,
+        'user_part_assignments': user_part_assignments,
+    }
+
+    return render(request, 'core/user_profile.html', context)
+
+def edit_profile(request):
+    """View for editing user profile"""
+    from users.models import Profile
+    from users.forms import UserProfileForm
+
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث الملف الشخصي بنجاح')
+            return redirect('core:profile')
+    else:
+        form = UserProfileForm(instance=profile)
+
+    context = {
+        'form': form,
+        'profile': profile
+    }
+
+    return render(request, 'core/edit_profile.html', context)
+
+def settings(request):
+    """View for user settings"""
+    from users.models import Profile
+    from users.forms import UserSettingsForm
+
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserSettingsForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم حفظ الإعدادات بنجاح')
+            return redirect('core:settings')
+    else:
+        form = UserSettingsForm(instance=profile)
+
+    context = {
+        'form': form,
+        'profile': profile
+    }
+
+    return render(request, 'core/settings.html', context)
+
+def community_khatmas(request):
+    """View to display community khatmas"""
+    # Get all public khatmas
+    from khatma.models import Khatma
+
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    context = {
+        'khatmas': public_khatmas
+    }
+
+    return render(request, 'core/community_khatmas.html', context)
+
+# Add more views as needed
 
 def community_khatmas(request):
     """View to display community khatmas"""
@@ -2011,6 +2664,8 @@ def community_khatmas(request):
 
 def group_list(request):
     """View to display list of reading groups"""
+    from groups.models import ReadingGroup
+
     # Get all public groups
     public_groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
 
@@ -2152,8 +2807,12 @@ def contact_us(request):
     return render(request, 'core/contact_us.html', context)
 
 def register(request):
+    """View for user registration"""
+    from django.contrib.auth.forms import UserCreationForm
+    from users.models import Profile
+
     if request.method == 'POST':
-        form = ExtendedUserCreationForm(request.POST)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
 
@@ -2174,16 +2833,21 @@ def register(request):
             )
             return redirect('login')
     else:
-        form = ExtendedUserCreationForm()
+        form = UserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
 
 @login_required
 def user_profile(request):
+    """View to display user profile information"""
+    from users.models import Profile
+    from khatma.models import Khatma, PartAssignment
+    from notifications.models import Notification
+
+    # Ensure user has a profile
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
     # Get user's khatmas
     user_khatmas = Khatma.objects.filter(creator=request.user)
-
-    # Get user's achievements
-    user_achievements = UserAchievement.objects.filter(user=request.user)
 
     # Get user's notifications
     user_notifications = Notification.objects.filter(user=request.user).order_by('-created_at')[:10]
@@ -2191,16 +2855,11 @@ def user_profile(request):
     # Get user's part assignments
     user_part_assignments = PartAssignment.objects.filter(participant=request.user)
 
-    # Get user's public khatmas
-    public_khatmas = PublicKhatma.objects.filter(user=request.user)
-
     context = {
-        'user_profile': request.user.profile,
+        'user_profile': profile,
         'user_khatmas': user_khatmas,
-        'user_achievements': user_achievements,
         'user_notifications': user_notifications,
         'user_part_assignments': user_part_assignments,
-        'public_khatmas': public_khatmas,
     }
 
     return render(request, 'core/user_profile.html', context)
@@ -2222,138 +2881,360 @@ def edit_profile(request):
     return render(request, 'core/edit_profile.html', {'profile': profile})
 
 @login_required
-def khatma_chat(request, khatma_id):
+def khatma_chat_redirect(request, khatma_id):
+    """Redirect to the chat app's khatma chat view"""
+    return redirect('chat:khatma_chat', khatma_id=khatma_id)
+
+@login_required
+def group_chat_redirect(request, group_id):
+    """Redirect to the chat app's group chat view"""
+    return redirect('chat:group_chat', group_id=group_id)
+
+def create_khatma(request):
+    """View to create a new khatma"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    from khatma.models import Khatma
+
+    if request.method == 'POST':
+        # Process form submission
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        khatma_type = request.POST.get('khatma_type', 'standard')
+        is_public = request.POST.get('is_public') == 'on'
+
+        # Create the khatma
+        khatma = Khatma.objects.create(
+            title=title,
+            description=description,
+            creator=request.user,
+            khatma_type=khatma_type,
+            is_public=is_public
+        )
+
+        messages.success(request, f'تم إنشاء ختمة {title} بنجاح')
+        return redirect('core:khatma_detail', khatma_id=khatma.id)
+
+    context = {
+        'khatma_types': [
+            ('standard', 'ختمة عادية'),
+            ('memorial', 'ختمة تذكارية'),
+            ('charity', 'ختمة خيرية'),
+            ('birth', 'ختمة مولود'),
+            ('healing', 'ختمة شفاء')
+        ]
+    }
+
+    return render(request, 'core/create_khatma.html', context)
+
+def khatma_detail(request, khatma_id):
+    """View to display khatma details"""
+    from khatma.models import Khatma, Participant, PartAssignment
+
     khatma = get_object_or_404(Khatma, id=khatma_id)
 
     # Check if user is a participant
-    if not Participant.objects.filter(user=request.user, khatma=khatma).exists():
-        messages.error(request, 'يجب أن تكون مشاركًا في الختمة للتحدث')
-        return redirect('core:khatma_detail', khatma_id=khatma.id)
+    is_participant = False
+    if request.user.is_authenticated:
+        is_participant = Participant.objects.filter(user=request.user, khatma=khatma).exists()
 
-    if request.method == 'POST':
-        message_type = request.POST.get('message_type', 'text')
-        message_text = request.POST.get('message', '').strip()
-        image = request.FILES.get('image')
-        audio = request.FILES.get('audio')
+    # Get part assignments
+    part_assignments = PartAssignment.objects.filter(khatma=khatma).order_by('part__part_number')
 
-        if not message_text and not image and not audio:
-            messages.error(request, 'لا يمكن إرسال رسالة فارغة')
-            return redirect('core:khatma_chat', khatma_id=khatma.id)
+    # Calculate progress
+    total_parts = 30  # Quran has 30 parts
+    assigned_parts = part_assignments.count()
+    completed_parts = part_assignments.filter(is_completed=True).count()
 
-        # Create chat message
-        chat_message = KhatmaChat.objects.create(
-            khatma=khatma,
-            user=request.user,
-            message=message_text,
-            message_type=message_type,
-            image=image,
-            audio=audio
-        )
-
-        # Create notification for other participants
-        other_participants = Participant.objects.filter(
-            khatma=khatma
-        ).exclude(user=request.user)
-
-        for participant in other_participants:
-            Notification.objects.create(
-                user=participant.user,
-                notification_type='comment',
-                message=f'رسالة جديدة من {request.user.username} في ختمة {khatma.title}',
-                related_khatma=khatma,
-                related_user=request.user
-            )
-
-        messages.success(request, 'تم إرسال الرسالة بنجاح')
-        return redirect('core:khatma_chat', khatma_id=khatma.id)
-
-    # Get chat messages
-    chat_messages = KhatmaChat.objects.filter(
-        khatma=khatma
-    ).order_by('created_at')
-
-    # Get total participants count
-    participants_count = Participant.objects.filter(khatma=khatma).count()
+    progress_percentage = 0
+    if total_parts > 0:
+        progress_percentage = (completed_parts / total_parts) * 100
 
     context = {
         'khatma': khatma,
-        'chat_messages': chat_messages,
-        'participants_count': participants_count
+        'is_participant': is_participant,
+        'is_creator': request.user == khatma.creator if request.user.is_authenticated else False,
+        'part_assignments': part_assignments,
+        'total_parts': total_parts,
+        'assigned_parts': assigned_parts,
+        'completed_parts': completed_parts,
+        'progress_percentage': progress_percentage
     }
 
-    return render(request, 'core/khatma_chat.html', context)
+    return render(request, 'core/khatma_detail.html', context)
 
-@login_required
-def group_chat(request, group_id):
-    """View for group chat functionality"""
-    group = get_object_or_404(ReadingGroup, id=group_id)
+def quran_part_view(request, part_number):
+    """View to display a specific part of the Quran"""
+    from quran.models import QuranPart, Surah, Ayah
 
-    # Check if user is a member of the group
-    if not GroupMembership.objects.filter(user=request.user, group=group, is_active=True).exists():
-        messages.error(request, 'يجب أن تكون عضوًا في المجموعة للمشاركة في الدردشة')
-        return redirect('core:group_detail', group_id=group.id)
+    # Get the part or create it if it doesn't exist
+    part, created = QuranPart.objects.get_or_create(
+        part_number=part_number,
+        defaults={'name_arabic': f'الجزء {part_number}'}
+    )
 
-    # Get user's role in the group
-    user_membership = GroupMembership.objects.get(user=request.user, group=group)
-    user_role = user_membership.role
+    # Get ayahs for this part
+    ayahs = Ayah.objects.filter(quran_part=part).select_related('surah').order_by('surah__surah_number', 'ayah_number_in_surah')
 
-    if request.method == 'POST':
-        message_type = request.POST.get('message_type', 'text')
-        message_text = request.POST.get('message', '').strip()
-        image = request.FILES.get('image')
-        audio = request.FILES.get('audio')
+    # Group ayahs by surah for better display
+    surahs_in_part = {}
+    for ayah in ayahs:
+        if ayah.surah.id not in surahs_in_part:
+            surahs_in_part[ayah.surah.id] = {
+                'surah': ayah.surah,
+                'ayahs': []
+            }
+        surahs_in_part[ayah.surah.id]['ayahs'].append(ayah)
 
-        if not message_text and not image and not audio:
-            messages.error(request, 'لا يمكن إرسال رسالة فارغة')
-            return redirect('core:group_chat', group_id=group.id)
+    # Convert to list for template
+    surahs_list = list(surahs_in_part.values())
 
-        # Create chat message
-        GroupChat.objects.create(
-            group=group,
-            user=request.user,
-            message=message_text,
-            message_type=message_type,
-            image=image,
-            audio=audio
-        )
-
-        # Create notifications for other group members
-        other_members = GroupMembership.objects.filter(
-            group=group,
-            is_active=True
-        ).exclude(user=request.user)
-
-        for membership in other_members:
-            Notification.objects.create(
-                user=membership.user,
-                notification_type='group_chat',
-                message=f'رسالة جديدة من {request.user.username} في مجموعة {group.name}',
-                related_user=request.user
-            )
-
-        messages.success(request, 'تم إرسال الرسالة بنجاح')
-        return redirect('core:group_chat', group_id=group.id)
-
-    # Get chat messages
-    chat_messages = GroupChat.objects.filter(group=group).order_by('created_at')
-
-    # Get active members count
-    members_count = group.get_active_members_count()
-
-    # Get pinned messages
-    pinned_messages = GroupChat.objects.filter(group=group, is_pinned=True).order_by('-created_at')
+    # Get next and previous part numbers for navigation
+    next_part = part_number + 1 if part_number < 30 else None
+    prev_part = part_number - 1 if part_number > 1 else None
 
     context = {
-        'group': group,
-        'chat_messages': chat_messages,
-        'members_count': members_count,
-        'pinned_messages': pinned_messages,
-        'user_role': user_role,
-        'is_admin': user_role == 'admin',
-        'is_moderator': user_role in ['admin', 'moderator']
+        'part': part,
+        'surahs': surahs_list,
+        'next_part': next_part,
+        'prev_part': prev_part,
     }
 
-    return render(request, 'core/group_chat.html', context)
+    return render(request, 'core/quran_part.html', context)
+
+def quran_reciters(request):
+    """View to display list of Quran reciters"""
+    from quran.models import Reciter
+
+    reciters = Reciter.objects.all().order_by('name_arabic')
+
+    context = {
+        'reciters': reciters
+    }
+
+    return render(request, 'core/quran_reciters.html', context)
+
+def reciter_surahs(request, reciter_name):
+    """View to display surahs for a specific reciter"""
+    from quran.models import Reciter, Surah, ReciterSurah
+
+    reciter = get_object_or_404(Reciter, slug=reciter_name)
+
+    # Get all surahs with recitations by this reciter
+    reciter_surahs = ReciterSurah.objects.filter(reciter=reciter).select_related('surah').order_by('surah__surah_number')
+
+    context = {
+        'reciter': reciter,
+        'reciter_surahs': reciter_surahs
+    }
+
+    return render(request, 'core/reciter_surahs.html', context)
+
+def community_leaderboard(request):
+    """View to display community leaderboard"""
+    from django.contrib.auth.models import User
+    from django.db.models import Count
+
+    # Get top users by created khatmas
+    top_creators = User.objects.annotate(
+        created_khatmas=Count('created_khatmas')
+    ).order_by('-created_khatmas')[:10]
+
+    # Get top users by joined khatmas
+    top_readers = User.objects.annotate(
+        joined_khatmas=Count('joined_khatmas')
+    ).order_by('-joined_khatmas')[:10]
+
+    context = {
+        'top_readers': top_readers,
+        'top_creators': top_creators
+    }
+
+    return render(request, 'core/community_leaderboard.html', context)
+
+@login_required
+def notifications(request):
+    """View to display user notifications"""
+    from notifications.models import Notification
+
+    # Get user's notifications
+    user_notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+
+    # Mark all as read if requested
+    if request.GET.get('mark_all_read'):
+        user_notifications.update(is_read=True)
+        messages.success(request, 'تم تحديث جميع الإشعارات كمقروءة')
+        return redirect('core:notifications')
+
+    # Mark specific notification as read
+    notification_id = request.GET.get('mark_read')
+    if notification_id:
+        try:
+            notification = Notification.objects.get(id=notification_id, user=request.user)
+            notification.is_read = True
+            notification.save()
+            messages.success(request, 'تم تحديث الإشعار كمقروء')
+        except Notification.DoesNotExist:
+            messages.error(request, 'الإشعار غير موجود')
+        return redirect('core:notifications')
+
+    # Paginate notifications
+    paginator = Paginator(user_notifications, 20)  # 20 notifications per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get unread count
+    unread_count = user_notifications.filter(is_read=False).count()
+
+    context = {
+        'notifications': page_obj,
+        'unread_count': unread_count
+    }
+
+    return render(request, 'core/notifications.html', context)
+
+@login_required
+def create_deceased(request):
+    """View to create a new deceased person"""
+    from khatma.models import Deceased
+
+    if request.method == 'POST':
+        # Process form submission
+        name = request.POST.get('name')
+        death_date = request.POST.get('death_date')
+        relation = request.POST.get('relation', '')
+        photo = request.FILES.get('photo')
+
+        # Simple validation
+        if not name or not death_date:
+            messages.error(request, 'يرجى ملء جميع الحقول المطلوبة')
+            return redirect('core:create_deceased')
+
+        # Create the deceased person
+        deceased = Deceased.objects.create(
+            name=name,
+            death_date=death_date,
+            relation=relation,
+            photo=photo,
+            added_by=request.user
+        )
+
+        messages.success(request, f'تم إضافة {name} بنجاح')
+        return redirect('core:index')
+
+    return render(request, 'core/create_deceased.html')
+
+@login_required
+def user_profile(request):
+    """View to display user profile"""
+    from users.models import Profile
+    from khatma.models import Khatma, Participant
+
+    # Get user's profile
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+
+    # Get user's khatmas
+    user_khatmas = Khatma.objects.filter(creator=request.user).order_by('-created_at')[:5]
+
+    # Get khatmas where user is a participant
+    participating_khatmas = Khatma.objects.filter(
+        participant__user=request.user
+    ).exclude(
+        creator=request.user
+    ).distinct().order_by('-created_at')[:5]
+
+    context = {
+        'profile': profile,
+        'user_khatmas': user_khatmas,
+        'participating_khatmas': participating_khatmas
+    }
+
+    return render(request, 'core/profile.html', context)
+
+@login_required
+def user_settings(request):
+    """View to display user settings"""
+    from users.models import Profile
+
+    # Get user's profile
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        # Process form submission
+        theme = request.POST.get('theme', 'light')
+        language = request.POST.get('language', 'ar')
+
+        # Update profile
+        profile.theme_preference = theme
+        profile.language_preference = language
+        profile.save()
+
+        messages.success(request, 'تم تحديث الإعدادات بنجاح')
+        return redirect('core:settings')
+
+    context = {
+        'profile': profile
+    }
+
+    return render(request, 'core/settings.html', context)
+
+def community(request):
+    """View to display community page"""
+    from khatma.models import Khatma
+
+    # Get public khatmas
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')[:5]
+
+    context = {
+        'public_khatmas': public_khatmas
+    }
+
+    return render(request, 'core/community.html', context)
+
+def community_khatmas(request):
+    """View to display community khatmas"""
+    from khatma.models import Khatma
+
+    # Get public khatmas
+    public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
+
+    # Paginate results
+    paginator = Paginator(public_khatmas, 10)  # 10 khatmas per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'public_khatmas': page_obj
+    }
+
+    return render(request, 'core/community_khatmas.html', context)
+
+def about_page(request):
+    """View to display about page"""
+    return render(request, 'core/about.html')
+
+def contact_us(request):
+    """View to display contact page"""
+    if request.method == 'POST':
+        # Process form submission
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        # Simple validation
+        if not name or not email or not subject or not message:
+            messages.error(request, 'يرجى ملء جميع الحقول المطلوبة')
+            return redirect('core:contact_us')
+
+        # Send email (placeholder)
+        # In a real application, you would send an email here
+
+        messages.success(request, 'تم إرسال رسالتك بنجاح. سنرد عليك قريبًا.')
+        return redirect('core:index')
+
+    return render(request, 'core/contact.html')
 
 
 @login_required

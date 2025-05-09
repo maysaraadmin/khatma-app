@@ -29,6 +29,7 @@ urlpatterns = [
     path('khatma/', include('khatma.urls')),
     path('groups/', include('groups.urls')),
     path('notifications/', include('notifications.urls')),
+    path('chat/', include('chat.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Redirect root URL to core index

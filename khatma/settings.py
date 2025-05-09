@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'khatma.apps.KhatmaConfig',
     'groups.apps.GroupsConfig',
     'notifications.apps.NotificationsConfig',
+    'chat.apps.ChatConfig',
 
     # django-allauth
     'allauth',
@@ -71,6 +72,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'khatma/templates'),
             os.path.join(BASE_DIR, 'groups/templates'),
             os.path.join(BASE_DIR, 'notifications/templates'),
+            os.path.join(BASE_DIR, 'chat/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -144,6 +146,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'khatma/static'),
     os.path.join(BASE_DIR, 'groups/static'),
     os.path.join(BASE_DIR, 'notifications/static'),
+    os.path.join(BASE_DIR, 'chat/static'),
 ]
 
 # Media files configuration

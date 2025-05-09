@@ -46,8 +46,8 @@
                                         {% endif %}
                                         <div>
                                             <h5 class="card-title mb-0">{{ group.name }}</h5>
-                                            <span class="badge bg-{{ group.privacy|yesno:'danger,success,warning' }}">
-                                                {{ group.get_privacy_display }}
+                                            <span class="badge bg-{{ group.is_public|yesno:'success,danger' }}">
+                                                {{ group.is_public|yesno:'عامة,خاصة' }}
                                             </span>
                                         </div>
                                     </div>
@@ -103,7 +103,7 @@
                                         <div>
                                             <h5 class="card-title mb-0">{{ group.name }}</h5>
                                             <small class="text-muted">
-                                                {{ group.get_group_type_display }}
+                                                مجموعة قراءة
                                             </small>
                                         </div>
                                     </div>
@@ -145,7 +145,7 @@
     .hover-card {
         transition: all 0.3s ease;
     }
-    
+
     .hover-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
