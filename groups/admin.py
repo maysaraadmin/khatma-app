@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
-    ReadingGroup, GroupMembership, JoinRequest, 
-    GroupChat, GroupAnnouncement, GroupEvent
+    ReadingGroup, GroupMembership, JoinRequest,
+    GroupAnnouncement, GroupEvent
 )
 
 
@@ -28,7 +28,7 @@ class ReadingGroupAdmin(admin.ModelAdmin):
             'fields': ('enable_chat', 'enable_khatma_creation')
         }),
     )
-    
+
     def get_members_count(self, obj):
         return obj.members.count()
     get_members_count.short_description = 'عدد الأعضاء'
@@ -51,13 +51,7 @@ class JoinRequestAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at']
 
 
-@admin.register(GroupChat)
-class GroupChatAdmin(admin.ModelAdmin):
-    list_display = ['sender', 'group', 'is_system_message', 'has_attachment', 'created_at']
-    list_filter = ['is_system_message', 'has_attachment', 'created_at', 'group']
-    search_fields = ['sender__username', 'group__name', 'message']
-    date_hierarchy = 'created_at'
-    readonly_fields = ['created_at']
+# GroupChat admin has been moved to chat/admin.py
 
 
 @admin.register(GroupAnnouncement)

@@ -1,43 +1,111 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ error_title }} - ختمة{% endblock %}
+{% block title %}{{ error_title }} - {{ status_code|default:"خطأ" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        padding: 3rem 0;
+        text-align: center;
+    }
+
+    .error-code {
+        font-size: 8rem;
+        font-weight: 700;
+        color: var(--primary-color, #5D4037);
+        opacity: 0.2;
+        margin-bottom: -2rem;
+    }
+
+    .error-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--primary-color, #5D4037);
+    }
+
+    .error-message {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: var(--text-secondary, #757575);
+    }
+
+    .error-details {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 2rem;
+        text-align: left;
+        direction: ltr;
+        font-family: monospace;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        color: #d63384;
+    }
+
+    .error-actions {
+        margin-top: 2rem;
+    }
+
+    .error-illustration {
+        max-width: 300px;
+        margin: 0 auto 2rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center p-5">
-                    <div class="mb-4">
-                        <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 4rem;"></i>
-                    </div>
-                    <h2 class="card-title mb-3">{{ error_title }}</h2>
-                    <p class="card-text fs-5 mb-4">{{ error_message }}</p>
-                    
-                    {% if error_details and user.is_staff %}
-                    <div class="alert alert-secondary mt-4 text-start">
-                        <h5 class="alert-heading">تفاصيل الخطأ (للمشرفين فقط):</h5>
-                        <hr>
-                        <pre class="mb-0">{{ error_details }}</pre>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="mt-4">
-                        <a href="{% url 'core:index' %}" class="btn btn-primary me-2">
-                            <i class="bi bi-house-fill me-1"></i> العودة للصفحة الرئيسية
-                        </a>
-                        <button onclick="window.history.back()" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> العودة للصفحة السابقة
-                        </button>
-                    </div>
-                </div>
+<div class="container">
+    <div class="error-container">
+        <div class="error-code">{{ status_code|default:"خطأ" }}</div>
+
+        {% if status_code == 404 %}
+            <div class="mb-4">
+                <i class="bi bi-search text-primary" style="font-size: 5rem;"></i>
             </div>
-            
-            <div class="text-center mt-4">
-                <p class="text-muted">
-                    إذا استمرت المشكلة، يرجى التواصل مع الدعم الفني.
-                </p>
+        {% elif status_code == 403 %}
+            <div class="mb-4">
+                <i class="bi bi-shield-lock text-warning" style="font-size: 5rem;"></i>
             </div>
+        {% elif status_code == 500 %}
+            <div class="mb-4">
+                <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 5rem;"></i>
+            </div>
+        {% else %}
+            <div class="mb-4">
+                <i class="bi bi-exclamation-circle text-warning" style="font-size: 5rem;"></i>
+            </div>
+        {% endif %}
+
+        <h1 class="error-title">{{ error_title }}</h1>
+        <p class="error-message">{{ error_message }}</p>
+
+        <div class="error-actions">
+            {% if show_home_link|default:True %}
+                <a href="{% url 'core:index' %}" class="btn btn-primary me-2">
+                    <i class="bi bi-house-fill me-1"></i> العودة للصفحة الرئيسية
+                </a>
+            {% endif %}
+
+            {% if show_back_link|default:True %}
+                <button onclick="history.back()" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> العودة للصفحة السابقة
+                </button>
+            {% endif %}
+        </div>
+
+        {% if error_details %}
+            <div class="error-details mt-5">
+                <h5>تفاصيل الخطأ:</h5>
+                <pre>{{ error_details }}</pre>
+            </div>
+        {% endif %}
+
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                إذا استمرت المشكلة، يرجى <a href="{% url 'core:contact_us' %}">التواصل مع الدعم الفني</a>.
+            </p>
         </div>
     </div>
 </div>

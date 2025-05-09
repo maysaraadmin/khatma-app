@@ -11,9 +11,9 @@ from django.urls import reverse
 
 from .models import (
     Khatma, Deceased, Participant, PartAssignment, KhatmaPart,
-    QuranReading, PublicKhatma, KhatmaComment, KhatmaInteraction,
-    KhatmaChat
+    QuranReading, PublicKhatma, KhatmaComment, KhatmaInteraction
 )
+from chat.models import KhatmaChat
 from .forms import (
     KhatmaCreationForm, KhatmaEditForm, DeceasedForm,
     PartAssignmentForm, QuranReadingForm, KhatmaPartForm,

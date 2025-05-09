@@ -2,7 +2,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth.models import User
-from .models import ReadingGroup, JoinRequest, GroupChat, GroupAnnouncement, GroupEvent, GroupMembership
+from .models import ReadingGroup, JoinRequest, GroupAnnouncement, GroupEvent, GroupMembership
+from chat.models import GroupChat
 from khatma.models import Khatma
 
 
@@ -34,7 +35,7 @@ class GroupChatForm(forms.ModelForm):
     """Form for sending chat messages"""
     class Meta:
         model = GroupChat
-        fields = ['message', 'attachment']
+        fields = ['message', 'image', 'audio']
         widgets = {
             'message': forms.Textarea(attrs={'rows': 2, 'placeholder': 'اكتب رسالتك هنا...'}),
         }

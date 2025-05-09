@@ -1,7 +1,8 @@
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
-from .models import ReadingGroup, GroupMembership, JoinRequest, GroupChat
+from .models import ReadingGroup, GroupMembership, JoinRequest
+from chat.models import GroupChat
 
 
 @receiver(post_save, sender=ReadingGroup)
@@ -13,7 +14,7 @@ def create_group_membership_for_creator(sender, instance, created, **kwargs):
             group=instance,
             role='admin'
         )
-        
+
         # Create system message for group creation
         GroupChat.objects.create(
             group=instance,
@@ -35,7 +36,7 @@ def handle_join_request_approval(sender, instance, **kwargs):
                 group=instance.group,
                 role='member'
             )
-            
+
             # Create system message for new member
             GroupChat.objects.create(
                 group=instance.group,
@@ -43,7 +44,7 @@ def handle_join_request_approval(sender, instance, **kwargs):
                 message=f'انضم {instance.user.username} إلى المجموعة',
                 is_system_message=True
             )
-            
+
             # Create notification for user
             try:
                 from notifications.models import Notification
@@ -85,7 +86,7 @@ def handle_membership_removal(sender, instance, **kwargs):
         message=f'غادر {instance.user.username} المجموعة',
         is_system_message=True
     )
-    
+
     # Create notification for group creator
     try:
         from notifications.models import Notification

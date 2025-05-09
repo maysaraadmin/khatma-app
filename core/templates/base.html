@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -15,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="{% static 'core/css/main.css' %}">
     
     {% block extra_css %}{% endblock %}
     
@@ -175,7 +176,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <!-- Custom JS -->
-    <script src="/static/js/main.js"></script>
+    <script src="{% static 'core/js/main.js' %}"></script>
     
     <script>
         // Load recent notifications in dropdown

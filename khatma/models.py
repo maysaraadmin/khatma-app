@@ -310,24 +310,7 @@ class KhatmaInteraction(models.Model):
         return f"{self.get_interaction_type_display()} by {self.user.username}"
 
 
-class KhatmaChat(models.Model):
-    """Model for chat messages within a khatma"""
-    khatma = models.ForeignKey(Khatma, on_delete=models.CASCADE, related_name='chat_messages')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_pinned = models.BooleanField(default=False)
-
-    # For attachments
-    has_attachment = models.BooleanField(default=False)
-    attachment = models.FileField(upload_to='khatma_chat_attachments/', null=True, blank=True)
-    attachment_type = models.CharField(max_length=50, null=True, blank=True)
-
-    class Meta:
-        ordering = ['created_at']
-
-    def __str__(self):
-        return f"{self.user.username} - {self.khatma.title} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+# KhatmaChat model has been moved to chat/models.py
 
 
 class PostReaction(models.Model):
@@ -340,7 +323,7 @@ class PostReaction(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='khatma_post_reactions')
-    khatma_chat = models.ForeignKey(KhatmaChat, on_delete=models.CASCADE, related_name='reactions', null=True, blank=True)
+    khatma_chat = models.ForeignKey('chat.KhatmaChat', on_delete=models.CASCADE, related_name='reactions', null=True, blank=True)
     khatma_comment = models.ForeignKey(KhatmaComment, on_delete=models.CASCADE, related_name='reactions', null=True, blank=True)
     reaction_type = models.CharField(max_length=20, choices=REACTION_TYPES)
     created_at = models.DateTimeField(auto_now_add=True)

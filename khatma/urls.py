@@ -3,11 +3,14 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from core.social_views import CustomSocialSignupView
+from core.admin_views_new import admin_dashboard
 from . import views
 
-# Include the core URLs at the root path
+# Main URL patterns
 urlpatterns = [
     # Admin URLs
+    path('admin/dashboard/', admin_dashboard, name='admin_dashboard'),
     path('admin/', admin.site.urls),
 
     # Authentication URLs
@@ -19,6 +22,7 @@ urlpatterns = [
     path('accounts/reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
     # django-allauth URLs
+    path('accounts/social/signup/', CustomSocialSignupView.as_view(), name='socialaccount_signup'),
     path('accounts/', include('allauth.urls')),
 
     # Core URLs at the root path
@@ -30,8 +34,6 @@ urlpatterns = [
     path('groups/', include('groups.urls')),
     path('notifications/', include('notifications.urls')),
     path('chat/', include('chat.urls')),
-
-    # Khatma-specific URLs with app_name namespace
 ]
 
 # Add khatma-specific URLs with namespace

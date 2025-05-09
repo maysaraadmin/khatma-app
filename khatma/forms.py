@@ -1,7 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Khatma, Deceased, PartAssignment, QuranReading, KhatmaPart, KhatmaChat, KhatmaInteraction
+from .models import Khatma, Deceased, PartAssignment, QuranReading, KhatmaPart, KhatmaInteraction
+from chat.models import KhatmaChat
 
 
 class DeceasedForm(forms.ModelForm):

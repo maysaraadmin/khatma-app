@@ -90,24 +90,7 @@ class JoinRequest(models.Model):
         return f"{self.user.username} - {self.group.name} ({self.get_status_display()})"
 
 
-class GroupChat(models.Model):
-    """Model for group chat messages"""
-    group = models.ForeignKey(ReadingGroup, on_delete=models.CASCADE, related_name='chat_messages', verbose_name="المجموعة")
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="المرسل")
-    message = models.TextField(verbose_name="الرسالة")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ الإرسال")
-    is_system_message = models.BooleanField(default=False, verbose_name="رسالة نظام")
-
-    # For attachments
-    has_attachment = models.BooleanField(default=False, verbose_name="يحتوي على مرفق")
-    attachment = models.FileField(upload_to='group_chat_attachments/', null=True, blank=True, verbose_name="المرفق")
-    attachment_type = models.CharField(max_length=50, null=True, blank=True, verbose_name="نوع المرفق")
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.sender.username} - {self.group.name} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+# GroupChat model has been moved to chat/models.py
 
 
 class GroupAnnouncement(models.Model):

@@ -8,8 +8,9 @@ from django.core.paginator import Paginator
 
 from .models import (
     ReadingGroup, GroupMembership, JoinRequest,
-    GroupChat, GroupAnnouncement, GroupEvent
+    GroupAnnouncement, GroupEvent
 )
+from chat.models import GroupChat
 from .forms import (
     ReadingGroupForm, JoinRequestForm, GroupChatForm,
     GroupAnnouncementForm, GroupEventForm, GroupMemberRoleForm,
