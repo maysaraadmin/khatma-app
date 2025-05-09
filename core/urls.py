@@ -16,6 +16,7 @@ urlpatterns = [
     # Remove the community/leaderboard path and use leaderboard directly
     path('leaderboard/', views.community_leaderboard, name='community_leaderboard'),
     path('groups/', views.group_list, name='group_list'),  # Changed to use the group_list view
+    path('groups/create/', views.create_group, name='create_group'),  # Added create_group view
     path('khatma/dashboard/', views.khatma_dashboard, name='khatma_dashboard'),
     path('khatma/create/', views.create_khatma, name='create_khatma'),
     path('khatma/<int:khatma_id>/', views.khatma_detail, name='khatma_detail'),

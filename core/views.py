@@ -58,6 +58,38 @@ def group_list(request):
     return render(request, 'core/group_list.html', context)
 
 
+@login_required
+def create_group(request):
+    """View for creating a new reading group"""
+    try:
+        from groups.forms import ReadingGroupForm
+        from groups.models import ReadingGroup, GroupMembership
+
+        if request.method == 'POST':
+            form = ReadingGroupForm(request.POST, request.FILES)
+            if form.is_valid():
+                group = form.save(commit=False)
+                group.creator = request.user
+                group.save()
+
+                # Add the creator as an admin member
+                GroupMembership.objects.create(
+                    user=request.user,
+                    group=group,
+                    role='admin'
+                )
+
+                messages.success(request, 'تم إنشاء المجموعة بنجاح')
+                return redirect('groups:group_detail', group_id=group.id)
+        else:
+            form = ReadingGroupForm()
+
+        return render(request, 'core/create_group.html', {'form': form})
+    except Exception as e:
+        logger.error(f"Error in create_group view: {str(e)}")
+        return render(request, 'core/error.html', {'error': str(e)})
+
+
 class GoogleLoginView(View):
     """
     Custom view for handling Google login.

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}إنشاء مجموعة قراءة جديدة{% endblock %}
@@ -29,10 +29,49 @@
                             <div class="form-text">وصف مختصر للمجموعة وأهدافها</div>
                         </div>
 
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="is_public" name="is_public" checked>
-                            <label class="form-check-label" for="is_public">مجموعة عامة</label>
-                            <div class="form-text">المجموعات العامة يمكن لأي شخص رؤيتها والانضمام إليها.</div>
+                        <div class="mb-3">
+                            <label for="image" class="form-label">صورة المجموعة</label>
+                            <input type="file" class="form-control" id="image" name="image">
+                            <div class="form-text">اختياري: يمكنك إضافة صورة للمجموعة</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_public" name="is_public" checked>
+                                    <label class="form-check-label" for="is_public">مجموعة عامة</label>
+                                    <div class="form-text">المجموعات العامة يمكن لأي شخص رؤيتها والانضمام إليها.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="allow_join_requests" name="allow_join_requests" checked>
+                                    <label class="form-check-label" for="allow_join_requests">السماح بطلبات الانضمام</label>
+                                    <div class="form-text">السماح للمستخدمين بتقديم طلبات للانضمام إلى المجموعة.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="max_members" class="form-label">الحد الأقصى للأعضاء</label>
+                                    <input type="number" class="form-control" id="max_members" name="max_members" value="0" min="0">
+                                    <div class="form-text">0 = غير محدود</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3 form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" id="enable_chat" name="enable_chat" checked>
+                                    <label class="form-check-label" for="enable_chat">تفعيل المحادثة</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3 form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" id="enable_khatma_creation" name="enable_khatma_creation" checked>
+                                    <label class="form-check-label" for="enable_khatma_creation">السماح بإنشاء ختمات</label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="alert alert-info mb-4">
