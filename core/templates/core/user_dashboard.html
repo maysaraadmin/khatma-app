@@ -3,6 +3,18 @@
 
 {% block title %}لوحة التحكم - ختمة{% endblock %}
 
+{% block extra_head %}
+<script>
+    // Prevent redirection to leaderboard
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.pathname === '/' &&
+            window.location.href.indexOf('/leaderboard') > -1) {
+            window.history.pushState({}, '', '/');
+        }
+    });
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -216,6 +228,14 @@
 
 {% block extra_js %}
 <script>
+    // Check if we're being redirected and prevent it
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.pathname === '/' &&
+            window.location.href.indexOf('/leaderboard') > -1) {
+            window.history.pushState({}, '', '/');
+        }
+    });
+
     // Add hover effect to cards
     document.querySelectorAll('.hover-card').forEach(card => {
         card.addEventListener('mouseenter', function() {

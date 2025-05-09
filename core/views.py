@@ -96,9 +96,17 @@ def index(request):
     Home page view.
     """
     try:
+        # Check if we're being redirected from the leaderboard
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'leaderboard' in referer:
+            # Add a flag to prevent redirection
+            request.session['prevent_redirect'] = True
+
         # If user is authenticated, show dashboard
         if request.user.is_authenticated:
             dashboard_data = get_dashboard_data(request.user)
+            # Add a flag to prevent redirection
+            dashboard_data['prevent_redirect'] = True
             return render(request, 'core/user_dashboard.html', dashboard_data)
 
         # Otherwise show welcome page
@@ -226,14 +234,65 @@ def community_leaderboard(request):
     Community leaderboard page view.
     """
     try:
-        # Get top users by completed parts
-        top_users = User.objects.annotate(
-            completed_parts_count=Count('participant__part_assignments',
-                                       filter=Q(participant__part_assignments__is_completed=True))
-        ).order_by('-completed_parts_count')[:20]
+        # Create a list of top readers with completed parts
+        users = User.objects.all()
+        top_readers_list = []
+
+        for user in users:
+            # Get profile or create if it doesn't exist
+            try:
+                profile = Profile.objects.get(user=user)
+            except Profile.DoesNotExist:
+                profile = Profile.objects.create(user=user)
+
+            # Count completed readings
+            completed_parts_count = QuranReading.objects.filter(
+                participant=user,
+                status='completed'
+            ).count()
+
+            if completed_parts_count > 0:
+                top_readers_list.append({
+                    'username': user.username,
+                    'date_joined': user.date_joined,
+                    'completed_parts': completed_parts_count,
+                    'profile': profile
+                })
+
+        # Sort by completed parts (descending)
+        top_readers_list.sort(key=lambda x: x['completed_parts'], reverse=True)
+        # Take top 10
+        top_readers = top_readers_list[:10]
+
+        # Create a list of top creators with khatma count
+        top_creators_list = []
+
+        for user in users:
+            # Get profile or create if it doesn't exist
+            try:
+                profile = Profile.objects.get(user=user)
+            except Profile.DoesNotExist:
+                profile = Profile.objects.create(user=user)
+
+            # Count created khatmas
+            created_khatmas_count = Khatma.objects.filter(creator=user).count()
+
+            if created_khatmas_count > 0:
+                top_creators_list.append({
+                    'username': user.username,
+                    'date_joined': user.date_joined,
+                    'created_khatmas': created_khatmas_count,
+                    'profile': profile
+                })
+
+        # Sort by created khatmas (descending)
+        top_creators_list.sort(key=lambda x: x['created_khatmas'], reverse=True)
+        # Take top 10
+        top_creators = top_creators_list[:10]
 
         return render(request, 'core/community_leaderboard.html', {
-            'top_users': top_users
+            'top_readers': top_readers,
+            'top_creators': top_creators
         })
     except Exception as e:
         logger.error(f"Error in community_leaderboard view: {str(e)}")
@@ -264,8 +323,36 @@ def create_khatma(request):
     """
     Create khatma view.
     """
-    # Redirect to the khatma app's create_khatma view
-    return redirect('khatma:create_khatma')
+    try:
+        from khatma.forms import KhatmaCreationForm
+        from khatma.models import Deceased, KhatmaPart, Participant
+
+        if request.method == 'POST':
+            form = KhatmaCreationForm(request.POST, user=request.user)
+            if form.is_valid():
+                khatma = form.save(commit=False)
+                khatma.creator = request.user
+                if khatma.khatma_type == 'memorial' and 'deceased' in form.cleaned_data:
+                    khatma.deceased = form.cleaned_data['deceased']
+                khatma.save()
+                for i in range(1, 31):
+                    KhatmaPart.objects.create(khatma=khatma, part_number=i)
+                Participant.objects.create(user=request.user, khatma=khatma)
+                try:
+                    from notifications.models import Notification
+                    Notification.objects.create(user=request.user, notification_type='khatma_progress', message=f'تم إنشاء ختمة جديدة: {khatma.title}', related_khatma=khatma)
+                except ImportError:
+                    pass
+                messages.success(request, 'تم إنشاء الختمة بنجاح')
+                return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+        else:
+            form = KhatmaCreationForm(user=request.user)
+        deceased_list = Deceased.objects.filter(added_by=request.user).order_by('-death_date')
+        context = {'form': form, 'deceased_list': deceased_list}
+        return render(request, 'khatma/create_khatma.html', context)
+    except Exception as e:
+        logger.error(f"Error in create_khatma view: {str(e)}")
+        return render(request, 'core/error.html', {'error': str(e)})
 
 
 def khatma_detail(request, khatma_id):
@@ -441,29 +528,45 @@ def achievements(request):
     """
     try:
         # Get user's achievements
-        user_achievements = UserAchievement.objects.filter(user=request.user).order_by('-date_earned')
+        user_achievements = UserAchievement.objects.filter(user=request.user).order_by('-achieved_at')
+
+        # Create a list of user achievement objects with additional properties to match the template
+        user_achievements_list = []
+        for achievement in user_achievements:
+            user_achievements_list.append({
+                'get_achievement_type_display': achievement.get_achievement_type_display(),
+                'description': 'إنجاز ' + achievement.get_achievement_type_display(),
+                'date_earned': achievement.achieved_at,
+                'points': achievement.points_earned
+            })
 
         # Get all possible achievements (for display of locked achievements)
         # This would typically come from an Achievement model, but for now we'll use a static list
         all_achievements = [
-            {'id': 1, 'name': 'أول ختمة', 'description': 'أكملت ختمة كاملة للقرآن الكريم', 'icon': 'bi-book'},
-            {'id': 2, 'name': 'قارئ نشط', 'description': 'شاركت في 5 ختمات', 'icon': 'bi-person-check'},
-            {'id': 3, 'name': 'منشئ ختمات', 'description': 'أنشأت 3 ختمات', 'icon': 'bi-plus-circle'},
-            {'id': 4, 'name': 'قارئ مخلص', 'description': 'أكملت 10 أجزاء من القرآن', 'icon': 'bi-star'},
-            {'id': 5, 'name': 'قارئ متميز', 'description': 'أكملت 30 جزءًا من القرآن', 'icon': 'bi-trophy'},
+            {'id': 1, 'name': 'أول ختمة', 'description': 'أكملت ختمة كاملة للقرآن الكريم', 'icon': 'bi-book', 'points': 50},
+            {'id': 2, 'name': 'قارئ نشط', 'description': 'شاركت في 5 ختمات', 'icon': 'bi-person-check', 'points': 100},
+            {'id': 3, 'name': 'منشئ ختمات', 'description': 'أنشأت 3 ختمات', 'icon': 'bi-plus-circle', 'points': 75},
+            {'id': 4, 'name': 'قارئ مخلص', 'description': 'أكملت 10 أجزاء من القرآن', 'icon': 'bi-star', 'points': 50},
+            {'id': 5, 'name': 'قارئ متميز', 'description': 'أكملت 30 جزءًا من القرآن', 'icon': 'bi-trophy', 'points': 150},
         ]
 
         # Mark which achievements the user has earned
         for achievement in all_achievements:
-            achievement['earned'] = user_achievements.filter(achievement_id=achievement['id']).exists()
-            if achievement['earned']:
-                achievement['date_earned'] = user_achievements.get(achievement_id=achievement['id']).date_earned
+            achievement_type = next((k for k, v in dict(UserAchievement.ACHIEVEMENT_TYPES).items() if v == achievement['name']), None)
+            achievement['achieved'] = user_achievements.filter(achievement_type=achievement_type).exists()
+            if achievement['achieved']:
+                achievement['date_earned'] = user_achievements.get(achievement_type=achievement_type).achieved_at
+
+        # Get user profile for total points and level
+        profile, created = Profile.objects.get_or_create(user=request.user)
+        total_points = profile.total_points
+        level = profile.level
 
         return render(request, 'core/user_achievements.html', {
             'achievements': all_achievements,
-            'user_achievements': user_achievements,
-            'total_points': 100,  # Placeholder value
-            'level': 1,  # Placeholder value
+            'user_achievements': user_achievements_list,
+            'total_points': total_points,
+            'level': level,
             'available_achievements': []  # Placeholder value
         })
     except Exception as e:

@@ -27,18 +27,18 @@ def get_dashboard_data(user):
     try:
         # Get user's khatmas
         user_khatmas = Khatma.objects.filter(
-            Q(creator=user) | Q(participants__user=user)
+            Q(creator=user) | Q(participants=user)
         ).distinct().select_related('creator').prefetch_related('participants')
 
         # Get user's groups
         user_groups = ReadingGroup.objects.filter(
-            Q(creator=user) | Q(members__user=user)
+            Q(creator=user) | Q(members=user)
         ).distinct().select_related('creator').prefetch_related('members')
 
         # Get user's part assignments
         part_assignments = PartAssignment.objects.filter(
-            participant__user=user
-        ).select_related('participant', 'participant__khatma', 'quran_part')
+            participant=user
+        ).select_related('khatma', 'part')
 
         # Get completed parts
         completed_parts = part_assignments.filter(is_completed=True).count()
@@ -56,17 +56,15 @@ def get_dashboard_data(user):
 
         # Add recent part completions
         recent_completions = QuranReading.objects.filter(
-            part_assignment__participant__user=user
-        ).order_by('-completion_date')[:5].select_related(
-            'part_assignment', 'part_assignment__quran_part'
-        )
+            participant=user
+        ).order_by('-completion_date')[:5]
 
         for completion in recent_completions:
             recent_activities.append({
                 'type': 'completion',
                 'date': completion.completion_date,
-                'part': completion.part_assignment.quran_part,
-                'khatma': completion.part_assignment.participant.khatma
+                'part_number': completion.part_number,
+                'khatma': completion.khatma
             })
 
         # Add recent khatma creations

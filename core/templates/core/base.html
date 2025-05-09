@@ -457,6 +457,16 @@
 
             // Enhanced active navigation highlighting
             const currentPath = window.location.pathname;
+
+            // Prevent redirection to leaderboard if we're on the homepage
+            if (currentPath === '/' &&
+                window.location.href.indexOf('/leaderboard') > -1) {
+                // Use setTimeout to ensure this runs after any potential redirects
+                setTimeout(function() {
+                    window.history.pushState({}, '', '/');
+                }, 0);
+            }
+
             document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
                 const href = link.getAttribute('href');
                 if (href && currentPath.includes(href) && href !== '/') {

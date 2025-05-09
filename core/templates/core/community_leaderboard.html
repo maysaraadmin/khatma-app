@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}لوحة الشرف{% endblock %}
@@ -46,8 +46,8 @@
                                                 </span>
                                             {% endif %}
 
-                                            {% if user.profile.avatar %}
-                                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% if user.profile.profile_picture %}
+                                                <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
                                             {% else %}
                                                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                                     <i class="bi bi-person text-primary"></i>
@@ -98,8 +98,8 @@
                                                 </span>
                                             {% endif %}
 
-                                            {% if user.profile.avatar %}
-                                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% if user.profile.profile_picture %}
+                                                <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
                                             {% else %}
                                                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                                     <i class="bi bi-person text-success"></i>

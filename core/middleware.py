@@ -4,8 +4,8 @@ import logging
 import sys
 import json
 '\n'
-from django.shortcuts import render
-from django.http import HttpResponseServerError, JsonResponse
+from django.shortcuts import render, redirect
+from django.http import HttpResponseServerError, JsonResponse, HttpResponseRedirect
 from django.db.utils import DatabaseError, IntegrityError, OperationalError
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
@@ -81,3 +81,29 @@ class ErrorHandlerMiddleware:
         if request.user.is_authenticated and request.user.is_staff:
             return True
         return False
+
+
+class PreventLeaderboardRedirectMiddleware:
+    """
+    Middleware to prevent redirection to the leaderboard page from the homepage.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Check if we're on the homepage and being redirected to the leaderboard
+        referer = request.META.get('HTTP_REFERER', '')
+        if request.path == '/' and '/leaderboard' in referer:
+            # Set a session flag to prevent redirection
+            request.session['prevent_redirect'] = True
+
+        # Process the request
+        response = self.get_response(request)
+
+        # Check if we're being redirected to the leaderboard from the homepage
+        if request.path == '/' and isinstance(response, HttpResponseRedirect) and '/leaderboard' in response.url:
+            # Prevent the redirection
+            return redirect('/')
+
+        return response

@@ -13,7 +13,8 @@ urlpatterns = [
     path('language/set/', views.set_language, name='set_language'),
     path('community/', views.community, name='community'),
     path('community/khatmas/', views.community_khatmas, name='community_khatmas'),
-    path('community/leaderboard/', views.community_leaderboard, name='community_leaderboard'),
+    # Remove the community/leaderboard path and use leaderboard directly
+    path('leaderboard/', views.community_leaderboard, name='community_leaderboard'),
     path('groups/', views.group_list, name='group_list'),  # Changed to use the group_list view
     path('khatma/dashboard/', views.khatma_dashboard, name='khatma_dashboard'),
     path('khatma/create/', views.create_khatma, name='create_khatma'),
