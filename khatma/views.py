@@ -10,6 +10,7 @@ from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
+from django.db import transaction
 '\n'
 from chat.models import KhatmaChat
 from quran.models import QuranPart
@@ -19,34 +20,79 @@ from .forms import KhatmaCreationForm, KhatmaEditForm, DeceasedForm, PartAssignm
 
 @login_required
 def create_khatma(request):
+    """View for creating a new Khatma"""
     try:
-        'View for creating a new Khatma'
         if request.method == 'POST':
             form = KhatmaCreationForm(request.POST, user=request.user)
             if form.is_valid():
-                khatma = form.save(commit=False)
-                khatma.creator = request.user
-                if khatma.khatma_type == 'memorial' and 'deceased' in form.cleaned_data:
-                    khatma.deceased = form.cleaned_data['deceased']
-                khatma.save()
-                for i in range(1, 31):
-                    KhatmaPart.objects.create(khatma=khatma, part_number=i)
-                Participant.objects.create(user=request.user, khatma=khatma)
                 try:
-                    from notifications.models import Notification
-                    Notification.objects.create(user=request.user, notification_type='khatma_progress', message=f'تم إنشاء ختمة جديدة: {khatma.title}', related_khatma=khatma)
-                except ImportError:
-                    pass
-                messages.success(request, 'تم إنشاء الختمة بنجاح')
-                return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+                    # Use transaction.atomic to ensure all database operations are atomic
+                    with transaction.atomic():
+                        # Create the khatma object but don't save it to the database yet
+                        khatma = form.save(commit=False)
+                        # Set the creator to the current user
+                        khatma.creator = request.user
+
+                        # Handle memorial khatma type
+                        if khatma.khatma_type == 'memorial' and 'deceased' in form.cleaned_data:
+                            khatma.deceased = form.cleaned_data['deceased']
+
+                        # Save the khatma to the database
+                        khatma.save()
+
+                        # Create the 30 parts for the khatma, but first check if they already exist
+                        existing_parts = set(KhatmaPart.objects.filter(khatma=khatma).values_list('part_number', flat=True))
+                        for i in range(1, 31):
+                            if i not in existing_parts:
+                                KhatmaPart.objects.create(khatma=khatma, part_number=i)
+
+                        # Add the creator as a participant if not already a participant
+                        Participant.objects.get_or_create(user=request.user, khatma=khatma)
+
+                        # Create a notification
+                        try:
+                            from notifications.models import Notification
+                            Notification.objects.create(
+                                user=request.user,
+                                notification_type='khatma_progress',
+                                message=f'تم إنشاء ختمة جديدة: {khatma.title}',
+                                related_khatma=khatma
+                            )
+                        except ImportError:
+                            # If the notifications app is not available, just skip this step
+                            pass
+
+                    messages.success(request, 'تم إنشاء الختمة بنجاح')
+                    return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+                except Exception as inner_e:
+                    # Log the specific error that occurred during khatma creation
+                    logging.error(f"Error saving khatma: {str(inner_e)}")
+                    messages.error(request, f"حدث خطأ أثناء إنشاء الختمة: {str(inner_e)}")
+            else:
+                # Form is not valid, display errors
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"خطأ في الحقل {field}: {error}")
         else:
+            # GET request, create a new form
             form = KhatmaCreationForm(user=request.user)
+
+        # Get the list of deceased persons for memorial khatmas
         deceased_list = Deceased.objects.filter(added_by=request.user).order_by('-death_date')
-        context = {'form': form, 'deceased_list': deceased_list}
+
+        context = {
+            'form': form,
+            'deceased_list': deceased_list
+        }
         return render(request, 'khatma/create_khatma.html', context)
     except Exception as e:
-        logging.error('Error in create_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        # Log the error and display a user-friendly error page
+        logging.error(f"Error in create_khatma view: {str(e)}")
+        return render(request, 'core/error.html', context={
+            'error_title': 'خطأ في إنشاء الختمة',
+            'error_message': 'حدث خطأ أثناء محاولة إنشاء الختمة. يرجى المحاولة مرة أخرى.',
+            'error_details': str(e)
+        })
 
 @login_required
 def edit_khatma(request, khatma_id):
@@ -70,37 +116,75 @@ def edit_khatma(request, khatma_id):
         context = {'form': form, 'khatma': khatma}
         return render(request, 'khatma/edit_khatma.html', context)
     except Exception as e:
-        logging.error('Error in edit_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        logging.error(f"Error in edit_khatma view: {str(e)}")
+        return render(request, 'core/error.html', context={
+            'error_title': 'خطأ في تعديل الختمة',
+            'error_message': 'حدث خطأ أثناء محاولة تعديل الختمة. يرجى المحاولة مرة أخرى.',
+            'error_details': str(e)
+        })
 
 def khatma_detail(request, khatma_id):
+    """View for displaying Khatma details"""
     try:
-        'View for displaying Khatma details'
+        # Get the khatma object or return 404 if not found
         khatma = get_object_or_404(Khatma, id=khatma_id)
+
+        # Check if the user is a participant
         is_participant = False
         if request.user.is_authenticated:
             is_participant = Participant.objects.filter(user=request.user, khatma=khatma).exists()
+
+        # Get all parts for this khatma
         parts = KhatmaPart.objects.filter(khatma=khatma).order_by('part_number')
+
+        # Calculate progress
         total_parts = parts.count()
         completed_parts = parts.filter(is_completed=True).count()
         progress_percentage = completed_parts / total_parts * 100 if total_parts > 0 else 0
+
+        # Handle POST request (joining the khatma)
         if request.method == 'POST' and request.user.is_authenticated and (not is_participant):
-            if khatma.max_participants > 0 and khatma.participants.count() >= khatma.max_participants:
+            # Check if the khatma has reached its maximum number of participants
+            if hasattr(khatma, 'max_participants') and khatma.max_participants > 0 and khatma.participants.count() >= khatma.max_participants:
                 messages.error(request, 'تم الوصول إلى الحد الأقصى للمشاركين في هذه الختمة')
             else:
-                Participant.objects.create(user=request.user, khatma=khatma)
+                # Create a new participant
+                Participant.objects.get_or_create(user=request.user, khatma=khatma)
                 messages.success(request, 'تم الانضمام إلى الختمة بنجاح')
                 is_participant = True
+
+                # Create a notification
                 try:
                     from notifications.models import Notification
-                    Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.username} انضم إلى الختمة: {khatma.title}', related_khatma=khatma)
+                    Notification.objects.create(
+                        user=khatma.creator,
+                        notification_type='khatma_progress',
+                        message=f'{request.user.username} انضم إلى الختمة: {khatma.title}',
+                        related_khatma=khatma
+                    )
                 except ImportError:
                     pass
-        context = {'khatma': khatma, 'parts': parts, 'is_participant': is_participant, 'is_creator': request.user.is_authenticated and khatma.creator == request.user, 'completed_parts': completed_parts, 'total_parts': total_parts, 'progress_percentage': progress_percentage}
+
+        # Prepare context for the template
+        context = {
+            'khatma': khatma,
+            'parts': parts,
+            'is_participant': is_participant,
+            'is_creator': request.user.is_authenticated and khatma.creator == request.user,
+            'completed_parts': completed_parts,
+            'total_parts': total_parts,
+            'progress_percentage': progress_percentage
+        }
+
         return render(request, 'khatma/khatma_detail.html', context)
     except Exception as e:
-        logging.error('Error in khatma_detail: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        # Log the error and display a user-friendly error page
+        logging.error(f"Error in khatma_detail view: {str(e)}")
+        return render(request, 'core/error.html', context={
+            'error_title': 'خطأ في عرض الختمة',
+            'error_message': 'حدث خطأ أثناء محاولة عرض تفاصيل الختمة. يرجى المحاولة مرة أخرى.',
+            'error_details': str(e)
+        })
 
 def khatma_list(request):
     try:
@@ -156,8 +240,12 @@ def delete_khatma(request, khatma_id):
         context = {'khatma': khatma}
         return render(request, 'khatma/delete_khatma.html', context)
     except Exception as e:
-        logging.error('Error in delete_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        logging.error(f"Error in delete_khatma view: {str(e)}")
+        return render(request, 'core/error.html', context={
+            'error_title': 'خطأ في حذف الختمة',
+            'error_message': 'حدث خطأ أثناء محاولة حذف الختمة. يرجى المحاولة مرة أخرى.',
+            'error_details': str(e)
+        })
 
 @login_required
 def complete_khatma(request, khatma_id):
@@ -177,8 +265,12 @@ def complete_khatma(request, khatma_id):
         context = {'khatma': khatma}
         return render(request, 'khatma/complete_khatma.html', context)
     except Exception as e:
-        logging.error('Error in complete_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        logging.error(f"Error in complete_khatma view: {str(e)}")
+        return render(request, 'core/error.html', context={
+            'error_title': 'خطأ في إكمال الختمة',
+            'error_message': 'حدث خطأ أثناء محاولة إكمال الختمة. يرجى المحاولة مرة أخرى.',
+            'error_details': str(e)
+        })
 
 @login_required
 def part_detail(request, khatma_id, part_id):
@@ -217,33 +309,61 @@ def part_detail(request, khatma_id, part_id):
 
 @login_required
 def assign_part(request, khatma_id, part_id):
+    """View for assigning a part to a participant"""
     try:
-        'View for assigning a part to a participant'
+        # Get the khatma and part objects
         khatma = get_object_or_404(Khatma, id=khatma_id)
         part = get_object_or_404(KhatmaPart, khatma=khatma, part_number=part_id)
+
+        # Check if the user has permission to assign parts
         if khatma.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لتعيين الأجزاء')
             return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+
+        # Handle form submission
         if request.method == 'POST':
             form = PartAssignmentForm(request.POST, khatma=khatma)
             if form.is_valid():
                 participant = form.cleaned_data['participant']
+
+                # Assign the part to the selected participant
                 part.assigned_to = participant
                 part.save()
+
+                # Create a notification for the participant
                 try:
                     from notifications.models import Notification
-                    Notification.objects.create(user=participant, notification_type='part_assigned', message=f'تم تعيين الجزء {part.part_number} لك في الختمة: {khatma.title}', related_khatma=khatma)
+                    Notification.objects.create(
+                        user=participant,
+                        notification_type='part_assigned',
+                        message=f'تم تعيين الجزء {part.part_number} لك في الختمة: {khatma.title}',
+                        related_khatma=khatma
+                    )
                 except ImportError:
                     pass
+
                 messages.success(request, f'تم تعيين الجزء {part.part_number} للمشارك {participant.username} بنجاح')
                 return redirect('khatma:khatma_detail', khatma_id=khatma.id)
         else:
+            # Display the form
             form = PartAssignmentForm(khatma=khatma)
-        context = {'form': form, 'khatma': khatma, 'part': part}
+
+        # Prepare context for the template
+        context = {
+            'form': form,
+            'khatma': khatma,
+            'part': part
+        }
+
         return render(request, 'khatma/assign_part.html', context)
     except Exception as e:
-        logging.error('Error in assign_part: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        # Log the error and display a user-friendly error page
+        logging.error(f"Error in assign_part view: {str(e)}")
+        return render(request, 'core/error.html', context={
+            'error_title': 'خطأ في تعيين الجزء',
+            'error_message': 'حدث خطأ أثناء محاولة تعيين الجزء. يرجى المحاولة مرة أخرى.',
+            'error_details': str(e)
+        })
 
 @login_required
 def complete_part(request, khatma_id, part_id):
@@ -436,8 +556,12 @@ def khatma_participants(request, khatma_id):
         context = {'khatma': khatma, 'participants': participants}
         return render(request, 'khatma/khatma_participants.html', context)
     except Exception as e:
-        logging.error('Error in khatma_participants: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        logging.error(f"Error in khatma_participants view: {str(e)}")
+        return render(request, 'core/error.html', context={
+            'error_title': 'خطأ في عرض المشاركين',
+            'error_message': 'حدث خطأ أثناء محاولة عرض المشاركين في الختمة. يرجى المحاولة مرة أخرى.',
+            'error_details': str(e)
+        })
 
 @login_required
 def remove_participant(request, khatma_id, user_id):

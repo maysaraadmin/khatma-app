@@ -20,18 +20,50 @@ class KhatmaCreationForm(forms.ModelForm):
     """Form for creating a new Khatma"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = Khatma
-        fields = ['title', 'description', 'khatma_type', 'frequency', 'is_public', 'visibility', 'allow_comments', 'target_completion_date', 'send_reminders', 'reminder_frequency']
-        widgets = {'target_completion_date': forms.DateInput(attrs={'type': 'date'}), 'description': forms.Textarea(attrs={'rows': 4})}
+        fields = ['title', 'description', 'khatma_type', 'frequency', 'is_public', 'visibility',
+                 'allow_comments', 'target_completion_date', 'send_reminders', 'reminder_frequency']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل عنوان الختمة'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'وصف الختمة (اختياري)'}),
+            'khatma_type': forms.Select(attrs={'class': 'form-control'}),
+            'frequency': forms.Select(attrs={'class': 'form-control'}),
+            'visibility': forms.Select(attrs={'class': 'form-control'}),
+            'target_completion_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'reminder_frequency': forms.Select(attrs={'class': 'form-control'}),
+        }
 
     def __init__(self, *args, **kwargs):
-        '''"""Function to   init  ."""'''
+        """Initialize the form with user-specific data"""
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        # Add help text to fields
+        self.fields['title'].help_text = 'أدخل عنواناً واضحاً للختمة'
+        self.fields['khatma_type'].help_text = 'اختر نوع الختمة'
+        self.fields['target_completion_date'].help_text = 'التاريخ المستهدف لإكمال الختمة (اختياري)'
+
+        # Add deceased field for memorial khatmas
         if self.user:
-            self.fields['deceased'] = forms.ModelChoiceField(queryset=Deceased.objects.filter(added_by=self.user), required=False, label='المتوفى (للختمات التذكارية)', widget=forms.Select(attrs={'class': 'form-control'}))
+            self.fields['deceased'] = forms.ModelChoiceField(
+                queryset=Deceased.objects.filter(added_by=self.user),
+                required=False,
+                label='المتوفى (للختمات التذكارية)',
+                widget=forms.Select(attrs={'class': 'form-control'})
+            )
             self.fields['deceased'].widget.attrs['data-show-if'] = 'khatma_type=memorial'
+
+    def clean(self):
+        """Validate the form data"""
+        cleaned_data = super().clean()
+        khatma_type = cleaned_data.get('khatma_type')
+        deceased = cleaned_data.get('deceased')
+
+        # If khatma type is memorial, deceased is required
+        if khatma_type == 'memorial' and not deceased:
+            self.add_error('deceased', 'يجب اختيار متوفى للختمات التذكارية')
+
+        return cleaned_data
 
 class KhatmaEditForm(forms.ModelForm):
     """Form for editing an existing Khatma"""
@@ -49,20 +81,28 @@ class KhatmaEditForm(forms.ModelForm):
         if self.user and self.instance.khatma_type == 'memorial':
             self.fields['deceased'] = forms.ModelChoiceField(queryset=Deceased.objects.filter(added_by=self.user), required=False, label='المتوفى', widget=forms.Select(attrs={'class': 'form-control'}), initial=self.instance.deceased)
 
-class PartAssignmentForm(forms.ModelForm):
+class PartAssignmentForm(forms.Form):
     """Form for assigning parts to participants"""
 
-    class Meta:
-        '''"""Class representing Meta."""'''
-        model = PartAssignment
-        fields = ['participant']
+    participant = forms.ModelChoiceField(
+        queryset=None,
+        required=True,
+        label='المشارك',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
     def __init__(self, *args, **kwargs):
-        '''"""Function to   init  ."""'''
+        """Initialize the form with khatma-specific data"""
         self.khatma = kwargs.pop('khatma', None)
         super().__init__(*args, **kwargs)
         if self.khatma:
-            self.fields['participant'].queryset = self.khatma.participants.all()
+            from django.contrib.auth.models import User
+            # Get all participants in this khatma
+            from .models import Participant
+            # Get the user IDs of participants in this khatma
+            participant_users = Participant.objects.filter(khatma=self.khatma).values_list('user', flat=True)
+            # Set the queryset to include only these users
+            self.fields['participant'].queryset = User.objects.filter(id__in=participant_users)
 
 class QuranReadingForm(forms.ModelForm):
     """Form for tracking Quran reading progress"""

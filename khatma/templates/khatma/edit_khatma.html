@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}تعديل الختمة - {{ khatma.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">تعديل الختمة</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">عنوان الختمة</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">وصف الختمة</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.khatma_type.id_for_label }}" class="form-label">نوع الختمة</label>
+                            {{ form.khatma_type }}
+                            {% if form.khatma_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.khatma_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if form.deceased %}
+                        <div class="mb-3" id="deceased-field" style="display: {% if khatma.khatma_type == 'memorial' %}block{% else %}none{% endif %};">
+                            <label for="{{ form.deceased.id_for_label }}" class="form-label">المتوفى</label>
+                            {{ form.deceased }}
+                            {% if form.deceased.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.deceased.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.frequency.id_for_label }}" class="form-label">تكرار الختمة</label>
+                            {{ form.frequency }}
+                            {% if form.frequency.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.frequency.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.target_completion_date.id_for_label }}" class="form-label">تاريخ الإكمال المستهدف</label>
+                            {{ form.target_completion_date }}
+                            {% if form.target_completion_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.target_completion_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_public }}
+                                <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                    ختمة عامة
+                                </label>
+                            </div>
+                            {% if form.is_public.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.is_public.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.visibility.id_for_label }}" class="form-label">مستوى الرؤية</label>
+                            {{ form.visibility }}
+                            {% if form.visibility.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.visibility.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.allow_comments }}
+                                <label class="form-check-label" for="{{ form.allow_comments.id_for_label }}">
+                                    السماح بالتعليقات
+                                </label>
+                            </div>
+                            {% if form.allow_comments.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.allow_comments.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.send_reminders }}
+                                <label class="form-check-label" for="{{ form.send_reminders.id_for_label }}">
+                                    إرسال تذكيرات
+                                </label>
+                            </div>
+                            {% if form.send_reminders.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.send_reminders.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3" id="reminder-frequency-field" style="display: {% if khatma.send_reminders %}block{% else %}none{% endif %};">
+                            <label for="{{ form.reminder_frequency.id_for_label }}" class="form-label">تكرار التذكيرات</label>
+                            {{ form.reminder_frequency }}
+                            {% if form.reminder_frequency.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.reminder_frequency.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i> العودة
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> حفظ التغييرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const khatmaTypeSelect = document.getElementById('{{ form.khatma_type.id_for_label }}');
+        const deceasedField = document.getElementById('deceased-field');
+        const sendRemindersCheckbox = document.getElementById('{{ form.send_reminders.id_for_label }}');
+        const reminderFrequencyField = document.getElementById('reminder-frequency-field');
+        
+        if (khatmaTypeSelect && deceasedField) {
+            khatmaTypeSelect.addEventListener('change', function() {
+                if (this.value === 'memorial') {
+                    deceasedField.style.display = 'block';
+                } else {
+                    deceasedField.style.display = 'none';
+                }
+            });
+        }
+        
+        if (sendRemindersCheckbox && reminderFrequencyField) {
+            sendRemindersCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    reminderFrequencyField.style.display = 'block';
+                } else {
+                    reminderFrequencyField.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

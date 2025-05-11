@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}إزالة مشارك - {{ khatma.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">إزالة مشارك</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>تحذير:</strong> أنت على وشك إزالة هذا المشارك من الختمة.
+                    </div>
+                    
+                    <div class="participant-info mb-4">
+                        <h5>معلومات المشارك</h5>
+                        <p><strong>اسم المستخدم:</strong> {{ participant_user.username }}</p>
+                        <p><strong>الختمة:</strong> {{ khatma.title }}</p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <p class="text-danger">هل أنت متأكد من رغبتك في إزالة هذا المشارك من الختمة؟</p>
+                        <p>سيتم إلغاء تعيين جميع الأجزاء المخصصة لهذا المشارك.</p>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'khatma:khatma_participants' khatma_id=khatma.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-person-x me-1"></i> نعم، إزالة المشارك
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

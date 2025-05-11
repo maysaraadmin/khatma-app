@@ -5,7 +5,7 @@ from django.urls import reverse
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.adapter import DefaultAccountAdapter
 '\n'
-from .models import Profile
+from users.models import Profile
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     """

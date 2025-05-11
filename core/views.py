@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views import View
+from django.http import HttpResponseRedirect
 import logging
 import traceback
 
@@ -22,6 +23,8 @@ from khatma.models import Khatma, Deceased, PartAssignment, Participant, QuranRe
 from quran.models import QuranPart, Surah, Ayah
 from groups.models import ReadingGroup, GroupMembership
 from notifications.models import Notification
+from .models import NewsletterSubscription
+from .forms import NewsletterSubscriptionForm
 
 # Import services
 from core.services import get_dashboard_data, get_community_data, search_global
@@ -197,6 +200,38 @@ def contact_us(request):
     return render(request, 'core/contact_us.html')
 
 
+@require_POST
+def newsletter_subscribe(request):
+    """
+    Newsletter subscription view.
+    """
+    try:
+        form = NewsletterSubscriptionForm(request.POST)
+        if form.is_valid():
+            subscription = form.save()
+            messages.success(request, 'تم الاشتراك في النشرة البريدية بنجاح.')
+        else:
+            # If there are form errors but they're just about the email already existing
+            if 'email' in form.errors and len(form.errors) == 1 and 'تم إعادة تفعيل اشتراكك' in str(form.errors['email']):
+                messages.success(request, 'تم إعادة تفعيل اشتراكك في النشرة البريدية.')
+            elif 'email' in form.errors and len(form.errors) == 1 and 'أنت مشترك بالفعل' in str(form.errors['email']):
+                messages.info(request, 'أنت مشترك بالفعل في النشرة البريدية.')
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{form.fields[field].label}: {error}")
+
+        # Redirect back to the referring page or home
+        referer = request.META.get('HTTP_REFERER')
+        if referer:
+            return HttpResponseRedirect(referer)
+        return redirect('core:index')
+    except Exception as e:
+        logger.error(f"Error in newsletter_subscribe view: {str(e)}")
+        messages.error(request, 'حدث خطأ أثناء الاشتراك في النشرة البريدية. يرجى المحاولة مرة أخرى.')
+        return redirect('core:index')
+
+
 def set_language(request):
     """
     Set language preference.
@@ -353,38 +388,10 @@ def khatma_dashboard(request):
 @login_required
 def create_khatma(request):
     """
-    Create khatma view.
+    Create khatma view - redirects to the khatma app's create_khatma view.
     """
-    try:
-        from khatma.forms import KhatmaCreationForm
-        from khatma.models import Deceased, KhatmaPart, Participant
-
-        if request.method == 'POST':
-            form = KhatmaCreationForm(request.POST, user=request.user)
-            if form.is_valid():
-                khatma = form.save(commit=False)
-                khatma.creator = request.user
-                if khatma.khatma_type == 'memorial' and 'deceased' in form.cleaned_data:
-                    khatma.deceased = form.cleaned_data['deceased']
-                khatma.save()
-                for i in range(1, 31):
-                    KhatmaPart.objects.create(khatma=khatma, part_number=i)
-                Participant.objects.create(user=request.user, khatma=khatma)
-                try:
-                    from notifications.models import Notification
-                    Notification.objects.create(user=request.user, notification_type='khatma_progress', message=f'تم إنشاء ختمة جديدة: {khatma.title}', related_khatma=khatma)
-                except ImportError:
-                    pass
-                messages.success(request, 'تم إنشاء الختمة بنجاح')
-                return redirect('khatma:khatma_detail', khatma_id=khatma.id)
-        else:
-            form = KhatmaCreationForm(user=request.user)
-        deceased_list = Deceased.objects.filter(added_by=request.user).order_by('-death_date')
-        context = {'form': form, 'deceased_list': deceased_list}
-        return render(request, 'khatma/create_khatma.html', context)
-    except Exception as e:
-        logger.error(f"Error in create_khatma view: {str(e)}")
-        return render(request, 'core/error.html', {'error': str(e)})
+    # Redirect to the khatma app's create_khatma view
+    return redirect('khatma:create_khatma')
 
 
 def khatma_detail(request, khatma_id):

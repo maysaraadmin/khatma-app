@@ -1,6 +1,7 @@
 '''"""This module contains Module functionality."""'''
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class Post(models.Model):
     """Social post model for community interactions"""
@@ -38,3 +39,21 @@ class PostReaction(models.Model):
     def __str__(self):
         '''"""Function to   str  ."""'''
         return f"{self.user.username}'s {self.get_reaction_type_display()} reaction"
+
+
+class NewsletterSubscription(models.Model):
+    """Newsletter subscription model"""
+    email = models.EmailField(unique=True, verbose_name='البريد الإلكتروني')
+    name = models.CharField(max_length=100, blank=True, null=True, verbose_name='الاسم')
+    is_active = models.BooleanField(default=True, verbose_name='مفعل')
+    subscribed_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الاشتراك')
+    last_sent_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ آخر إرسال')
+
+    class Meta:
+        '''"""Class representing Meta."""'''
+        verbose_name = 'اشتراك النشرة البريدية'
+        verbose_name_plural = 'اشتراكات النشرة البريدية'
+
+    def __str__(self):
+        '''"""Function to   str  ."""'''
+        return self.email

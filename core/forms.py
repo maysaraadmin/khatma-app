@@ -5,9 +5,10 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 '\n'
 from users.models import Profile
-from khatma.models import Khatma, PartAssignment, PublicKhatma, KhatmaComment, KhatmaInteraction, KhatmaChat
-from groups.models import ReadingGroup, GroupMembership, GroupChat
+from khatma.models import Khatma, PartAssignment
+from groups.models import ReadingGroup, GroupMembership
 from quran.models import QuranPart
+from .models import NewsletterSubscription
 
 class ExtendedUserCreationForm(UserCreationForm):
     """Extended user creation form with additional fields"""
@@ -107,22 +108,23 @@ class PartAssignmentForm(forms.ModelForm):
         model = PartAssignment
         fields = ['dua', 'notes']
 
-class KhatmaChatForm(forms.ModelForm):
-    """Form for Khatma chat messages"""
-
-    class Meta:
-        '''"""Class representing Meta."""'''
-        model = KhatmaChat
-        fields = ['message']
-        widgets = {'message': forms.Textarea(attrs={'rows': 3, 'placeholder': 'اكتب رسالتك هنا...'})}
-
-class KhatmaInteractionForm(forms.ModelForm):
-    """Form for Khatma interactions (likes, prayers, etc.)"""
-
-    class Meta:
-        '''"""Class representing Meta."""'''
-        model = KhatmaInteraction
-        fields = ['interaction_type']
+# These forms are commented out because the models are not available
+# class KhatmaChatForm(forms.ModelForm):
+#     """Form for Khatma chat messages"""
+#
+#     class Meta:
+#         '''"""Class representing Meta."""'''
+#         model = KhatmaChat
+#         fields = ['message']
+#         widgets = {'message': forms.Textarea(attrs={'rows': 3, 'placeholder': 'اكتب رسالتك هنا...'})}
+#
+# class KhatmaInteractionForm(forms.ModelForm):
+#     """Form for Khatma interactions (likes, prayers, etc.)"""
+#
+#     class Meta:
+#         '''"""Class representing Meta."""'''
+#         model = KhatmaInteraction
+#         fields = ['interaction_type']
 
 class KhatmaCreationForm(forms.Form):
     """Form for creating a new Khatma"""
@@ -135,3 +137,43 @@ class KhatmaCreationForm(forms.Form):
     end_date = forms.DateField(initial=timezone.now().date() + timezone.timedelta(days=30), widget=forms.DateInput(attrs={'class': 'form-control', 'id': 'id_end_date', 'type': 'date'}))
     frequency = forms.ChoiceField(choices=FREQUENCY_CHOICES, widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_frequency'}))
     is_public = forms.BooleanField(required=False, initial=True, widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_is_public'}))
+
+
+class NewsletterSubscriptionForm(forms.ModelForm):
+    """Form for newsletter subscription"""
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'البريد الإلكتروني',
+            'aria-label': 'البريد الإلكتروني',
+            'aria-describedby': 'newsletter-button'
+        })
+    )
+    name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'الاسم (اختياري)',
+            'aria-label': 'الاسم'
+        })
+    )
+
+    class Meta:
+        '''"""Class representing Meta."""'''
+        model = NewsletterSubscription
+        fields = ['email', 'name']
+
+    def clean_email(self):
+        '''"""Validate email."""'''
+        email = self.cleaned_data.get('email')
+        if NewsletterSubscription.objects.filter(email=email).exists():
+            # If the email exists but is not active, reactivate it
+            subscription = NewsletterSubscription.objects.get(email=email)
+            if not subscription.is_active:
+                subscription.is_active = True
+                subscription.save()
+                raise forms.ValidationError('تم إعادة تفعيل اشتراكك في النشرة البريدية.')
+            else:
+                raise forms.ValidationError('أنت مشترك بالفعل في النشرة البريدية.')
+        return email

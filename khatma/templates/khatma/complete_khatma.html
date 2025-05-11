@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}إكمال الختمة - {{ khatma.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">إكمال الختمة</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>ملاحظة:</strong> سيتم تحديد جميع الأجزاء غير المكتملة كمكتملة وسيتم تحديد الختمة كمكتملة.
+                    </div>
+                    
+                    <div class="khatma-info mb-4">
+                        <h5>معلومات الختمة</h5>
+                        <p><strong>العنوان:</strong> {{ khatma.title }}</p>
+                        <p><strong>النوع:</strong> {{ khatma.get_khatma_type_display }}</p>
+                        <p><strong>تاريخ الإنشاء:</strong> {{ khatma.created_at|date:"Y-m-d" }}</p>
+                        <p><strong>عدد المشاركين:</strong> {{ khatma.participants.count }}</p>
+                        
+                        {% with completed_parts=khatma.parts.filter.is_completed.count %}
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ completed_parts|floatformat:0 }}%;" aria-valuenow="{{ completed_parts|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">{{ completed_parts|floatformat:0 }}%</div>
+                        </div>
+                        <p><strong>عدد الأجزاء المكتملة:</strong> {{ completed_parts }} من 30</p>
+                        <p><strong>عدد الأجزاء المتبقية:</strong> {{ 30|add:"-"|add:completed_parts }}</p>
+                        {% endwith %}
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <p>هل أنت متأكد من رغبتك في تحديد هذه الختمة كمكتملة؟</p>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i> نعم، إكمال الختمة
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

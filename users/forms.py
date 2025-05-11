@@ -6,10 +6,20 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Profile
 
 class ExtendedUserCreationForm(UserCreationForm):
-    """Extended user creation form with email field"""
+    """Extended user creation form with email field and account type"""
     email = forms.EmailField(required=True, label='البريد الإلكتروني')
     first_name = forms.CharField(max_length=30, required=False, label='الاسم الأول')
     last_name = forms.CharField(max_length=30, required=False, label='الاسم الأخير')
+    account_type = forms.ChoiceField(
+        choices=[
+            ('individual', 'فردي'),
+            ('family', 'عائلي'),
+            ('charity', 'مؤسسة خيرية')
+        ],
+        initial='individual',
+        required=True,
+        label='نوع الحساب'
+    )
 
     class Meta:
         '''"""Class representing Meta."""'''
@@ -24,6 +34,11 @@ class ExtendedUserCreationForm(UserCreationForm):
         user.last_name = self.cleaned_data['last_name']
         if commit:
             user.save()
+            Profile.objects.create(
+                user=user,
+                preferred_language='ar',
+                account_type=self.cleaned_data.get('account_type', 'individual')
+            )
         return user
 
 class UserProfileForm(forms.ModelForm):

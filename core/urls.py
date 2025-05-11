@@ -18,8 +18,7 @@ urlpatterns = [
     path('groups/', views.group_list, name='group_list'),  # Changed to use the group_list view
     path('groups/create/', views.create_group, name='create_group'),  # Added create_group view
     path('khatma/dashboard/', views.khatma_dashboard, name='khatma_dashboard'),
-    path('khatma/create/', views.create_khatma, name='create_khatma'),
-    path('khatma/<int:khatma_id>/', views.khatma_detail, name='khatma_detail'),
+    # Removed duplicate khatma URLs to avoid conflicts with khatma app URLs
     path('deceased/create/', views.create_deceased, name='create_deceased'),
     path('deceased/', views.deceased_list, name='deceased_list'),
     path('deceased/<int:deceased_id>/', views.deceased_detail, name='deceased_detail'),
@@ -32,4 +31,5 @@ urlpatterns = [
     path('quran/part/<int:part_number>/', views.quran_part, name='quran_part'),
     path('notifications/', views.notifications, name='notifications'),
     path('achievements/', views.achievements, name='achievements'),
+    path('newsletter/subscribe/', views.newsletter_subscribe, name='newsletter_subscribe'),
 ]

@@ -27,7 +27,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>رقم الجزء:</strong> {{ part.part_number }}</p>
-                        <p><strong>الحالة:</strong> 
+                        <p><strong>الحالة:</strong>
                             {% if part.is_completed %}
                                 <span class="text-success">تم الإكمال</span>
                             {% else %}
@@ -39,7 +39,7 @@
                         {% endif %}
                     </div>
                     <div class="col-md-6">
-                        <p><strong>مخصص لـ:</strong> 
+                        <p><strong>مخصص لـ:</strong>
                             {% if part.assigned_to %}
                                 {{ part.assigned_to.username }}
                                 {% if part.assigned_to == user %}
@@ -53,31 +53,31 @@
                         <p><strong>منشئ الختمة:</strong> {{ khatma.creator.username }}</p>
                     </div>
                 </div>
-                
+
                 {% if is_assigned_to_user or is_creator %}
                     <hr>
                     <form method="post">
                         {% csrf_token %}
-                        
+
                         <div class="mb-3 form-check">
                             {{ form.is_completed }}
                             <label class="form-check-label" for="{{ form.is_completed.id_for_label }}">تم إكمال هذا الجزء</label>
                         </div>
-                        
+
                         <div id="completion-details" {% if not part.is_completed %}style="display: none;"{% endif %}>
                             <div class="mb-3">
                                 <label for="{{ form.completion_notes.id_for_label }}" class="form-label">ملاحظات الإكمال</label>
                                 {{ form.completion_notes }}
                                 <div class="form-text">يمكنك إضافة ملاحظات حول قراءتك لهذا الجزء (اختياري)</div>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label for="{{ form.completion_dua.id_for_label }}" class="form-label">دعاء الإكمال</label>
                                 {{ form.completion_dua }}
                                 <div class="form-text">يمكنك إضافة دعاء خاص بإكمال هذا الجزء (اختياري)</div>
                             </div>
                         </div>
-                        
+
                         <div class="text-center">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> حفظ التغييرات
@@ -87,7 +87,7 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">محتوى الجزء</h5>
@@ -96,7 +96,7 @@
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> يمكنك قراءة هذا الجزء من القرآن الكريم من خلال الروابط التالية:
                 </div>
-                
+
                 <div class="list-group">
                     {% for surah in quran_part.surahs.all %}
                         <a href="{% url 'quran:surah_detail' surah_number=surah.surah_number %}" class="list-group-item list-group-item-action">
@@ -113,16 +113,16 @@
                         </div>
                     {% endfor %}
                 </div>
-                
+
                 <div class="text-center mt-3">
-                    <a href="{% url 'quran:juz_detail' part_number=part.part_number %}" class="btn btn-primary">
+                    <a href="{% url 'quran:quran_part' part_number=part.part_number %}" class="btn btn-primary">
                         <i class="fas fa-book-open"></i> قراءة الجزء في صفحة القرآن
                     </a>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-4">
         <div class="card mb-4">
             <div class="card-header">
@@ -131,13 +131,13 @@
             <div class="card-body">
                 <h6>{{ khatma.title }}</h6>
                 <p>{{ khatma.description|truncatechars:150 }}</p>
-                
+
                 <div class="progress mb-3">
                     {% with progress=khatma.get_progress_percentage %}
                         <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress|floatformat:0 }}%</div>
                     {% endwith %}
                 </div>
-                
+
                 <div class="text-center">
                     <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-eye"></i> عرض تفاصيل الختمة
@@ -145,7 +145,7 @@
                 </div>
             </div>
         </div>
-        
+
         {% if part.assigned_to %}
             <div class="card mb-4">
                 <div class="card-header">
@@ -165,7 +165,7 @@
                             <p class="small text-muted">{{ part.assigned_to.profile.bio|truncatechars:100 }}</p>
                         {% endif %}
                     </div>
-                    
+
                     {% if part.is_completed %}
                         <div class="alert alert-success">
                             <i class="fas fa-check-circle"></i> تم إكمال هذا الجزء بتاريخ {{ part.completed_at|date:"Y-m-d" }}
@@ -192,7 +192,7 @@
                 </div>
             </div>
         {% endif %}
-        
+
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">الأجزاء المجاورة</h5>
@@ -208,7 +208,7 @@
                             <i class="fas fa-arrow-right"></i> الجزء السابق
                         </button>
                     {% endif %}
-                    
+
                     {% if part.part_number < 30 %}
                         <a href="{% url 'khatma:part_detail' khatma_id=khatma.id part_id=part.part_number|add:'1' %}" class="btn btn-outline-primary">
                             الجزء التالي <i class="fas fa-arrow-left"></i>
@@ -231,7 +231,7 @@
         // Show/hide completion details based on checkbox
         var completedCheckbox = document.getElementById('{{ form.is_completed.id_for_label }}');
         var completionDetails = document.getElementById('completion-details');
-        
+
         if (completedCheckbox && completionDetails) {
             completedCheckbox.addEventListener('change', function() {
                 if (this.checked) {
