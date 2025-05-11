@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}قراء القرآن الكريم{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-center mb-4">قراء القرآن الكريم</h1>
+            <p class="lead text-center mb-5">استمع إلى تلاوات القرآن الكريم بأصوات أشهر القراء</p>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        {% for reciter in reciters %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4 text-center">
+                    <div class="card-img-top position-relative">
+                        <div class="ratio ratio-1x1 rounded-top-4 overflow-hidden">
+                            <img src="/{{ reciter.image|default:'https://via.placeholder.com/300x300.png?text=صورة+القارئ' }}"
+                                 class="img-fluid" alt="{{ reciter.name }}"
+                                 onerror="this.src='https://via.placeholder.com/300x300.png?text={{ reciter.name }}'">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ reciter.name }}</h5>
+                        <p class="card-text text-muted">{{ reciter.style }}</p>
+                        <a href="/reciters/{{ reciter.folder }}" class="btn btn-primary">
+                            <i class="bi bi-play-fill me-1"></i> استماع
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

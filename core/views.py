@@ -426,22 +426,37 @@ def profile(request):
     User profile view.
     """
     try:
-        profile, created = Profile.objects.get_or_create(user=request.user)
-        user_khatmas = Khatma.objects.filter(creator=request.user).order_by('-created_at')
-        participated_khatmas = Khatma.objects.filter(participants__user=request.user).exclude(creator=request.user).order_by('-created_at')
-
-        # Get user achievements
-        achievements = UserAchievement.objects.filter(user=request.user).order_by('-date_earned')
-
-        return render(request, 'core/profile.html', {
-            'profile': profile,
-            'user_khatmas': user_khatmas,
-            'participated_khatmas': participated_khatmas,
-            'achievements': achievements
+        # Use the user_dashboard.html template instead of profile.html
+        return render(request, 'core/user_dashboard.html', {
+            'user_khatmas': [],
+            'user_groups': [],
+            'achievements': [],
+            'completed_parts': 0,
+            'total_parts': 30,
+            'completion_percentage': 0,
+            'recent_activities': []
         })
     except Exception as e:
-        logger.error(f"Error in profile view: {str(e)}")
-        return render(request, 'core/error.html', {'error': str(e)})
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ERROR in profile view: {str(e)}\n{error_details}")
+        logger.error(f"Error in profile view: {str(e)}\n{error_details}")
+
+        # Return a more detailed error page
+        return render(request, 'core/error.html', {
+            'error_title': 'خطأ في صفحة الملف الشخصي',
+            'error_message': 'حدث خطأ أثناء تحميل صفحة الملف الشخصي',
+            'error': str(e),
+            'error_details': error_details
+        })
+
+
+@login_required
+def my_profile(request):
+    """
+    My profile view.
+    """
+    return render(request, 'core/my_profile.html')
 
 
 @login_required
@@ -476,10 +491,11 @@ def quran_reciters(request):
     try:
         # This would typically come from a Reciter model, but for now we'll use a static list
         reciters = [
-            {'id': 1, 'name': 'عبد الباسط عبد الصمد', 'style': 'مرتل', 'image': 'reciters/abdulbasit.jpg'},
-            {'id': 2, 'name': 'محمود خليل الحصري', 'style': 'مرتل', 'image': 'reciters/elhosary.jpg'},
-            {'id': 3, 'name': 'محمد صديق المنشاوي', 'style': 'مرتل', 'image': 'reciters/minshawi.jpg'},
-            {'id': 4, 'name': 'مشاري راشد العفاسي', 'style': 'مرتل', 'image': 'reciters/alafasy.jpg'},
+            {'id': 1, 'name': 'محمد أحمد الزين', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 2, 'name': 'عبد الباسط عبد الصمد', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 3, 'name': 'محمود خليل الحصري', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 4, 'name': 'محمد صديق المنشاوي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 5, 'name': 'مشاري راشد العفاسي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
         ]
 
         return render(request, 'core/quran_reciters.html', {
@@ -487,6 +503,44 @@ def quran_reciters(request):
         })
     except Exception as e:
         logger.error(f"Error in quran_reciters view: {str(e)}")
+        return render(request, 'core/error.html', {'error': str(e)})
+
+
+def reciter_detail(request, folder):
+    """
+    Reciter detail view.
+    """
+    try:
+        # Get the reciter information
+        reciters = [
+            {'id': 1, 'name': 'محمد أحمد الزين', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 2, 'name': 'عبد الباسط عبد الصمد', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 3, 'name': 'محمود خليل الحصري', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 4, 'name': 'محمد صديق المنشاوي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+            {'id': 5, 'name': 'مشاري راشد العفاسي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
+        ]
+
+        reciter = next((r for r in reciters if r['folder'] == folder), None)
+
+        if not reciter:
+            return render(request, 'core/error.html', {'error': 'Reciter not found'})
+
+        # Get the list of surahs
+        surahs = [
+            {'id': 1, 'name': 'الفاتحة', 'verses': 7},
+            {'id': 2, 'name': 'البقرة', 'verses': 286},
+            {'id': 3, 'name': 'آل عمران', 'verses': 200},
+            {'id': 4, 'name': 'النساء', 'verses': 176},
+            {'id': 5, 'name': 'المائدة', 'verses': 120},
+            # Add more surahs as needed
+        ]
+
+        return render(request, 'core/reciter_detail.html', {
+            'reciter': reciter,
+            'surahs': surahs
+        })
+    except Exception as e:
+        logger.error(f"Error in reciter_detail view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
 
 

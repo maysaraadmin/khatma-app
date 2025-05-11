@@ -200,21 +200,21 @@
                             <span>{{ user.username }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end animate__animated animate__fadeIn animate__faster">
-                            <li><a class="dropdown-item" href="{% url 'core:profile' %}"><i class="bi bi-person me-2"></i> الملف الشخصي</a></li>
+                            <li><a class="dropdown-item" href="{% url 'core:my_profile' %}"><i class="bi bi-person me-2"></i> الملف الشخصي</a></li>
                             <li><a class="dropdown-item" href="{% url 'core:settings' %}"><i class="bi bi-gear me-2"></i> الإعدادات</a></li>
                             <li><a class="dropdown-item" href="{% url 'core:quran_reciters' %}"><i class="bi bi-mic-fill me-2"></i> القراء</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i> تسجيل الخروج</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right me-2"></i> تسجيل الخروج</a></li>
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item me-2">
-                        <a class="btn btn-outline-light" href="{% url 'login' %}">
+                        <a class="btn btn-outline-light" href="{% url 'users:login' %}">
                             <i class="bi bi-box-arrow-in-right me-1"></i> تسجيل الدخول
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-accent" href="#">
+                        <a class="btn btn-accent" href="{% url 'users:register' %}">
                             <i class="bi bi-person-plus me-1"></i> إنشاء حساب
                         </a>
                     </li>

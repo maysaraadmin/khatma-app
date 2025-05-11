@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ reciter.name }} - قارئ القرآن الكريم{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'core:quran_reciters' %}">القراء</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ reciter.name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <img src="/{{ reciter.image }}" alt="{{ reciter.name }}" class="img-fluid rounded-circle" style="width: 150px; height: 150px; object-fit: cover;"
+                             onerror="this.src='https://via.placeholder.com/150x150.png?text={{ reciter.name }}'">
+                    </div>
+                    <h3 class="card-title">{{ reciter.name }}</h3>
+                    <p class="text-muted">{{ reciter.style }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3 rounded-top-4">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-book me-2"></i> سور القرآن الكريم
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                        {% for surah in surahs %}
+                            <div class="col">
+                                <div class="card h-100 shadow-sm border-0 rounded-3">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">{{ surah.name }}</h5>
+                                        <p class="text-muted small">{{ surah.verses }} آية</p>
+                                        <a href="#" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-play-fill me-1"></i> استماع
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

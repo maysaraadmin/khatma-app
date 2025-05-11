@@ -25,8 +25,10 @@ urlpatterns = [
     path('deceased/<int:deceased_id>/', views.deceased_detail, name='deceased_detail'),
     # Add missing URLs from the template
     path('profile/', views.profile, name='profile'),
+    path('my-profile/', views.my_profile, name='my_profile'),
     path('settings/', views.settings, name='settings'),
     path('quran/reciters/', views.quran_reciters, name='quran_reciters'),
+    path('reciters/<str:folder>/', views.reciter_detail, name='reciter_detail'),
     path('quran/part/<int:part_number>/', views.quran_part, name='quran_part'),
     path('notifications/', views.notifications, name='notifications'),
     path('achievements/', views.achievements, name='achievements'),
