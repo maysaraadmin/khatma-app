@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}إنشاء حساب{% endblock %}
+
+{% block extra_css %}
+<style>
+  .separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  .separator::before,
+  .separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .separator::before {
+    margin-right: 1em;
+  }
+
+  .separator::after {
+    margin-left: 1em;
+  }
+
+  .separator-text {
+    padding: 0 10px;
+  }
+
+  .form-control:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+  }
+
+  .btn-success {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+  }
+
+  .btn-success:hover {
+    background-color: #3e8e41;
+    border-color: #3e8e41;
+  }
+
+  .invalid-feedback {
+    font-size: 0.875rem;
+    color: #dc3545;
+  }
+
+  .was-validated .form-control:invalid {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
+          <h2 class="card-title text-center mb-4 fw-bold text-success">إنشاء حساب جديد</h2>
+
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            {% if form.errors %}
+              <div class="alert alert-danger">
+                {% for field, errors in form.errors.items %}
+                  {% for error in errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="id_username" class="form-label">اسم المستخدم</label>
+              <input type="text" name="username" id="id_username" class="form-control" required>
+              <div class="invalid-feedback">
+                يرجى إدخال اسم مستخدم صالح.
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="id_first_name" class="form-label">الاسم الأول</label>
+                <input type="text" name="first_name" id="id_first_name" class="form-control">
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="id_last_name" class="form-label">الاسم الأخير</label>
+                <input type="text" name="last_name" id="id_last_name" class="form-control">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="id_email" class="form-label">البريد الإلكتروني</label>
+              <input type="email" name="email" id="id_email" class="form-control" required>
+              <div class="invalid-feedback">
+                يرجى إدخال بريد إلكتروني صالح.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="id_password1" class="form-label">كلمة المرور</label>
+              <input type="password" name="password1" id="id_password1" class="form-control" required>
+              <div class="invalid-feedback">
+                يرجى إدخال كلمة مرور قوية.
+              </div>
+              <div class="form-text small text-muted">
+                <ul class="mb-0 ps-3">
+                  <li>يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.</li>
+                  <li>يجب أن تحتوي على أحرف وأرقام.</li>
+                  <li>لا يمكن أن تكون كلمة المرور مشابهة لاسم المستخدم.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="id_password2" class="form-label">تأكيد كلمة المرور</label>
+              <input type="password" name="password2" id="id_password2" class="form-control" required>
+              <div class="invalid-feedback">
+                يجب أن تتطابق كلمتا المرور.
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 mb-4">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-person-plus-fill me-2"></i>إنشاء حساب
+              </button>
+            </div>
+
+            <div class="separator mb-4">
+              <span class="separator-text">أو</span>
+            </div>
+
+            <div class="text-center">
+              <p class="mb-0">لديك حساب بالفعل؟ <a href="{% url 'users:login' %}" class="text-success">تسجيل الدخول</a></p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.getElementsByClassName('needs-validation');
+    // Loop over them and prevent submission
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+
+    // Check if passwords match
+    var password1 = document.getElementById('id_password1');
+    var password2 = document.getElementById('id_password2');
+
+    function validatePassword() {
+      if (password1.value != password2.value) {
+        password2.setCustomValidity('كلمات المرور غير متطابقة');
+      } else {
+        password2.setCustomValidity('');
+      }
+    }
+
+    password1.addEventListener('change', validatePassword);
+    password2.addEventListener('keyup', validatePassword);
+  }, false);
+})();
+</script>
+{% endblock %}

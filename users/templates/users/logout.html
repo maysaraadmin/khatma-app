@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}تسجيل الخروج{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4 text-center">
+          <i class="bi bi-box-arrow-right text-danger mb-3" style="font-size: 3rem;"></i>
+          <h2 class="card-title text-center mb-4 fw-bold">تسجيل الخروج</h2>
+          
+          <p class="mb-4">هل أنت متأكد من رغبتك في تسجيل الخروج من حسابك؟</p>
+          
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-danger btn-lg">
+                <i class="bi bi-box-arrow-right me-2"></i>نعم، تسجيل الخروج
+              </button>
+              <a href="{% url 'core:index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-return-left me-2"></i>لا، العودة للصفحة الرئيسية
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

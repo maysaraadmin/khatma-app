@@ -562,7 +562,7 @@ def quran_part(request, part_number):
         quran_part = get_object_or_404(QuranPart, part_number=part_number)
 
         # Get all ayahs in this part
-        ayahs = Ayah.objects.filter(part=quran_part).order_by('surah__surah_number', 'ayah_number')
+        ayahs = Ayah.objects.filter(quran_part=quran_part).order_by('surah__surah_number', 'ayah_number_in_surah')
 
         # Group ayahs by surah
         surahs = {}
