@@ -227,11 +227,15 @@ def search_quran(request):
 
 @login_required
 def bookmark_ayah(request, surah_number, ayah_number):
+    """View for bookmarking an ayah"""
     try:
-        'View for bookmarking an ayah'
+        # Get the surah and ayah
         surah = get_object_or_404(Surah, surah_number=surah_number)
         ayah = get_object_or_404(Ayah, surah=surah, ayah_number_in_surah=ayah_number)
+
+        # Check if bookmark already exists
         existing_bookmark = QuranBookmark.objects.filter(user=request.user, ayah=ayah).first()
+
         if request.method == 'POST':
             form = QuranBookmarkForm(request.POST, instance=existing_bookmark)
             if form.is_valid():
@@ -242,13 +246,25 @@ def bookmark_ayah(request, surah_number, ayah_number):
                 messages.success(request, 'تم حفظ الإشارة المرجعية بنجاح')
                 return redirect('quran:surah_detail', surah_number=surah_number)
         else:
+            # Initialize form with default values
             initial_data = {'title': f'{surah.name_arabic} - الآية {ayah_number}'}
             form = QuranBookmarkForm(instance=existing_bookmark, initial=initial_data)
-        context = {'form': form, 'surah': surah, 'ayah': ayah, 'is_edit': existing_bookmark is not None}
+
+            # Add Bootstrap classes to form fields
+            form.fields['title'].widget.attrs.update({'class': 'form-control'})
+            form.fields['notes'].widget.attrs.update({'class': 'form-control', 'rows': 3})
+            form.fields['color'].widget.attrs.update({'class': 'form-control'})
+
+        context = {
+            'form': form,
+            'surah': surah,
+            'ayah': ayah,
+            'is_edit': existing_bookmark is not None
+        }
         return render(request, 'quran/bookmark_form.html', context)
     except Exception as e:
-        logging.error('Error in bookmark_ayah: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        logging.error(f"Error in bookmark_ayah: {str(e)}")
+        return render(request, 'core/error.html', context={'error': str(e)})
 
 @login_required
 def bookmarks_list(request):

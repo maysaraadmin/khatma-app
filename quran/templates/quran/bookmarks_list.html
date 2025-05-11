@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إشاراتي المرجعية{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bookmarks-container {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .bookmark-card {
+        border-radius: 8px;
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+        overflow: hidden;
+    }
+    
+    .bookmark-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .bookmark-header {
+        padding: 15px;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .bookmark-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .bookmark-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .bookmark-body {
+        padding: 15px;
+    }
+    
+    .bookmark-text {
+        font-family: 'Amiri', 'Traditional Arabic', serif;
+        font-size: 20px;
+        line-height: 1.8;
+        direction: rtl;
+        margin-bottom: 15px;
+    }
+    
+    .bookmark-notes {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        font-style: italic;
+    }
+    
+    .bookmark-actions {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .bookmark-color-blue {
+        border-right: 5px solid #007bff;
+    }
+    
+    .bookmark-color-green {
+        border-right: 5px solid #28a745;
+    }
+    
+    .bookmark-color-red {
+        border-right: 5px solid #dc3545;
+    }
+    
+    .bookmark-color-yellow {
+        border-right: 5px solid #ffc107;
+    }
+    
+    .bookmark-color-purple {
+        border-right: 5px solid #6f42c1;
+    }
+    
+    .bookmark-color-orange {
+        border-right: 5px solid #fd7e14;
+    }
+    
+    .empty-bookmarks {
+        text-align: center;
+        padding: 50px 0;
+    }
+    
+    .empty-bookmarks i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'quran:quran_home' %}">القرآن الكريم</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">إشاراتي المرجعية</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="bookmarks-container">
+                <h2 class="text-center mb-4">إشاراتي المرجعية</h2>
+                
+                {% if page_obj %}
+                    {% for bookmark in page_obj %}
+                    <div class="card bookmark-card bookmark-color-{{ bookmark.color }}">
+                        <div class="bookmark-header">
+                            <h5 class="bookmark-title">{{ bookmark.title }}</h5>
+                            <div class="bookmark-meta">
+                                {{ bookmark.ayah.surah.name_arabic }} - الآية {{ bookmark.ayah.ayah_number_in_surah }}
+                                <span class="mx-2">•</span>
+                                <small>{{ bookmark.created_at|date:"Y/m/d" }}</small>
+                            </div>
+                        </div>
+                        <div class="bookmark-body">
+                            <div class="bookmark-text">{{ bookmark.ayah.text_uthmani }}</div>
+                            {% if bookmark.notes %}
+                            <div class="bookmark-notes">{{ bookmark.notes }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="bookmark-actions">
+                            <a href="{% url 'quran:surah_detail' surah_number=bookmark.ayah.surah.surah_number %}#ayah-{{ bookmark.ayah.ayah_number_in_surah }}" class="btn btn-sm btn-outline-primary">
+                                الذهاب إلى الآية
+                            </a>
+                            <div>
+                                <a href="{% url 'quran:bookmark_ayah' surah_number=bookmark.ayah.surah.surah_number ayah_number=bookmark.ayah.ayah_number_in_surah %}" class="btn btn-sm btn-outline-secondary">
+                                    تعديل
+                                </a>
+                                <a href="{% url 'quran:delete_bookmark' bookmark_id=bookmark.id %}" class="btn btn-sm btn-outline-danger">
+                                    حذف
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_other_pages %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in page_obj.paginator.page_range %}
+                                {% if page_obj.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                {% else %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                {% else %}
+                <div class="empty-bookmarks">
+                    <i class="bi bi-bookmark"></i>
+                    <h4>لا توجد إشارات مرجعية</h4>
+                    <p>لم تقم بإضافة أي إشارات مرجعية بعد. يمكنك إضافة إشارة مرجعية أثناء قراءة القرآن الكريم.</p>
+                    <a href="{% url 'quran:surah_list' %}" class="btn btn-primary mt-3">تصفح سور القرآن</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

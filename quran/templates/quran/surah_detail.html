@@ -5,27 +5,72 @@
 
 {% block extra_css %}
 <style>
+    :root {
+        --primary-color: #1e5799;
+        --secondary-color: #207cca;
+        --accent-color: #4CAF50;
+        --light-bg: #f8f9fa;
+        --dark-bg: #1a1a1a;
+        --light-text: #333;
+        --dark-text: #e0e0e0;
+        --light-border: #dee2e6;
+        --dark-border: #444;
+        --light-hover: #e9ecef;
+        --dark-hover: #333;
+    }
+
+    body {
+        background-color: {% if reading_settings.night_mode %}var(--dark-bg){% else %}var(--light-bg){% endif %};
+        color: {% if reading_settings.night_mode %}var(--dark-text){% else %}var(--light-text){% endif %};
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
     /* Quran text styling */
     .quran-container {
         font-family: 'Amiri', 'Traditional Arabic', serif;
         direction: rtl;
-        text-align: right;
-        line-height: 2.2;
-        padding: 20px;
-        background-color: {% if reading_settings.night_mode %}#1a1a1a{% else %}#f8f9fa{% endif %};
-        color: {% if reading_settings.night_mode %}#e0e0e0{% else %}#333{% endif %};
-        border-radius: 8px;
-        margin-bottom: 20px;
+        text-align: justify;
+        line-height: 2.5;
+        padding: 30px;
+        background-color: {% if reading_settings.night_mode %}#2a2a2a{% else %}#fff{% endif %};
+        color: {% if reading_settings.night_mode %}var(--dark-text){% else %}var(--light-text){% endif %};
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        transition: background-color 0.3s ease, color 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .quran-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, transparent 70%, {% if reading_settings.night_mode %}rgba(76, 175, 80, 0.1){% else %}rgba(30, 87, 153, 0.1){% endif %} 100%);
+        border-radius: 0 0 0 100%;
+        z-index: 1;
     }
 
     .quran-text {
-        font-size: {% if reading_settings.font_size %}{{ reading_settings.font_size }}px{% else %}24px{% endif %};
+        font-size: {% if reading_settings.font_size %}{{ reading_settings.font_size }}px{% else %}28px{% endif %};
         font-family: {% if reading_settings.font_family %}{{ reading_settings.font_family }}{% else %}'Amiri'{% endif %}, 'Traditional Arabic', serif;
+        position: relative;
+        z-index: 2;
     }
 
     .ayah-container {
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         position: relative;
+        padding: 5px 10px;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+    }
+
+    .ayah-container:hover {
+        background-color: {% if reading_settings.night_mode %}rgba(255,255,255,0.05){% else %}rgba(0,0,0,0.02){% endif %};
     }
 
     .ayah-text {
@@ -34,75 +79,119 @@
 
     .ayah-number {
         font-family: 'Amiri', serif;
-        font-size: 0.7em;
+        font-size: 0.6em;
         color: {% if reading_settings.night_mode %}#aaa{% else %}#777{% endif %};
         margin: 0 5px;
         display: none;
+        background-color: {% if reading_settings.night_mode %}rgba(255,255,255,0.1){% else %}rgba(0,0,0,0.05){% endif %};
+        padding: 2px 6px;
+        border-radius: 50%;
     }
 
     .ayah-actions {
-        display: none;
+        opacity: 0;
         position: absolute;
-        left: 0;
-        top: 0;
-        background-color: {% if reading_settings.night_mode %}#333{% else %}#fff{% endif %};
-        border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        padding: 5px;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: {% if reading_settings.night_mode %}#444{% else %}#fff{% endif %};
+        border-radius: 30px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        padding: 5px 10px;
         z-index: 10;
+        transition: opacity 0.3s ease;
+        display: flex;
+        align-items: center;
     }
 
     .ayah-container:hover .ayah-actions {
-        display: block;
+        opacity: 1;
     }
 
     .ayah-actions a {
-        margin: 0 5px;
-        color: {% if reading_settings.night_mode %}#e0e0e0{% else %}#333{% endif %};
+        margin: 0 8px;
+        color: {% if reading_settings.night_mode %}var(--dark-text){% else %}var(--light-text){% endif %};
         text-decoration: none;
+        font-size: 1.1rem;
+        transition: color 0.2s ease, transform 0.2s ease;
     }
 
     .ayah-actions a:hover {
-        color: #007bff;
+        color: var(--accent-color);
+        transform: scale(1.2);
     }
 
     .surah-info {
-        background-color: {% if reading_settings.night_mode %}#2a2a2a{% else %}#fff{% endif %};
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background: linear-gradient(135deg, {% if reading_settings.night_mode %}#2a2a2a, #222{% else %}#fff, #f8f9fa{% endif %});
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+        border-left: 5px solid var(--accent-color);
     }
 
     .surah-header {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .surah-header::after {
+        content: "";
+        display: block;
+        width: 100px;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        margin: 15px auto 0;
+        border-radius: 3px;
     }
 
     .surah-name-arabic {
         font-family: 'Amiri', 'Traditional Arabic', serif;
-        font-size: 2.5rem;
+        font-size: 3rem;
         margin-bottom: 5px;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .surah-name-english {
-        font-size: 1.2rem;
-        color: {% if reading_settings.night_mode %}#aaa{% else %}#777{% endif %};
+        font-size: 1.3rem;
+        color: {% if reading_settings.night_mode %}#bbb{% else %}#666{% endif %};
+        font-weight: 300;
     }
 
     .surah-meta {
         display: flex;
         justify-content: space-around;
-        margin-bottom: 20px;
+        margin: 30px 0;
+        flex-wrap: wrap;
     }
 
     .surah-meta-item {
         text-align: center;
+        background-color: {% if reading_settings.night_mode %}rgba(255,255,255,0.05){% else %}rgba(0,0,0,0.02){% endif %};
+        padding: 15px;
+        border-radius: 10px;
+        min-width: 120px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin: 5px;
+        flex: 1;
+    }
+
+    .surah-meta-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
     .surah-meta-value {
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         font-weight: bold;
+        color: var(--accent-color);
+        margin-bottom: 5px;
     }
 
     .surah-meta-label {
@@ -113,35 +202,173 @@
     .bismillah {
         text-align: center;
         font-family: 'Amiri', 'Traditional Arabic', serif;
-        font-size: 1.8rem;
-        margin-bottom: 20px;
+        font-size: 2rem;
+        margin: 30px 0;
+        padding: 15px;
+        background-color: {% if reading_settings.night_mode %}rgba(255,255,255,0.03){% else %}rgba(0,0,0,0.01){% endif %};
+        border-radius: 10px;
+        color: {% if reading_settings.night_mode %}#e0e0e0{% else %}#333{% endif %};
     }
 
     .audio-player {
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, {% if reading_settings.night_mode %}#333, #222{% else %}#f8f9fa, #fff{% endif %});
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .audio-player .card {
+        background: transparent;
+        border: none;
+    }
+
+    .audio-player .card-body {
+        padding: 0;
+    }
+
+    .audio-player .card-title {
+        color: var(--accent-color);
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+    }
+
+    .audio-player select {
+        background-color: {% if reading_settings.night_mode %}#444{% else %}#fff{% endif %};
+        color: {% if reading_settings.night_mode %}#e0e0e0{% else %}#333{% endif %};
+        border-color: {% if reading_settings.night_mode %}#555{% else %}#ddd{% endif %};
+        border-radius: 30px;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .audio-player select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+        border-color: var(--accent-color);
+    }
+
+    .audio-player audio {
+        width: 100%;
+        border-radius: 30px;
+        background-color: {% if reading_settings.night_mode %}#444{% else %}#f1f3f5{% endif %};
     }
 
     .translation-text {
         font-size: 1rem;
-        color: {% if reading_settings.night_mode %}#bbb{% else %}#555{% endif %};
-        margin-top: 5px;
+        color: {% if reading_settings.night_mode %}#bbb{% else %}#666{% endif %};
+        margin-top: 8px;
         font-style: italic;
+        padding-right: 15px;
+        border-right: 3px solid {% if reading_settings.night_mode %}rgba(255,255,255,0.1){% else %}rgba(0,0,0,0.1){% endif %};
     }
 
     .navigation-buttons {
         display: flex;
         justify-content: space-between;
-        margin-top: 20px;
+        margin-top: 30px;
+    }
+
+    .navigation-buttons a {
+        padding: 10px 20px;
+        border-radius: 30px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .navigation-buttons a:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    }
+
+    .settings-card {
+        background: linear-gradient(135deg, {% if reading_settings.night_mode %}#333, #222{% else %}#f8f9fa, #fff{% endif %});
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        overflow: hidden;
+        border: none;
+    }
+
+    .settings-card .card-header {
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        color: white;
+        border: none;
+        padding: 15px 20px;
+    }
+
+    .settings-card .card-title {
+        margin-bottom: 0;
+        font-weight: 500;
+    }
+
+    .settings-card .card-body {
+        padding: 20px;
+    }
+
+    .form-range {
+        height: 8px;
+    }
+
+    .form-range::-webkit-slider-thumb {
+        background: var(--accent-color);
+    }
+
+    .form-check-input:checked {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    .surah-list-card {
+        background: linear-gradient(135deg, {% if reading_settings.night_mode %}#333, #222{% else %}#f8f9fa, #fff{% endif %});
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: none;
+    }
+
+    .surah-list-card .card-header {
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        color: white;
+        border: none;
+        padding: 15px 20px;
+    }
+
+    .surah-list-card .list-group-item {
+        background-color: transparent;
+        border-color: {% if reading_settings.night_mode %}rgba(255,255,255,0.1){% else %}rgba(0,0,0,0.05){% endif %};
+        color: {% if reading_settings.night_mode %}#e0e0e0{% else %}#333{% endif %};
+        transition: all 0.2s ease;
+    }
+
+    .surah-list-card .list-group-item:hover {
+        background-color: {% if reading_settings.night_mode %}rgba(255,255,255,0.05){% else %}rgba(0,0,0,0.02){% endif %};
+    }
+
+    .surah-list-card .list-group-item.active {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+        color: white;
+    }
+
+    .surah-list-card .badge {
+        background-color: {% if reading_settings.night_mode %}rgba(255,255,255,0.2){% else %}rgba(0,0,0,0.1){% endif %};
+        color: {% if reading_settings.night_mode %}#e0e0e0{% else %}#333{% endif %};
+        font-weight: normal;
+        padding: 5px 10px;
+        border-radius: 20px;
     }
 
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .quran-text {
-            font-size: {% if reading_settings.font_size %}{{ reading_settings.font_size|add:"-4" }}px{% else %}20px{% endif %};
+            font-size: {% if reading_settings.font_size %}{{ reading_settings.font_size|add:"-4" }}px{% else %}24px{% endif %};
+            line-height: 2.2;
         }
 
         .surah-name-arabic {
-            font-size: 2rem;
+            font-size: 2.5rem;
         }
 
         .surah-meta {
@@ -149,8 +376,28 @@
         }
 
         .surah-meta-item {
-            width: 50%;
+            width: calc(50% - 10px);
             margin-bottom: 10px;
+            min-width: auto;
+        }
+
+        .quran-container {
+            padding: 20px 15px;
+        }
+
+        .ayah-actions {
+            position: relative;
+            left: 0;
+            top: 0;
+            transform: none;
+            margin-top: 10px;
+            justify-content: center;
+            display: none;
+        }
+
+        .ayah-container:active .ayah-actions {
+            display: flex;
+            opacity: 1;
         }
     }
 </style>
@@ -160,10 +407,10 @@
 <div class="container py-4">
     <div class="row">
         <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'quran:surah_list' %}">القرآن الكريم</a></li>
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb bg-transparent p-0">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}" class="text-decoration-none">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'quran:surah_list' %}" class="text-decoration-none">القرآن الكريم</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ surah.name_arabic }}</li>
                 </ol>
             </nav>
@@ -171,7 +418,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-lg-8">
             <!-- Surah Information -->
             <div class="surah-info">
                 <div class="surah-header">
@@ -198,69 +445,57 @@
                     </div>
                 </div>
 
+
+
                 {% if surah.surah_number != 1 and surah.surah_number != 9 %}
                 <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
                 {% endif %}
             </div>
 
-            <!-- Audio Player -->
-            <div class="audio-player">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">استمع إلى السورة</h5>
-                        <select class="form-select mb-3" id="reciterSelect">
-                            <option value="">اختر القارئ</option>
-                            {% for reciter in reciters %}
-                            <option value="{{ reciter.id }}">{{ reciter.name_arabic }}</option>
-                            {% endfor %}
-                        </select>
-                        <audio controls class="w-100" id="audioPlayer">
-                            <source src="" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Quran Text -->
             <div class="quran-container">
-                {% for ayah in ayahs %}
-                <div class="ayah-container" id="ayah-{{ ayah.ayah_number_in_surah }}">
-                    <span class="ayah-text">{{ ayah.text_uthmani }}</span>
-                    <span class="ayah-number">﴿{{ ayah.ayah_number_in_surah }}﴾</span>
+                <div class="quran-text">
+                    {% for ayah in ayahs %}
+                    <div class="ayah-container" id="ayah-{{ ayah.ayah_number_in_surah }}">
+                        <span class="ayah-text">{{ ayah.text_uthmani }}</span>
+                        <span class="ayah-number">﴿{{ ayah.ayah_number_in_surah }}﴾</span>
 
-                    <div class="ayah-actions">
-                        <a href="{% url 'quran:bookmark_ayah' surah_number=surah.surah_number ayah_number=ayah.ayah_number_in_surah %}" title="إضافة إشارة مرجعية">
-                            <i class="bi bi-bookmark-plus"></i>
-                        </a>
-                        <a href="#" class="copy-ayah" data-ayah-text="{{ ayah.text_uthmani }}" title="نسخ الآية">
-                            <i class="bi bi-clipboard"></i>
-                        </a>
-                        <a href="#" class="share-ayah" data-ayah-text="{{ ayah.text_uthmani }}" data-surah-name="{{ surah.name_arabic }}" data-ayah-number="{{ ayah.ayah_number_in_surah }}" title="مشاركة الآية">
-                            <i class="bi bi-share"></i>
-                        </a>
+                        <div class="ayah-actions">
+                            <a href="{% url 'quran:bookmark_ayah' surah_number=surah.surah_number ayah_number=ayah.ayah_number_in_surah %}" title="إضافة إشارة مرجعية">
+                                إشارة
+                            </a>
+                            <a href="#" class="copy-ayah" data-ayah-text="{{ ayah.text_uthmani }}" title="نسخ الآية">
+                                نسخ
+                            </a>
+                        </div>
+
+                        {% if reading_settings.show_translation and ayah.translation %}
+                        <div class="translation-text">{{ ayah.translation }}</div>
+                        {% endif %}
                     </div>
-
-                    {% if reading_settings.show_translation and ayah.translation %}
-                    <div class="translation-text">{{ ayah.translation }}</div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
 
             <!-- Navigation Buttons -->
             <div class="navigation-buttons">
                 {% if previous_surah %}
                 <a href="{% url 'quran:surah_detail' surah_number=previous_surah.surah_number %}" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-right me-1"></i> {{ previous_surah.name_arabic }}
+                    {{ previous_surah.name_arabic }}
                 </a>
                 {% else %}
                 <div></div>
                 {% endif %}
 
+                <a href="{% url 'quran:surah_list' %}" class="btn btn-outline-secondary">
+                    قائمة السور
+                </a>
+
                 {% if next_surah %}
                 <a href="{% url 'quran:surah_detail' surah_number=next_surah.surah_number %}" class="btn btn-outline-primary">
-                    {{ next_surah.name_arabic }} <i class="bi bi-arrow-left ms-1"></i>
+                    {{ next_surah.name_arabic }}
                 </a>
                 {% else %}
                 <div></div>
@@ -268,62 +503,107 @@
             </div>
         </div>
 
-        <div class="col-md-4">
-            <!-- Sidebar with reading settings and other options -->
-            <div class="card mb-4">
+        <div class="col-lg-4">
+            <!-- Sidebar with reading settings -->
+            <div class="settings-card mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">إعدادات القراءة</h5>
+                    <h5 class="card-title mb-0">
+                        إعدادات القراءة
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label for="fontSizeRange" class="form-label">حجم الخط</label>
-                        <input type="range" class="form-range" min="16" max="36" step="2" id="fontSizeRange" value="{% if reading_settings.font_size %}{{ reading_settings.font_size }}{% else %}24{% endif %}">
+                    <div class="mb-4">
+                        <label for="fontSizeRange" class="form-label d-flex justify-content-between">
+                            <span>حجم الخط</span>
+                            <span class="badge bg-primary" id="fontSizeValue">{% if reading_settings.font_size %}{{ reading_settings.font_size }}{% else %}28{% endif %}px</span>
+                        </label>
+                        <input type="range" class="form-range" min="16" max="40" step="2" id="fontSizeRange" value="{% if reading_settings.font_size %}{{ reading_settings.font_size }}{% else %}28{% endif %}">
                     </div>
 
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="nightModeSwitch" {% if reading_settings.night_mode %}checked{% endif %}>
-                            <label class="form-check-label" for="nightModeSwitch">الوضع الليلي</label>
+                            <label class="form-check-label" for="nightModeSwitch">
+                                الوضع الليلي
+                            </label>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="showTranslationSwitch" {% if reading_settings.show_translation %}checked{% endif %}>
-                            <label class="form-check-label" for="showTranslationSwitch">عرض الترجمة</label>
+                            <label class="form-check-label" for="showTranslationSwitch">
+                                عرض الترجمة
+                            </label>
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="showAyahNumbersSwitch">
-                            <label class="form-check-label" for="showAyahNumbersSwitch">عرض أرقام الآيات</label>
+                            <label class="form-check-label" for="showAyahNumbersSwitch">
+                                عرض أرقام الآيات
+                            </label>
                         </div>
                     </div>
 
-                    <a href="{% url 'quran:reading_settings' %}" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-gear me-1"></i> المزيد من الإعدادات
+                    <a href="{% url 'quran:reading_settings' %}" class="btn btn-primary w-100">
+                        المزيد من الإعدادات
                     </a>
                 </div>
             </div>
 
-            <!-- Surah List -->
-            <div class="card">
+            <!-- Reading Progress -->
+            <div class="settings-card mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">سور القرآن الكريم</h5>
+                    <h5 class="card-title mb-0">
+                        تقدم القراءة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="readingProgress">0%</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>آية 0 من {{ surah.verses_count }}</span>
+                        <span id="timeRemaining">الوقت المتبقي: 0 دقيقة</span>
+                    </div>
+                    <button class="btn btn-outline-success w-100" id="markAsRead">
+                        تحديد كمقروء
+                    </button>
+                </div>
+            </div>
+
+            <!-- Surah List -->
+            <div class="surah-list-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        سور القرآن الكريم
+                    </h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        {% for i in "123456789"|make_list %}
+                        {% for i in "12345"|make_list %}
                         <a href="{% url 'quran:surah_detail' surah_number=forloop.counter %}" class="list-group-item list-group-item-action {% if surah.surah_number == forloop.counter %}active{% endif %}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span>{{ forloop.counter }}. {{ surah.name_arabic }}</span>
-                                <span class="badge bg-secondary">{{ surah.verses_count }} آية</span>
+                                <span class="badge">{{ surah.verses_count }} آية</span>
                             </div>
                         </a>
                         {% endfor %}
+
+                        <!-- Current Surah -->
+                        {% if surah.surah_number > 5 %}
+                        <a href="{% url 'quran:surah_detail' surah_number=surah.surah_number %}" class="list-group-item list-group-item-action active">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ surah.surah_number }}. {{ surah.name_arabic }}</span>
+                                <span class="badge">{{ surah.verses_count }} آية</span>
+                            </div>
+                        </a>
+                        {% endif %}
+
                         <a href="{% url 'quran:surah_list' %}" class="list-group-item list-group-item-action text-center">
-                            <i class="bi bi-three-dots me-1"></i> عرض كل السور
+                            عرض كل السور
                         </a>
                     </div>
                 </div>
@@ -336,103 +616,229 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        // Font size adjustment
+        // Initialize reading progress
+        let lastReadAyah = 0;
+        const totalAyahs = {{ surah.verses_count }};
+
+        // Track reading progress as user scrolls
+        function updateReadingProgress() {
+            const windowHeight = $(window).height();
+            const scrollTop = $(window).scrollTop();
+
+            $('.ayah-container').each(function() {
+                const ayahTop = $(this).offset().top;
+                const ayahNumber = parseInt($(this).attr('id').replace('ayah-', ''));
+
+                // If ayah is in viewport and is further than the last read ayah
+                if (ayahTop < (scrollTop + windowHeight/2) && ayahNumber > lastReadAyah) {
+                    lastReadAyah = ayahNumber;
+                    updateProgressUI(ayahNumber);
+                }
+            });
+        }
+
+        // Update progress UI elements
+        function updateProgressUI(ayahNumber) {
+            const progressPercent = Math.round((ayahNumber / totalAyahs) * 100);
+            $('#readingProgress').css('width', progressPercent + '%').attr('aria-valuenow', progressPercent).text(progressPercent + '%');
+
+            // Update ayah counter
+            $('.progress').next().find('span:first').text(`آية ${ayahNumber} من ${totalAyahs}`);
+
+            // Estimate remaining time (assuming 10 seconds per ayah on average)
+            const remainingAyahs = totalAyahs - ayahNumber;
+            const remainingMinutes = Math.ceil((remainingAyahs * 10) / 60);
+            $('#timeRemaining').text(`الوقت المتبقي: ${remainingMinutes} دقيقة`);
+        }
+
+        // Initialize with 0 progress
+        updateProgressUI(0);
+
+        // Attach scroll event for tracking progress
+        $(window).on('scroll', updateReadingProgress);
+
+        // Font size adjustment with value display
         $('#fontSizeRange').on('input', function() {
             const fontSize = $(this).val();
             $('.quran-text').css('font-size', fontSize + 'px');
+            $('#fontSizeValue').text(fontSize + 'px');
         });
 
-        // Night mode toggle
+        // Night mode toggle with icon change
         $('#nightModeSwitch').change(function() {
             const isNightMode = $(this).is(':checked');
+
+            // Toggle body class for global styling
+            $('body').toggleClass('dark-mode', isNightMode);
+
+            // Update icon
+            const icon = $(this).next('label').find('i');
             if (isNightMode) {
-                $('.quran-container').css({
-                    'background-color': '#1a1a1a',
-                    'color': '#e0e0e0'
+                icon.removeClass('bi-sun-fill').addClass('bi-moon-fill');
+
+                // Dark mode styles
+                $('body').css({
+                    'background-color': 'var(--dark-bg)',
+                    'color': 'var(--dark-text)'
                 });
-                $('.surah-info').css('background-color', '#2a2a2a');
+
+                $('.quran-container').css({
+                    'background-color': '#2a2a2a',
+                    'color': 'var(--dark-text)'
+                });
+
+                $('.surah-info').css('background', 'linear-gradient(135deg, #2a2a2a, #222)');
+                $('.settings-card, .surah-list-card, .audio-player').css('background', 'linear-gradient(135deg, #333, #222)');
+
                 $('.ayah-number').css('color', '#aaa');
                 $('.translation-text').css('color', '#bbb');
                 $('.surah-name-english, .surah-meta-label').css('color', '#aaa');
-            } else {
-                $('.quran-container').css({
-                    'background-color': '#f8f9fa',
-                    'color': '#333'
+
+                // Update form elements
+                $('.form-select, audio').css({
+                    'background-color': '#444',
+                    'color': '#e0e0e0',
+                    'border-color': '#555'
                 });
-                $('.surah-info').css('background-color', '#fff');
+
+                // Update list items
+                $('.list-group-item:not(.active)').css({
+                    'background-color': 'transparent',
+                    'color': '#e0e0e0',
+                    'border-color': 'rgba(255,255,255,0.1)'
+                });
+            } else {
+                icon.removeClass('bi-moon-fill').addClass('bi-sun-fill');
+
+                // Light mode styles
+                $('body').css({
+                    'background-color': 'var(--light-bg)',
+                    'color': 'var(--light-text)'
+                });
+
+                $('.quran-container').css({
+                    'background-color': '#fff',
+                    'color': 'var(--light-text)'
+                });
+
+                $('.surah-info').css('background', 'linear-gradient(135deg, #fff, #f8f9fa)');
+                $('.settings-card, .surah-list-card, .audio-player').css('background', 'linear-gradient(135deg, #f8f9fa, #fff)');
+
                 $('.ayah-number').css('color', '#777');
                 $('.translation-text').css('color', '#555');
                 $('.surah-name-english, .surah-meta-label').css('color', '#777');
+
+                // Update form elements
+                $('.form-select, audio').css({
+                    'background-color': '#fff',
+                    'color': '#333',
+                    'border-color': '#ddd'
+                });
+
+                // Update list items
+                $('.list-group-item:not(.active)').css({
+                    'background-color': 'transparent',
+                    'color': '#333',
+                    'border-color': 'rgba(0,0,0,0.05)'
+                });
             }
         });
 
         // Show/hide translation
         $('#showTranslationSwitch').change(function() {
             const showTranslation = $(this).is(':checked');
-            if (showTranslation) {
-                $('.translation-text').show();
-            } else {
-                $('.translation-text').hide();
-            }
+            $('.translation-text').toggle(showTranslation);
         });
 
         // Show/hide ayah numbers
         $('#showAyahNumbersSwitch').change(function() {
             const showAyahNumbers = $(this).is(':checked');
-            if (showAyahNumbers) {
-                $('.ayah-number').show();
-            } else {
-                $('.ayah-number').hide();
-            }
+            $('.ayah-number').toggle(showAyahNumbers);
         });
 
-        // Reciter selection
-        $('#reciterSelect').change(function() {
-            const reciterId = $(this).val();
-            if (reciterId) {
-                const audioUrl = `/media/recitations/${reciterId}/{{ surah.surah_number }}.mp3`;
-                $('#audioPlayer').attr('src', audioUrl);
-                $('#audioPlayer')[0].load();
-            }
-        });
-
-        // Copy ayah text
+        // Copy ayah text with toast notification
         $('.copy-ayah').click(function(e) {
             e.preventDefault();
             const ayahText = $(this).data('ayah-text');
+
             navigator.clipboard.writeText(ayahText).then(function() {
-                alert('تم نسخ الآية بنجاح');
+                showToast('تم نسخ الآية بنجاح', 'success');
             }, function() {
-                alert('فشل نسخ الآية');
+                showToast('فشل نسخ الآية', 'danger');
             });
         });
 
-        // Share ayah
-        $('.share-ayah').click(function(e) {
-            e.preventDefault();
-            const ayahText = $(this).data('ayah-text');
-            const surahName = $(this).data('surah-name');
-            const ayahNumber = $(this).data('ayah-number');
-            const shareText = `${ayahText} [${surahName}: ${ayahNumber}]`;
-
-            if (navigator.share) {
-                navigator.share({
-                    title: `${surahName} - الآية ${ayahNumber}`,
-                    text: shareText,
-                    url: window.location.href + '#ayah-' + ayahNumber
-                }).then(() => {
-                    console.log('Share successful');
-                }).catch((error) => {
-                    console.log('Error sharing', error);
-                });
-            } else {
-                navigator.clipboard.writeText(shareText).then(function() {
-                    alert('تم نسخ الآية للمشاركة بنجاح');
-                }, function() {
-                    alert('فشل نسخ الآية للمشاركة');
-                });
-            }
+        // Mark as read button
+        $('#markAsRead').click(function() {
+            // In a real implementation, this would save the reading progress to the server
+            lastReadAyah = totalAyahs;
+            updateProgressUI(totalAyahs);
+            showToast('تم تحديد السورة كمقروءة', 'success');
         });
+
+        // Helper function to copy text to clipboard
+        function copyToClipboard(text, url) {
+            const fullText = `${text}\n${url}`;
+            navigator.clipboard.writeText(fullText).then(function() {
+                showToast('تم نسخ الآية للمشاركة', 'success');
+            }, function() {
+                showToast('فشل نسخ الآية للمشاركة', 'danger');
+            });
+        }
+
+        // Helper function to show toast notifications
+        function showToast(message, type = 'info') {
+            // Create toast container if it doesn't exist
+            if ($('#toast-container').length === 0) {
+                $('body').append('<div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;"></div>');
+            }
+
+            // Create toast element
+            const toastId = 'toast-' + Date.now();
+            const toast = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+
+            // Add toast to container
+            $('#toast-container').append(toast);
+
+            // Initialize and show toast
+            const toastElement = new bootstrap.Toast(document.getElementById(toastId), {
+                autohide: true,
+                delay: 3000
+            });
+            toastElement.show();
+
+            // Remove toast after it's hidden
+            $(`#${toastId}`).on('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
+
+        // Add CSS for print mode
+        $('<style>')
+            .text(`
+                @media print {
+                    .settings-card, .surah-list-card, .navigation-buttons, .breadcrumb {
+                        display: none !important;
+                    }
+                    .quran-container {
+                        box-shadow: none;
+                        border: none;
+                    }
+                    .ayah-actions {
+                        display: none !important;
+                    }
+                }
+            `)
+            .appendTo('head');
     });
 </script>
 {% endblock %}
