@@ -353,6 +353,7 @@ def reciter_surahs(request, reciter_name):
     if reciter_name not in available_reciters:
         error_message = f'القارئ {reciter_name} غير موجود'
         return render(request, 'quran/reciter_surahs.html', {'reciter_name': reciter_name, 'surahs': [], 'error': error_message, 'available_reciters': available_reciters})
+    # Get existing MP3 files
     mp3_files = []
     try:
         for file in os.listdir(reciter_path):
@@ -360,24 +361,42 @@ def reciter_surahs(request, reciter_name):
                 mp3_files.append(file)
     except Exception as e:
         logger.error(f'Error reading directory {reciter_path}: {e}')
-        return render(request, 'quran/reciter_surahs.html', {'reciter_name': reciter_name, 'surahs': [], 'error': f'خطأ في قراءة ملفات الصوت: {e}', 'available_reciters': available_reciters})
-    mp3_files.sort()
-    surahs = []
+        # Continue with empty mp3_files list instead of returning an error
+        # This allows us to generate all 114 chapters even if no MP3 files exist
+
+    # Create a dictionary to track which surahs have MP3 files
+    existing_mp3s = {}
     for mp3 in mp3_files:
         try:
             filename_without_ext = mp3.split('.')[0]
             if filename_without_ext.isdigit():
-                surah_number = filename_without_ext.zfill(3)
-            else:
-                continue
-            surah_num_int = int(surah_number)
-            if surah_num_int < 1 or surah_num_int > 114:
-                continue
-            surah_name = SURAH_NAMES.get(surah_number, f'سورة {surah_number}')
-            template_path = f'/media/reciters/{reciter_name}/{mp3}'
-            surahs.append({'number': surah_number, 'name': surah_name, 'filename': mp3, 'path': template_path})
+                surah_number = int(filename_without_ext)
+                if 1 <= surah_number <= 114:
+                    existing_mp3s[surah_number] = mp3
         except Exception as e:
-            logger.error(f'Error processing surah {mp3}: {e}')
+            logger.error(f'Error processing MP3 filename {mp3}: {e}')
+
+    # Generate all 114 chapters
+    surahs = []
+    for surah_num in range(1, 115):  # 1 to 114 inclusive
+        surah_number_str = str(surah_num).zfill(3)
+        surah_name = SURAH_NAMES.get(surah_number_str, f'سورة {surah_num}')
+
+        # Check if we have an MP3 file for this surah
+        if surah_num in existing_mp3s:
+            mp3_filename = existing_mp3s[surah_num]
+        else:
+            # Create a placeholder filename for surahs without MP3 files
+            mp3_filename = f"{surah_num}.mp3"
+
+        template_path = f'/media/reciters/{reciter_name}/{mp3_filename}'
+        surahs.append({
+            'number': surah_number_str,
+            'name': surah_name,
+            'filename': mp3_filename,
+            'path': template_path,
+            'has_audio': surah_num in existing_mp3s
+        })
     surahs.sort(key=lambda x: x['number'])
     return render(request, 'quran/reciter_surahs.html', {'reciter_name': reciter_name, 'surahs': surahs})
 

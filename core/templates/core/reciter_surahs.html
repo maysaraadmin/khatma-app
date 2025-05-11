@@ -1084,6 +1084,34 @@
         box-shadow: 0 8px 20px rgba(15, 32, 39, 0.25);
     }
 
+    /* Styling for cards without audio */
+    .surah-card.no-audio {
+        opacity: 0.7;
+        background: linear-gradient(to bottom, rgba(248, 249, 250, 0.9), rgba(248, 249, 250, 0.7));
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .surah-card.no-audio:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(15, 32, 39, 0.05);
+    }
+
+    .surah-card.no-audio .play-icon {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .surah-card.no-audio .play-icon:hover {
+        background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+    }
+
+    .surah-card.no-audio .badge {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .surah-card.no-audio::before {
+        opacity: 0.3;
+    }
+
     /* Responsive adjustments - Enhanced */
     @media (max-width: 768px) {
         .quran-container {
@@ -1453,7 +1481,11 @@
 
             <div class="surah-grid">
                 {% for surah in surahs %}
-                    <div class="surah-card" data-surah-path="{{ surah.path }}" data-surah-name="{{ surah.name }}" data-surah-number="{{ surah.number }}">
+                    <div class="surah-card {% if not surah.has_audio %}no-audio{% endif %}"
+                         data-surah-path="{{ surah.path }}"
+                         data-surah-name="{{ surah.name }}"
+                         data-surah-number="{{ surah.number }}"
+                         data-has-audio="{{ surah.has_audio|yesno:'true,false' }}">
                         <div class="surah-card-bg"></div>
                         <div class="surah-card-inner">
                             <span class="badge">{{ surah.number }}</span>
@@ -1465,7 +1497,13 @@
                                 <span><i class="bi bi-translate"></i> {{ surah.number }}</span>
                             </div>
 
-                            <div class="play-icon"><i class="bi bi-play-fill"></i></div>
+                            <div class="play-icon">
+                                {% if surah.has_audio %}
+                                    <i class="bi bi-play-fill"></i>
+                                {% else %}
+                                    <i class="bi bi-volume-mute"></i>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 {% empty %}
@@ -1524,12 +1562,41 @@
                     element: card,
                     number: card.getAttribute('data-surah-number'),
                     name: card.getAttribute('data-surah-name'),
-                    path: card.getAttribute('data-surah-path')
+                    path: card.getAttribute('data-surah-path'),
+                    hasAudio: card.getAttribute('data-has-audio') === 'true'
                 };
             });
 
             // Function to try different audio sources
-            function tryAudioSources(audioFile, surahNumber, surahText) {
+            function tryAudioSources(audioFile, surahNumber, surahText, hasAudio) {
+                // If the surah doesn't have audio, show a message and return
+                if (hasAudio === false) {
+                    currentSurahTitle.textContent = 'سورة ' + surahText + ' (غير متوفرة)';
+                    currentSurahNumber = surahNumber;
+                    currentSurahPath = '';
+
+                    // Clear audio player sources
+                    audioPlayer.innerHTML = '';
+                    audioPlayer.load();
+
+                    // Show a message to the user
+                    const audioPlayerWrapper = document.getElementById('audioPlayerWrapper');
+                    if (audioPlayerWrapper) {
+                        audioPlayerWrapper.innerHTML = '<div class="alert alert-warning text-center p-3 w-100">هذه السورة غير متوفرة للاستماع حالياً</div>';
+                    }
+
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                    return;
+                }
+
+                // Reset audio player wrapper if it was showing a message
+                const audioPlayerWrapper = document.getElementById('audioPlayerWrapper');
+                if (audioPlayerWrapper && !audioPlayerWrapper.contains(audioPlayer)) {
+                    audioPlayerWrapper.innerHTML = '';
+                    audioPlayerWrapper.appendChild(audioPlayer);
+                }
+
                 const sources = [
                     audioFile,
                     '/media/reciters/{{ reciter_name }}/' + audioFile,
@@ -1616,7 +1683,8 @@
                 tryAudioSources(
                     surahsData[index].path,
                     surahsData[index].number,
-                    surahsData[index].name
+                    surahsData[index].name,
+                    surahsData[index].hasAudio
                 );
 
                 // Update current index

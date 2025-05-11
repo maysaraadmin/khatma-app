@@ -41,28 +41,35 @@
                     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                         {% for surah in surahs %}
                             <div class="col">
-                                <div class="card h-100 shadow-sm border-0 rounded-3">
+                                <div class="card h-100 shadow-sm border-0 rounded-3 {% if not surah.has_audio %}bg-light{% endif %}">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h5 class="card-title mb-0">{{ surah.name }}</h5>
                                             <span class="badge bg-secondary">{{ surah.verses }} آية</span>
                                         </div>
                                         <div class="text-center">
-                                            <div class="audio-container">
-                                                <div class="audio-loading d-none">
-                                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
+                                            {% if surah.has_audio %}
+                                                <div class="audio-container">
+                                                    <div class="audio-loading d-none">
+                                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                            <span class="visually-hidden">Loading...</span>
+                                                        </div>
+                                                        <span class="ms-2 small">جاري التحميل...</span>
                                                     </div>
-                                                    <span class="ms-2 small">جاري التحميل...</span>
+                                                    <audio controls class="mt-2 w-100" preload="none">
+                                                        <source src="/media/reciters/{{ reciter.folder }}/{{ surah.filename }}" type="audio/mpeg">
+                                                        <source src="https://server7.mp3quran.net/shur/{{ surah.id|stringformat:'03d' }}.mp3" type="audio/mpeg">
+                                                        Your browser does not support the audio element.
+                                                    </audio>
                                                 </div>
-                                                <audio controls class="mt-2 w-100" preload="none">
-                                                    <source src="https://server7.mp3quran.net/shur/{{ surah.id|stringformat:'03d' }}.mp3" type="audio/mpeg">
-                                                    Your browser does not support the audio element.
-                                                </audio>
-                                            </div>
-                                            <button class="btn btn-sm btn-primary mt-2 download-btn" data-surah-id="{{ surah.id }}">
-                                                <i class="bi bi-download me-1"></i> تحميل
-                                            </button>
+                                                <button class="btn btn-sm btn-primary mt-2 download-btn" data-surah-id="{{ surah.id }}">
+                                                    <i class="bi bi-download me-1"></i> تحميل
+                                                </button>
+                                            {% else %}
+                                                <div class="alert alert-warning mt-2">
+                                                    <i class="bi bi-volume-mute me-1"></i> غير متوفرة حالياً
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>

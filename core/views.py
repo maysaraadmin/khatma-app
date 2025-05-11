@@ -13,6 +13,7 @@ from django.views import View
 from django.http import HttpResponseRedirect
 import logging
 import traceback
+import os
 
 # Import for social authentication
 from allauth.socialaccount.views import SignupView
@@ -499,10 +500,6 @@ def quran_reciters(request):
         # This would typically come from a Reciter model, but for now we'll use a static list
         reciters = [
             {'id': 1, 'name': 'محمد أحمد الزين', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 2, 'name': 'عبد الباسط عبد الصمد', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 3, 'name': 'محمود خليل الحصري', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 4, 'name': 'محمد صديق المنشاوي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 5, 'name': 'مشاري راشد العفاسي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
         ]
 
         return render(request, 'core/quran_reciters.html', {
@@ -521,10 +518,6 @@ def reciter_detail(request, folder):
         # Get the reciter information
         reciters = [
             {'id': 1, 'name': 'محمد أحمد الزين', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 2, 'name': 'عبد الباسط عبد الصمد', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 3, 'name': 'محمود خليل الحصري', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 4, 'name': 'محمد صديق المنشاوي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
-            {'id': 5, 'name': 'مشاري راشد العفاسي', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
         ]
 
         reciter = next((r for r in reciters if r['folder'] == folder), None)
@@ -532,24 +525,161 @@ def reciter_detail(request, folder):
         if not reciter:
             return render(request, 'core/error.html', {'error': 'Reciter not found'})
 
-        # Get the list of surahs
-        surahs = [
-            {'id': 1, 'name': 'الفاتحة', 'verses': 7},
-            {'id': 2, 'name': 'البقرة', 'verses': 286},
-            {'id': 3, 'name': 'آل عمران', 'verses': 200},
-            {'id': 4, 'name': 'النساء', 'verses': 176},
-            {'id': 5, 'name': 'المائدة', 'verses': 120},
-            {'id': 6, 'name': 'الأنعام', 'verses': 165},
-            {'id': 7, 'name': 'الأعراف', 'verses': 206},
-            {'id': 8, 'name': 'الأنفال', 'verses': 75},
-            {'id': 9, 'name': 'التوبة', 'verses': 129},
-            {'id': 10, 'name': 'يونس', 'verses': 109},
-            {'id': 11, 'name': 'هود', 'verses': 123},
-            {'id': 12, 'name': 'يوسف', 'verses': 111},
-            {'id': 13, 'name': 'الرعد', 'verses': 43},
-            {'id': 14, 'name': 'إبراهيم', 'verses': 52},
-            {'id': 15, 'name': 'الحجر', 'verses': 99},
-        ]
+        # Get the list of all 114 surahs
+        # Define a dictionary of all Quran surahs with their names and verse counts
+        all_surahs_data = {
+            1: {'name': 'الفاتحة', 'verses': 7},
+            2: {'name': 'البقرة', 'verses': 286},
+            3: {'name': 'آل عمران', 'verses': 200},
+            4: {'name': 'النساء', 'verses': 176},
+            5: {'name': 'المائدة', 'verses': 120},
+            6: {'name': 'الأنعام', 'verses': 165},
+            7: {'name': 'الأعراف', 'verses': 206},
+            8: {'name': 'الأنفال', 'verses': 75},
+            9: {'name': 'التوبة', 'verses': 129},
+            10: {'name': 'يونس', 'verses': 109},
+            11: {'name': 'هود', 'verses': 123},
+            12: {'name': 'يوسف', 'verses': 111},
+            13: {'name': 'الرعد', 'verses': 43},
+            14: {'name': 'إبراهيم', 'verses': 52},
+            15: {'name': 'الحجر', 'verses': 99},
+            16: {'name': 'النحل', 'verses': 128},
+            17: {'name': 'الإسراء', 'verses': 111},
+            18: {'name': 'الكهف', 'verses': 110},
+            19: {'name': 'مريم', 'verses': 98},
+            20: {'name': 'طه', 'verses': 135},
+            21: {'name': 'الأنبياء', 'verses': 112},
+            22: {'name': 'الحج', 'verses': 78},
+            23: {'name': 'المؤمنون', 'verses': 118},
+            24: {'name': 'النور', 'verses': 64},
+            25: {'name': 'الفرقان', 'verses': 77},
+            26: {'name': 'الشعراء', 'verses': 227},
+            27: {'name': 'النمل', 'verses': 93},
+            28: {'name': 'القصص', 'verses': 88},
+            29: {'name': 'العنكبوت', 'verses': 69},
+            30: {'name': 'الروم', 'verses': 60},
+            31: {'name': 'لقمان', 'verses': 34},
+            32: {'name': 'السجدة', 'verses': 30},
+            33: {'name': 'الأحزاب', 'verses': 73},
+            34: {'name': 'سبأ', 'verses': 54},
+            35: {'name': 'فاطر', 'verses': 45},
+            36: {'name': 'يس', 'verses': 83},
+            37: {'name': 'الصافات', 'verses': 182},
+            38: {'name': 'ص', 'verses': 88},
+            39: {'name': 'الزمر', 'verses': 75},
+            40: {'name': 'غافر', 'verses': 85},
+            41: {'name': 'فصلت', 'verses': 54},
+            42: {'name': 'الشورى', 'verses': 53},
+            43: {'name': 'الزخرف', 'verses': 89},
+            44: {'name': 'الدخان', 'verses': 59},
+            45: {'name': 'الجاثية', 'verses': 37},
+            46: {'name': 'الأحقاف', 'verses': 35},
+            47: {'name': 'محمد', 'verses': 38},
+            48: {'name': 'الفتح', 'verses': 29},
+            49: {'name': 'الحجرات', 'verses': 18},
+            50: {'name': 'ق', 'verses': 45},
+            51: {'name': 'الذاريات', 'verses': 60},
+            52: {'name': 'الطور', 'verses': 49},
+            53: {'name': 'النجم', 'verses': 62},
+            54: {'name': 'القمر', 'verses': 55},
+            55: {'name': 'الرحمن', 'verses': 78},
+            56: {'name': 'الواقعة', 'verses': 96},
+            57: {'name': 'الحديد', 'verses': 29},
+            58: {'name': 'المجادلة', 'verses': 22},
+            59: {'name': 'الحشر', 'verses': 24},
+            60: {'name': 'الممتحنة', 'verses': 13},
+            61: {'name': 'الصف', 'verses': 14},
+            62: {'name': 'الجمعة', 'verses': 11},
+            63: {'name': 'المنافقون', 'verses': 11},
+            64: {'name': 'التغابن', 'verses': 18},
+            65: {'name': 'الطلاق', 'verses': 12},
+            66: {'name': 'التحريم', 'verses': 12},
+            67: {'name': 'الملك', 'verses': 30},
+            68: {'name': 'القلم', 'verses': 52},
+            69: {'name': 'الحاقة', 'verses': 52},
+            70: {'name': 'المعارج', 'verses': 44},
+            71: {'name': 'نوح', 'verses': 28},
+            72: {'name': 'الجن', 'verses': 28},
+            73: {'name': 'المزمل', 'verses': 20},
+            74: {'name': 'المدثر', 'verses': 56},
+            75: {'name': 'القيامة', 'verses': 40},
+            76: {'name': 'الإنسان', 'verses': 31},
+            77: {'name': 'المرسلات', 'verses': 50},
+            78: {'name': 'النبأ', 'verses': 40},
+            79: {'name': 'النازعات', 'verses': 46},
+            80: {'name': 'عبس', 'verses': 42},
+            81: {'name': 'التكوير', 'verses': 29},
+            82: {'name': 'الانفطار', 'verses': 19},
+            83: {'name': 'المطففين', 'verses': 36},
+            84: {'name': 'الانشقاق', 'verses': 25},
+            85: {'name': 'البروج', 'verses': 22},
+            86: {'name': 'الطارق', 'verses': 17},
+            87: {'name': 'الأعلى', 'verses': 19},
+            88: {'name': 'الغاشية', 'verses': 26},
+            89: {'name': 'الفجر', 'verses': 30},
+            90: {'name': 'البلد', 'verses': 20},
+            91: {'name': 'الشمس', 'verses': 15},
+            92: {'name': 'الليل', 'verses': 21},
+            93: {'name': 'الضحى', 'verses': 11},
+            94: {'name': 'الشرح', 'verses': 8},
+            95: {'name': 'التين', 'verses': 8},
+            96: {'name': 'العلق', 'verses': 19},
+            97: {'name': 'القدر', 'verses': 5},
+            98: {'name': 'البينة', 'verses': 8},
+            99: {'name': 'الزلزلة', 'verses': 8},
+            100: {'name': 'العاديات', 'verses': 11},
+            101: {'name': 'القارعة', 'verses': 11},
+            102: {'name': 'التكاثر', 'verses': 8},
+            103: {'name': 'العصر', 'verses': 3},
+            104: {'name': 'الهمزة', 'verses': 9},
+            105: {'name': 'الفيل', 'verses': 5},
+            106: {'name': 'قريش', 'verses': 4},
+            107: {'name': 'الماعون', 'verses': 7},
+            108: {'name': 'الكوثر', 'verses': 3},
+            109: {'name': 'الكافرون', 'verses': 6},
+            110: {'name': 'النصر', 'verses': 3},
+            111: {'name': 'المسد', 'verses': 5},
+            112: {'name': 'الإخلاص', 'verses': 4},
+            113: {'name': 'الفلق', 'verses': 5},
+            114: {'name': 'الناس', 'verses': 6}
+        }
+
+        # Check if MP3 files exist for each surah
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        reciter_path = os.path.join(base_dir, 'reciters', folder)
+        existing_mp3s = {}
+
+        try:
+            if os.path.exists(reciter_path):
+                for file in os.listdir(reciter_path):
+                    if file.endswith('.mp3'):
+                        filename_without_ext = file.split('.')[0]
+                        if filename_without_ext.isdigit():
+                            surah_number = int(filename_without_ext)
+                            if 1 <= surah_number <= 114:
+                                existing_mp3s[surah_number] = file
+        except Exception as e:
+            logger.error(f'Error reading directory {reciter_path}: {e}')
+
+        # Generate the list of all 114 surahs
+        surahs = []
+        for surah_id in range(1, 115):  # 1 to 114 inclusive
+            surah_data = all_surahs_data.get(surah_id, {'name': f'سورة {surah_id}', 'verses': 0})
+
+            # Check if we have an MP3 file for this surah
+            if surah_id in existing_mp3s:
+                mp3_filename = existing_mp3s[surah_id]
+            else:
+                # Create a placeholder filename for surahs without MP3 files
+                mp3_filename = f"{surah_id}.mp3"
+
+            surahs.append({
+                'id': surah_id,
+                'name': surah_data['name'],
+                'verses': surah_data['verses'],
+                'filename': mp3_filename,
+                'has_audio': surah_id in existing_mp3s
+            })
 
         return render(request, 'core/reciter_detail.html', {
             'reciter': reciter,
