@@ -2,6 +2,48 @@
 
 {% block title %}الجزء {{ part.part_number }} - {{ khatma.title }} - تطبيق الختمة{% endblock %}
 
+{% block extra_css %}
+<style>
+    .quran-text {
+        font-family: 'Amiri', 'Traditional Arabic', serif;
+        font-size: 1.4rem;
+        line-height: 2.2;
+        text-align: right;
+        direction: rtl;
+        color: #333;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .quran-text .ayah {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+
+    /* Custom scrollbar for Quran text */
+    .quran-text::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .quran-text::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 8px;
+    }
+
+    .quran-text::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 8px;
+    }
+
+    .quran-text::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-8">
@@ -94,31 +136,45 @@
             </div>
             <div class="card-body">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> يمكنك قراءة هذا الجزء من القرآن الكريم من خلال الروابط التالية:
+                    <i class="fas fa-info-circle"></i> محتوى الجزء من القرآن الكريم:
                 </div>
 
                 <div class="list-group">
-                    {% for surah in quran_part.surahs.all %}
-                        <a href="{% url 'quran:surah_detail' surah_number=surah.surah_number %}" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">{{ surah.name_arabic }}</h5>
-                                <small>{{ surah.name_english }}</small>
+                    {% if surahs_in_part %}
+                        {% for surah_id, surah_data in surahs_in_part.items %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between mb-2">
+                                    <h5 class="mb-1">{{ surah_data.surah.name_arabic }}</h5>
+                                    <small>{{ surah_data.surah.name_english }}</small>
+                                </div>
+                                <p class="mb-1">
+                                    <span class="badge {% if surah_data.surah.revelation_type == 'meccan' %}bg-success{% else %}bg-info{% endif %}">
+                                        {{ surah_data.surah.revelation_type|title }}
+                                    </span>
+                                    <span class="badge bg-secondary ms-2">عدد الآيات: {{ surah_data.surah.verses_count }}</span>
+                                </p>
+
+                                <div class="quran-text mt-3 p-3 bg-light rounded">
+                                    {% for ayah in surah_data.ayahs %}
+                                        <span class="ayah">{{ ayah.text_uthmani }}</span>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="text-center mt-2">
+                                    <a href="{% url 'quran:surah_detail' surah_number=surah_data.surah.surah_number %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-book-open"></i> قراءة السورة كاملة
+                                    </a>
+                                </div>
                             </div>
-                            <p class="mb-1">{{ surah.revelation_type }}</p>
-                            <small>عدد الآيات: {{ surah.verses_count }}</small>
-                        </a>
-                    {% empty %}
+                        {% endfor %}
+                    {% else %}
                         <div class="list-group-item text-center text-muted">
                             لا توجد معلومات متاحة عن محتوى هذا الجزء
                         </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
 
-                <div class="text-center mt-3">
-                    <a href="{% url 'quran:quran_part' part_number=part.part_number %}" class="btn btn-primary">
-                        <i class="fas fa-book-open"></i> قراءة الجزء في صفحة القرآن
-                    </a>
-                </div>
+
             </div>
         </div>
     </div>

@@ -18,11 +18,41 @@ SURAH_NAMES = {'001': 'الفاتحة', '002': 'البقرة', '003': 'آل عم
 def surah_list(request):
     try:
         'View for listing all Surahs'
-        surahs = Surah.objects.all().order_by('surah_number')
-        meccan_surahs = surahs.filter(revelation_type='meccan')
-        medinan_surahs = surahs.filter(revelation_type='medinan')
-        context = {'surahs': surahs, 'meccan_surahs': meccan_surahs, 'medinan_surahs': medinan_surahs}
-        return render(request, 'quran/surah_list.html', context)
+        show_verses = request.GET.get('show_verses', 'false').lower() == 'true'
+
+        # Get all surahs with their ayahs prefetched for efficiency
+        surahs = Surah.objects.all().order_by('surah_number').prefetch_related('ayahs')
+
+        # Apply filters if provided
+        revelation_type = request.GET.get('revelation_type')
+        if revelation_type and revelation_type != 'all':
+            surahs = surahs.filter(revelation_type=revelation_type)
+
+        # Get meccan and medinan surahs for filter options
+        meccan_surahs = Surah.objects.filter(revelation_type='meccan')
+        medinan_surahs = Surah.objects.filter(revelation_type='medinan')
+
+        # Paginate the results for both views
+        # Use different page sizes based on the view
+        page_size = 15 if show_verses else 30  # Fewer surahs per page when showing verses
+
+        paginator = Paginator(surahs, page_size)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            'surahs': page_obj,  # Paginated surahs
+            'meccan_surahs': meccan_surahs,
+            'medinan_surahs': medinan_surahs,
+            'show_verses': show_verses,
+            'is_paginated': True,
+            'page_obj': page_obj
+        }
+
+        # Choose the appropriate template based on whether to show verses
+        template = 'quran/surah_list_with_verses.html' if show_verses else 'quran/surah_list.html'
+
+        return render(request, template, context)
     except Exception as e:
         logging.error('Error in surah_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -30,27 +60,51 @@ def surah_list(request):
 def surah_detail(request, surah_number):
     """View for displaying a specific Surah"""
     try:
-        # Use the service to get the data
-        from .services import get_surah_detail
+        # Get the surah directly
+        surah = get_object_or_404(Surah, surah_number=surah_number)
 
-        # Get surah details
-        context = get_surah_detail(surah_number, request.user)
+        # Get all ayahs for the surah
+        ayahs = Ayah.objects.filter(surah=surah).order_by('ayah_number_in_surah')
 
-        if context is None:
-            return render(request, 'core/error.html', context={'error': f'Surah {surah_number} not found'})
+        # Get reciters who have recited this surah
+        reciters = QuranReciter.objects.all()[:5]  # Just get a few for now
+
+        # Get user reading settings if user is authenticated
+        reading_settings = None
+        if request.user.is_authenticated:
+            reading_settings, _ = QuranReadingSettings.objects.get_or_create(user=request.user)
+
+        # Get previous and next surahs
+        previous_surah = Surah.objects.filter(surah_number__lt=surah_number).order_by('-surah_number').first()
+        next_surah = Surah.objects.filter(surah_number__gt=surah_number).order_by('surah_number').first()
 
         # Add recitations to the context
         recitations = QuranRecitation.objects.filter(
-            surah=context['surah'],
+            surah=surah,
             start_ayah__isnull=True,
             end_ayah__isnull=True
         )
-        context['recitations'] = recitations
+
+        context = {
+            'surah': surah,
+            'ayahs': ayahs,
+            'reciters': reciters,
+            'reading_settings': reading_settings,
+            'previous_surah': previous_surah,
+            'next_surah': next_surah,
+            'recitations': recitations
+        }
 
         return render(request, 'quran/surah_detail.html', context)
     except Exception as e:
         logging.error(f"Error in surah_detail: {str(e)}")
-        return render(request, 'core/error.html', context={'error': e})
+        error_title = "خطأ في عرض السورة"
+        error_message = f"حدث خطأ أثناء محاولة عرض سورة {surah_number}. يرجى المحاولة مرة أخرى."
+        return render(request, 'core/error.html', context={
+            'error_title': error_title,
+            'error_message': error_message,
+            'error_details': str(e)
+        })
 
 def juz_list(request):
     try:

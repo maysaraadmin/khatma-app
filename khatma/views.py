@@ -300,8 +300,32 @@ def part_detail(request, khatma_id, part_id):
                 return redirect('khatma:khatma_detail', khatma_id=khatma.id)
         else:
             form = KhatmaPartForm(instance=part, user=request.user)
+        # Get the QuranPart object
         quran_part = QuranPart.objects.get(part_number=part.part_number)
-        context = {'khatma': khatma, 'part': part, 'quran_part': quran_part, 'form': form, 'is_assigned_to_user': part.assigned_to == request.user, 'is_creator': khatma.creator == request.user}
+
+        # Get all ayahs for this part
+        from quran.models import Ayah
+        ayahs = Ayah.objects.filter(quran_part=quran_part).order_by('surah__surah_number', 'ayah_number_in_surah')
+
+        # Group ayahs by surah
+        surahs_in_part = {}
+        for ayah in ayahs:
+            if ayah.surah.id not in surahs_in_part:
+                surahs_in_part[ayah.surah.id] = {
+                    'surah': ayah.surah,
+                    'ayahs': []
+                }
+            surahs_in_part[ayah.surah.id]['ayahs'].append(ayah)
+
+        context = {
+            'khatma': khatma,
+            'part': part,
+            'quran_part': quran_part,
+            'form': form,
+            'is_assigned_to_user': part.assigned_to == request.user,
+            'is_creator': khatma.creator == request.user,
+            'surahs_in_part': surahs_in_part
+        }
         return render(request, 'khatma/part_detail.html', context)
     except Exception as e:
         logging.error('Error in part_detail: ' + str(e))

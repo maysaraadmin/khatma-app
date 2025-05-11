@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ surah.name_arabic }} - سورة {{ surah.name_arabic }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'quran:surah_list' %}">القرآن الكريم</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ surah.name_arabic }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Surah Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">{{ surah.name_arabic }}</h1>
+                    <p class="text-muted mb-0">{{ surah.name_english }}</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="h4">{{ surah.surah_number }}</div>
+                            <small class="text-muted">رقم السورة</small>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="h4">{{ surah.verses_count }}</div>
+                            <small class="text-muted">عدد الآيات</small>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="h4">
+                                {% if surah.revelation_type == 'meccan' %}
+                                    مكية
+                                {% else %}
+                                    مدنية
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">نوع السورة</small>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="h4">{{ surah.revelation_order|default:"-" }}</div>
+                            <small class="text-muted">ترتيب النزول</small>
+                        </div>
+                    </div>
+
+                    {% if surah.surah_number != 1 and surah.surah_number != 9 %}
+                    <div class="text-center my-4" style="font-family: 'Amiri', serif; font-size: 1.8rem;">
+                        بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quran Text -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">آيات السورة</h5>
+                </div>
+                <div class="card-body">
+                    <div style="font-family: 'Amiri', serif; font-size: 1.4rem; line-height: 2.2; text-align: right; direction: rtl;">
+                        {% for ayah in ayahs %}
+                        <div class="mb-2">
+                            <span>{{ ayah.text_uthmani }}</span>
+                            <small style="color: #777; margin: 0 5px;">﴿{{ ayah.ayah_number_in_surah }}﴾</small>
+                        </div>
+                        {% empty %}
+                        <div class="alert alert-warning text-center">
+                            لا توجد آيات متاحة لهذه السورة. يرجى التحقق من قاعدة البيانات.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="d-flex justify-content-between mb-4">
+                {% if previous_surah %}
+                <a href="{% url 'quran:surah_detail' surah_number=previous_surah.surah_number %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-right me-1"></i> {{ previous_surah.name_arabic }}
+                </a>
+                {% else %}
+                <div></div>
+                {% endif %}
+
+                {% if next_surah %}
+                <a href="{% url 'quran:surah_detail' surah_number=next_surah.surah_number %}" class="btn btn-outline-primary">
+                    {{ next_surah.name_arabic }} <i class="bi bi-arrow-left ms-1"></i>
+                </a>
+                {% else %}
+                <div></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Sidebar with reading settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">إعدادات القراءة</h5>
+                </div>
+                <div class="card-body">
+                    <p>إعدادات القراءة ستظهر هنا</p>
+                </div>
+            </div>
+
+            <!-- Surah List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">سور القرآن الكريم</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for i in "123456789"|make_list %}
+                        <a href="{% url 'quran:surah_detail' surah_number=forloop.counter %}" class="list-group-item list-group-item-action {% if surah.surah_number == forloop.counter %}active{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ forloop.counter }}. سورة</span>
+                                <span class="badge bg-secondary">آية</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                        <a href="{% url 'quran:surah_list' %}" class="list-group-item list-group-item-action text-center">
+                            <i class="bi bi-three-dots me-1"></i> عرض كل السور
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

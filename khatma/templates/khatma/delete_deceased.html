@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}حذف المتوفى{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'khatma:deceased_list' %}">المتوفين</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'khatma:deceased_detail' deceased.id %}">{{ deceased.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">حذف</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-danger text-white py-3 rounded-top-4">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> حذف المتوفى
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> تأكيد الحذف
+                        </h5>
+                        <p>هل أنت متأكد من رغبتك في حذف المتوفى <strong>{{ deceased.name }}</strong>؟</p>
+                        
+                        {% if khatmas_count > 0 %}
+                        <hr>
+                        <p class="mb-0">
+                            <i class="bi bi-info-circle-fill me-1"></i> 
+                            يوجد {{ khatmas_count }} ختمة مرتبطة بهذا المتوفى. حذف المتوفى سيؤدي إلى إزالة الارتباط بين هذه الختمات والمتوفى.
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">معلومات المتوفى</h5>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>الاسم:</span>
+                                            <span class="fw-bold">{{ deceased.name }}</span>
+                                        </li>
+                                        {% if deceased.death_date %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>تاريخ الوفاة:</span>
+                                            <span>{{ deceased.death_date }}</span>
+                                        </li>
+                                        {% endif %}
+                                        {% if deceased.relationship %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>صلة القرابة:</span>
+                                            <span>{{ deceased.relationship }}</span>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    {% if deceased.photo %}
+                                    <img src="{{ deceased.photo.url }}" alt="{{ deceased.name }}" class="img-thumbnail" style="max-height: 150px;">
+                                    {% else %}
+                                    <div class="bg-light rounded p-3 d-flex align-items-center justify-content-center" style="height: 150px;">
+                                        <i class="bi bi-person-circle text-muted" style="font-size: 3rem;"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'khatma:deceased_detail' deceased.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i> تأكيد الحذف
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

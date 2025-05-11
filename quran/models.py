@@ -24,10 +24,19 @@ class Surah(models.Model):
     name_english = models.CharField(max_length=255)
     revelation_type = models.CharField(max_length=10, choices=[('meccan', 'Meccan'), ('medinan', 'Medinan')])
     verses_count = models.IntegerField()
+    revelation_order = models.IntegerField(default=0)
 
     def __str__(self):
         '''"""Function to   str  ."""'''
         return f'{self.surah_number}. {self.name_arabic}'
+
+    def get_revelation_type_display(self):
+        """Return the display value for revelation_type"""
+        return dict([('meccan', 'مكية'), ('medinan', 'مدنية')]).get(self.revelation_type, self.revelation_type)
+
+    def get_revelation_order_display(self):
+        """Return the revelation order as string"""
+        return str(self.revelation_order) if self.revelation_order > 0 else '-'
 
     class Meta:
         '''"""Class representing Meta."""'''

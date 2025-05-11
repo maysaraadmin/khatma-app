@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}تعديل بيانات المتوفى{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'khatma:deceased_list' %}">المتوفين</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'khatma:deceased_detail' deceased.id %}">{{ deceased.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">تعديل</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3 rounded-top-4">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pencil-square me-2"></i> تعديل بيانات المتوفى
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">اسم المتوفى</label>
+                            <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-control {% if form.name.errors %}is-invalid{% endif %}" id="id_name" required>
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_death_date" class="form-label">تاريخ الوفاة</label>
+                            <input type="date" name="death_date" value="{{ form.death_date.value|date:'Y-m-d'|default:'' }}" class="form-control {% if form.death_date.errors %}is-invalid{% endif %}" id="id_death_date">
+                            {% if form.death_date.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.death_date.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">اختياري</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_relationship" class="form-label">صلة القرابة</label>
+                            <input type="text" name="relationship" value="{{ form.relationship.value|default:'' }}" class="form-control {% if form.relationship.errors %}is-invalid{% endif %}" id="id_relationship">
+                            {% if form.relationship.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.relationship.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">اختياري (مثال: والد، والدة، أخ، أخت، ...)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_photo" class="form-label">صورة المتوفى</label>
+                            {% if deceased.photo %}
+                                <div class="mb-2">
+                                    <img src="{{ deceased.photo.url }}" alt="{{ deceased.name }}" class="img-thumbnail" style="max-height: 150px;">
+                                </div>
+                            {% endif %}
+                            <input type="file" name="photo" class="form-control {% if form.photo.errors %}is-invalid{% endif %}" id="id_photo">
+                            {% if form.photo.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.photo.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">اختياري</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_notes" class="form-label">ملاحظات</label>
+                            <textarea name="notes" class="form-control {% if form.notes.errors %}is-invalid{% endif %}" id="id_notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.notes.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">اختياري</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'khatma:deceased_detail' deceased.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i> رجوع
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> حفظ التغييرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.querySelectorAll('.needs-validation');
+        
+        // Loop over them and prevent submission
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+{% endblock %}

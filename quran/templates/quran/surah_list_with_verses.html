@@ -1,0 +1,403 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}سور القرآن الكريم{% endblock %}
+
+{% block extra_css %}
+<style>
+    .surah-section {
+        margin-bottom: 3rem;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .surah-header {
+        background: linear-gradient(135deg, #1e5799 0%, #207cca 100%);
+        color: white;
+        padding: 15px 20px;
+        position: relative;
+    }
+
+    .surah-number {
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        background-color: rgba(255,255,255,0.9);
+        color: #1e5799;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .surah-meta {
+        display: flex;
+        gap: 15px;
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .surah-content {
+        padding: 20px;
+        background-color: #fff;
+    }
+
+    .quran-text {
+        font-family: 'Amiri', 'Traditional Arabic', serif;
+        font-size: 1.4rem;
+        line-height: 2.2;
+        text-align: right;
+        direction: rtl;
+        color: #333;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+
+    .ayah {
+        margin-bottom: 10px;
+    }
+
+    .ayah-text {
+        display: inline;
+    }
+
+    .ayah-number {
+        font-family: 'Amiri', serif;
+        font-size: 0.7em;
+        color: #777;
+        margin: 0 5px;
+    }
+
+    .revelation-type {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+
+    .revelation-type.meccan {
+        background-color: rgba(40, 167, 69, 0.8);
+        color: white;
+    }
+
+    .revelation-type.medinan {
+        background-color: rgba(23, 162, 184, 0.8);
+        color: white;
+    }
+
+    .filter-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .bismillah {
+        text-align: center;
+        font-family: 'Amiri', 'Traditional Arabic', serif;
+        font-size: 1.6rem;
+        margin-bottom: 15px;
+        color: #1e5799;
+    }
+
+    .surah-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+    }
+
+    .collapse-toggle {
+        cursor: pointer;
+        color: #1e5799;
+        font-weight: bold;
+    }
+
+    .collapse-toggle:hover {
+        text-decoration: underline;
+    }
+
+    .surah-collapse {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    /* Custom scrollbar */
+    .surah-collapse::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .surah-collapse::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 8px;
+    }
+
+    .surah-collapse::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 8px;
+    }
+
+    .surah-collapse::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">القرآن الكريم</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">سور القرآن الكريم</h1>
+            <p class="text-muted">قراءة القرآن الكريم مع عرض جميع الآيات</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group">
+                <a href="{% url 'quran:juz_list' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-grid-3x3-gap me-1"></i> عرض حسب الأجزاء
+                </a>
+                <a href="{% url 'quran:surah_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-grid me-1"></i> العرض المبسط
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section mb-4">
+        <form method="get" action="{% url 'quran:surah_list' %}">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="searchSurah" class="form-label">بحث عن سورة</label>
+                    <input type="text" class="form-control" id="searchSurah" placeholder="اكتب اسم السورة...">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="filterRevelation" class="form-label">نوع السورة</label>
+                    <select class="form-select" id="filterRevelation" name="revelation_type">
+                        <option value="all" {% if not request.GET.revelation_type or request.GET.revelation_type == 'all' %}selected{% endif %}>الكل</option>
+                        <option value="meccan" {% if request.GET.revelation_type == 'meccan' %}selected{% endif %}>مكية</option>
+                        <option value="medinan" {% if request.GET.revelation_type == 'medinan' %}selected{% endif %}>مدنية</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="expandAll" class="form-label">عرض الآيات</label>
+                    <div>
+                        <button type="button" class="btn btn-outline-primary w-100" id="expandAll">
+                            <i class="bi bi-arrows-expand me-1"></i> عرض/إخفاء جميع الآيات
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter me-1"></i> تطبيق الفلتر
+                    </button>
+                    <a href="{% url 'quran:surah_list' %}?show_verses=true" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-x-circle me-1"></i> إعادة ضبط
+                    </a>
+                </div>
+            </div>
+
+            <!-- Preserve other query parameters -->
+            <input type="hidden" name="show_verses" value="true">
+            {% for key, value in request.GET.items %}
+                {% if key != 'revelation_type' and key != 'page' and key != 'show_verses' %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                {% endif %}
+            {% endfor %}
+        </form>
+    </div>
+
+    <!-- Surahs List with Verses -->
+    <div id="surahsList">
+        {% for surah in surahs %}
+        <div class="surah-section surah-item"
+             data-name="{{ surah.name_arabic }} {{ surah.name_english }}"
+             data-revelation="{{ surah.revelation_type }}"
+             data-verses="{{ surah.verses_count }}"
+             data-revelation-order="{{ surah.revelation_order|default:0 }}">
+            <div class="surah-header">
+                <div class="surah-number">{{ surah.surah_number }}</div>
+                <h2 class="h4 mb-0">{{ surah.name_arabic }}</h2>
+                <small>{{ surah.name_english }}</small>
+
+                <div class="surah-meta">
+                    <span>
+                        <span class="revelation-type {% if surah.revelation_type == 'meccan' %}meccan{% else %}medinan{% endif %}">
+                            {% if surah.revelation_type == 'meccan' %}مكية{% else %}مدنية{% endif %}
+                        </span>
+                    </span>
+                    <span>{{ surah.verses_count }} آية</span>
+                    <span>ترتيب النزول: {{ surah.revelation_order|default:"-" }}</span>
+                </div>
+            </div>
+
+            <div class="surah-content">
+                <div class="surah-actions">
+                    <a href="{% url 'quran:surah_detail' surah_number=surah.surah_number %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-book me-1"></i> عرض صفحة السورة
+                    </a>
+                    <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#surah-{{ surah.surah_number }}-verses">
+                        <i class="bi bi-chevron-down me-1"></i> عرض الآيات
+                    </span>
+                </div>
+
+                <div class="collapse mt-3" id="surah-{{ surah.surah_number }}-verses">
+                    <div class="surah-collapse">
+                        {% if surah.surah_number != 1 and surah.surah_number != 9 %}
+                        <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+                        {% endif %}
+
+                        <div class="quran-text">
+                            {% if surah.ayahs.all|length > 0 %}
+                                {% for ayah in surah.ayahs.all %}
+                                <div class="ayah">
+                                    <span class="ayah-text">{{ ayah.text_uthmani }}</span>
+                                    <span class="ayah-number">﴿{{ ayah.ayah_number_in_surah }}﴾</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-info text-center">
+                                    <p>لم يتم تحميل الآيات بعد</p>
+                                    <div class="text-center mt-2">
+                                        <a href="{% url 'quran:surah_detail' surah_number=surah.surah_number %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-book-half me-1"></i> عرض السورة كاملة
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination for Surahs -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?show_verses=true&page=1{% if request.GET.revelation_type %}&revelation_type={{ request.GET.revelation_type }}{% endif %}" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?show_verses=true&page={{ page_obj.previous_page_number }}{% if request.GET.revelation_type %}&revelation_type={{ request.GET.revelation_type }}{% endif %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><a class="page-link" href="?show_verses=true&page={{ num }}{% if request.GET.revelation_type %}&revelation_type={{ request.GET.revelation_type }}{% endif %}">{{ num }}</a></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?show_verses=true&page={{ num }}{% if request.GET.revelation_type %}&revelation_type={{ request.GET.revelation_type }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?show_verses=true&page={{ page_obj.next_page_number }}{% if request.GET.revelation_type %}&revelation_type={{ request.GET.revelation_type }}{% endif %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?show_verses=true&page={{ page_obj.paginator.num_pages }}{% if request.GET.revelation_type %}&revelation_type={{ request.GET.revelation_type }}{% endif %}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- No Results Message -->
+    <div id="noResults" class="text-center py-5 d-none">
+        <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+        <h4 class="mt-3">لا توجد نتائج</h4>
+        <p class="text-muted">لم يتم العثور على سور تطابق معايير البحث</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Search and filter functionality
+        function filterSurahs() {
+            const searchText = $('#searchSurah').val().toLowerCase();
+            const revelationType = $('#filterRevelation').val();
+
+            let visibleCount = 0;
+
+            // Filter the surahs
+            $('.surah-item').each(function() {
+                const surahName = $(this).data('name').toLowerCase();
+                const surahRevelation = $(this).data('revelation');
+
+                const matchesSearch = surahName.includes(searchText);
+                const matchesRevelation = revelationType === 'all' || surahRevelation === revelationType;
+
+                if (matchesSearch && matchesRevelation) {
+                    $(this).removeClass('d-none');
+                    visibleCount++;
+                } else {
+                    $(this).addClass('d-none');
+                }
+            });
+
+            // Show/hide no results message
+            if (visibleCount === 0) {
+                $('#noResults').removeClass('d-none');
+            } else {
+                $('#noResults').addClass('d-none');
+            }
+        }
+
+        // Expand/collapse all verses
+        let allExpanded = false;
+        $('#expandAll').click(function() {
+            if (allExpanded) {
+                $('.collapse').collapse('hide');
+            } else {
+                $('.collapse').collapse('show');
+            }
+            allExpanded = !allExpanded;
+        });
+
+        // Update collapse toggle text
+        $('.collapse').on('show.bs.collapse', function() {
+            $(this).prev('.surah-actions').find('.collapse-toggle').html('<i class="bi bi-chevron-up me-1"></i> إخفاء الآيات');
+        });
+
+        $('.collapse').on('hide.bs.collapse', function() {
+            $(this).prev('.surah-actions').find('.collapse-toggle').html('<i class="bi bi-chevron-down me-1"></i> عرض الآيات');
+        });
+
+        // Attach event handlers
+        $('#searchSurah').on('input', filterSurahs);
+        $('#filterRevelation').on('change', filterSurahs);
+    });
+</script>
+{% endblock %}
