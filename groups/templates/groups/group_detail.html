@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Group Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="group-header p-4" style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);">
+                <div class="row align-items-center">
+                    <div class="col-md-2 text-center mb-3 mb-md-0">
+                        {% if group.image %}
+                            <img src="{{ group.image.url }}" alt="{{ group.name }}" class="rounded-circle img-thumbnail" style="width: 120px; height: 120px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-white rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px;">
+                                <i class="bi bi-people-fill text-success" style="font-size: 3rem;"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-7 text-white">
+                        <h1 class="display-5 mb-1">{{ group.name }}</h1>
+                        <div class="d-flex flex-wrap align-items-center mb-2">
+                            <span class="badge bg-light text-dark me-2 mb-1">
+                                <i class="bi bi-shield-lock me-1"></i>
+                                {{ group.is_public|yesno:'عامة,خاصة' }}
+                            </span>
+                            <span class="badge bg-light text-dark me-2 mb-1">
+                                <i class="bi bi-people me-1"></i>
+                                {{ members_count }} عضو
+                            </span>
+                            <span class="badge bg-light text-dark me-2 mb-1">
+                                <i class="bi bi-book me-1"></i>
+                                {{ active_khatmas.count }} ختمة نشطة
+                            </span>
+                        </div>
+                        <p class="mb-0">{{ group.description }}</p>
+                    </div>
+                    <div class="col-md-3 text-center text-md-end mt-3 mt-md-0">
+                        {% if is_member %}
+                            <a href="{% url 'groups:group_dashboard' group.id %}" class="btn btn-light mb-2 w-100">
+                                <i class="bi bi-speedometer2 me-1"></i> لوحة المعلومات
+                            </a>
+                            <a href="{% url 'chat:group_chat' group.id %}" class="btn btn-light mb-2 w-100">
+                                <i class="bi bi-chat-dots me-1"></i> الدردشة
+                            </a>
+                            <a href="{% url 'groups:leave_group' group.id %}" class="btn btn-outline-light w-100">
+                                <i class="bi bi-box-arrow-right me-1"></i> مغادرة المجموعة
+                            </a>
+                        {% elif has_pending_request %}
+                            <button class="btn btn-light w-100" disabled>
+                                <i class="bi bi-hourglass-split me-1"></i> طلب الانضمام قيد المراجعة
+                            </button>
+                        {% else %}
+                            <a href="{% url 'groups:join_group' group.id %}" class="btn btn-light w-100">
+                                <i class="bi bi-person-plus me-1"></i> انضمام للمجموعة
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Group Info and Members -->
+        <div class="col-md-4 mb-4">
+            <!-- Group Admins -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge me-2"></i>
+                        إدارة المجموعة
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for admin in admins %}
+                            <li class="list-group-item d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if admin.user.profile.profile_picture %}
+                                        <img src="{{ admin.user.profile.profile_picture.url }}" alt="{{ admin.user.username }}" class="rounded-circle" width="40" height="40">
+                                    {% else %}
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ admin.user.username }}</h6>
+                                    <small class="text-muted">مدير المجموعة</small>
+                                </div>
+                            </li>
+                        {% endfor %}
+                        
+                        {% for moderator in moderators %}
+                            <li class="list-group-item d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if moderator.user.profile.profile_picture %}
+                                        <img src="{{ moderator.user.profile.profile_picture.url }}" alt="{{ moderator.user.username }}" class="rounded-circle" width="40" height="40">
+                                    {% else %}
+                                        <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ moderator.user.username }}</h6>
+                                    <small class="text-muted">مشرف</small>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'groups:group_members' group.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-people me-1"></i> عرض جميع الأعضاء
+                    </a>
+                </div>
+            </div>
+
+            <!-- Announcements -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-megaphone me-2"></i>
+                        الإعلانات
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if announcements %}
+                        {% for announcement in announcements %}
+                            <div class="announcement-item {% if announcement.is_pinned %}pinned{% endif %} mb-3">
+                                <h6 class="announcement-title">
+                                    {% if announcement.is_pinned %}
+                                        <i class="bi bi-pin-angle-fill text-danger me-1"></i>
+                                    {% endif %}
+                                    {{ announcement.title }}
+                                </h6>
+                                <p class="announcement-content small mb-1">{{ announcement.content }}</p>
+                                <div class="announcement-meta d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">{{ announcement.created_at|date:"Y-m-d" }}</small>
+                                    <small class="text-muted">{{ announcement.created_by.username }}</small>
+                                </div>
+                            </div>
+                            {% if not forloop.last %}
+                                <hr class="my-3">
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center mb-0">لا توجد إعلانات حالياً</p>
+                    {% endif %}
+                </div>
+                {% if is_admin or is_moderator %}
+                    <div class="card-footer text-center">
+                        <a href="{% url 'groups:create_announcement' group.id %}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-plus-circle me-1"></i> إضافة إعلان
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Khatmas and Events -->
+        <div class="col-md-8">
+            <!-- Active Khatmas -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-book me-2"></i>
+                        الختمات النشطة
+                    </h5>
+                    {% if is_member %}
+                        <a href="{% url 'groups:create_group_khatma' group.id %}" class="btn btn-sm btn-light">
+                            <i class="bi bi-plus-circle me-1"></i> إنشاء ختمة
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if active_khatmas %}
+                        <div class="row">
+                            {% for khatma in active_khatmas %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm hover-card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ khatma.title }}</h5>
+                                            <p class="card-text small text-muted">{{ khatma.description|truncatechars:80 }}</p>
+                                            <div class="progress mb-3" style="height: 10px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ khatma.get_completion_percentage }}%;" aria-valuenow="{{ khatma.get_completion_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">{{ khatma.get_completion_percentage }}% مكتمل</small>
+                                                <a href="{% url 'khatma:khatma_detail' khatma.id %}" class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-eye me-1"></i> عرض
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">لا توجد ختمات نشطة حالياً</p>
+                            {% if is_member %}
+                                <a href="{% url 'groups:create_group_khatma' group.id %}" class="btn btn-success">
+                                    <i class="bi bi-plus-circle me-1"></i> إنشاء ختمة جديدة
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% if active_khatmas %}
+                    <div class="card-footer text-center">
+                        <a href="{% url 'groups:group_khatmas' group.id %}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-book me-1"></i> عرض جميع الختمات
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Upcoming Events -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        الفعاليات القادمة
+                    </h5>
+                    {% if is_member %}
+                        <a href="{% url 'groups:create_event' group.id %}" class="btn btn-sm btn-light">
+                            <i class="bi bi-plus-circle me-1"></i> إضافة فعالية
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if upcoming_events %}
+                        <div class="row">
+                            {% for event in upcoming_events %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm hover-card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ event.title }}</h5>
+                                            <p class="card-text small text-muted">{{ event.description|truncatechars:80 }}</p>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-clock me-2 text-info"></i>
+                                                <span>{{ event.start_time|date:"Y-m-d H:i" }}</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="bi bi-geo-alt me-2 text-info"></i>
+                                                <span>{{ event.location|default:"عبر الإنترنت" }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-info text-white">{{ event.attendees.count }} مشارك</span>
+                                                <a href="{% url 'groups:event_detail' group.id event.id %}" class="btn btn-sm btn-outline-info">
+                                                    <i class="bi bi-eye me-1"></i> عرض
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-calendar-event text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">لا توجد فعاليات قادمة حالياً</p>
+                            {% if is_member %}
+                                <a href="{% url 'groups:create_event' group.id %}" class="btn btn-info text-white">
+                                    <i class="bi bi-plus-circle me-1"></i> إضافة فعالية جديدة
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% if upcoming_events %}
+                    <div class="card-footer text-center">
+                        <a href="{% url 'groups:group_events' group.id %}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-calendar me-1"></i> عرض جميع الفعاليات
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -532,7 +532,16 @@ def reciter_detail(request, folder):
             {'id': 3, 'name': 'آل عمران', 'verses': 200},
             {'id': 4, 'name': 'النساء', 'verses': 176},
             {'id': 5, 'name': 'المائدة', 'verses': 120},
-            # Add more surahs as needed
+            {'id': 6, 'name': 'الأنعام', 'verses': 165},
+            {'id': 7, 'name': 'الأعراف', 'verses': 206},
+            {'id': 8, 'name': 'الأنفال', 'verses': 75},
+            {'id': 9, 'name': 'التوبة', 'verses': 129},
+            {'id': 10, 'name': 'يونس', 'verses': 109},
+            {'id': 11, 'name': 'هود', 'verses': 123},
+            {'id': 12, 'name': 'يوسف', 'verses': 111},
+            {'id': 13, 'name': 'الرعد', 'verses': 43},
+            {'id': 14, 'name': 'إبراهيم', 'verses': 52},
+            {'id': 15, 'name': 'الحجر', 'verses': 99},
         ]
 
         return render(request, 'core/reciter_detail.html', {

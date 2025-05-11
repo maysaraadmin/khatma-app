@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إنشاء ختمة جماعية - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:index' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'groups:group_list' %}">المجموعات</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'groups:group_detail' group.id %}">{{ group.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'groups:group_khatmas' group.id %}">الختمات</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">إنشاء ختمة جديدة</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-success text-white py-3 rounded-top-4">
+                    <h3 class="mb-0">
+                        <i class="bi bi-book me-2"></i>
+                        إنشاء ختمة جماعية لمجموعة {{ group.name }}
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Hidden field for group -->
+                        <input type="hidden" name="group" value="{{ group.id }}">
+
+                        <div class="mb-4">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">{{ form.title.label }}</label>
+                            <input type="text" name="title" id="id_title" class="form-control" required>
+                            {% if form.title.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">أدخل عنواناً واضحاً للختمة</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">{{ form.description.label }}</label>
+                            <textarea name="description" id="id_description" class="form-control" rows="3"></textarea>
+                            {% if form.description.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">أضف وصفاً مختصراً للختمة والغرض منها</div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label fw-bold">تاريخ البدء</label>
+                                <input type="date" name="start_date" id="id_start_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+                                {% if form.start_date.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.start_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.target_completion_date.id_for_label }}" class="form-label fw-bold">تاريخ الانتهاء المتوقع</label>
+                                <input type="date" name="target_completion_date" id="id_target_completion_date" class="form-control">
+                                {% if form.target_completion_date.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.target_completion_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_public" id="id_is_public" class="form-check-input" checked>
+                                <label for="id_is_public" class="form-check-label">ختمة عامة (يمكن لأي عضو في المجموعة المشاركة)</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="auto_distribute_parts" id="id_auto_distribute_parts" class="form-check-input">
+                                <label for="id_auto_distribute_parts" class="form-check-label">توزيع الأجزاء تلقائياً</label>
+                            </div>
+                            <div class="form-text">سيتم توزيع أجزاء القرآن تلقائياً على أعضاء المجموعة</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'groups:group_khatmas' group.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                العودة للختمات
+                            </a>
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-check-circle me-1"></i>
+                                إنشاء الختمة
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calculate target completion date based on start date
+        const startDateInput = document.getElementById('id_start_date');
+        const endDateInput = document.getElementById('id_target_completion_date');
+
+        // Set default end date to 30 days after start date
+        function updateEndDate() {
+            const startDate = new Date(startDateInput.value);
+            if (!isNaN(startDate.getTime())) {
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 30);
+
+                // Format date as YYYY-MM-DD
+                const year = endDate.getFullYear();
+                const month = String(endDate.getMonth() + 1).padStart(2, '0');
+                const day = String(endDate.getDate()).padStart(2, '0');
+                endDateInput.value = `${year}-${month}-${day}`;
+            }
+        }
+
+        // Set initial end date
+        updateEndDate();
+
+        // Update end date when start date changes
+        startDateInput.addEventListener('change', updateEndDate);
+    });
+</script>
+{% endblock %}

@@ -1,71 +1,238 @@
+{% extends 'core/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مرحباً بك في تطبيق ختمة</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background-color: #f8f9fa;
-        }
-        .welcome-container {
-            max-width: 800px;
-            margin: 100px auto;
-            padding: 40px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .welcome-icon {
-            font-size: 4rem;
-            color: #5D4037;
-            margin-bottom: 20px;
-        }
-        h1 {
-            color: #3E2723;
-            margin-bottom: 20px;
-        }
-        p {
-            color: #757575;
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-        }
-        .btn-primary {
-            background-color: #5D4037;
-            border-color: #5D4037;
-            padding: 10px 25px;
-        }
-        .btn-primary:hover {
-            background-color: #3E2723;
-            border-color: #3E2723;
-        }
-        .btn-outline-secondary {
-            color: #5D4037;
-            border-color: #5D4037;
-            padding: 10px 25px;
-        }
-        .btn-outline-secondary:hover {
-            background-color: #5D4037;
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <div class="welcome-container">
-        <i class="bi bi-book welcome-icon"></i>
-        <h1>مرحباً بك في تطبيق ختمة</h1>
-        <p>تطبيق ختمة هو منصة إسلامية لتنظيم ختمات القرآن الكريم بشكل فردي أو جماعي وإهداء الثواب للمتوفين.</p>
-        <div class="d-flex justify-content-center gap-3">
-            <a href="{% url 'core:community' %}" class="btn btn-primary">استكشف التطبيق</a>
-            <a href="{% url 'core:about_page' %}" class="btn btn-outline-secondary">عن التطبيق</a>
+
+{% block title %}مرحباً بك في تطبيق ختمة{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #5D4037 0%, #3E2723 100%);
+        color: white;
+        padding: 80px 0;
+        margin-top: -24px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('{% static "core/images/quran-pattern.png" %}');
+        background-size: 300px;
+        opacity: 0.05;
+        z-index: 0;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+
+    .feature-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        color: #5D4037;
+    }
+
+    .cta-section {
+        background-color: #f8f9fa;
+        padding: 80px 0;
+        border-radius: 20px;
+        margin: 50px 0;
+    }
+
+    .auth-buttons .btn {
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 50px;
+        margin: 0 10px;
+    }
+
+    .btn-primary {
+        background-color: #5D4037;
+        border-color: #5D4037;
+    }
+
+    .btn-primary:hover {
+        background-color: #3E2723;
+        border-color: #3E2723;
+    }
+
+    .btn-outline-primary {
+        color: #5D4037;
+        border-color: #5D4037;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #5D4037;
+        color: white;
+    }
+
+    .testimonial-card {
+        border: none;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+
+    .testimonial-quote {
+        font-size: 1.2rem;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+
+    .testimonial-author {
+        font-weight: 600;
+        color: #5D4037;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7 hero-content">
+                <h1 class="hero-title">ختمة القرآن الكريم</h1>
+                <p class="hero-subtitle">شارك في ختمات القرآن الكريم مع الأصدقاء والعائلة، وأهدِ ثواب القراءة للمتوفين</p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{% url 'login' %}" class="btn btn-light btn-lg px-4 py-2">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> تسجيل الدخول
+                    </a>
+                    <a href="{% url 'core:community_khatmas' %}" class="btn btn-outline-light btn-lg px-4 py-2">
+                        <i class="bi bi-people me-2"></i> استكشف الختمات
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block">
+                <img src="{% static 'core/images/quran-illustration.png' %}" alt="القرآن الكريم" class="img-fluid" onerror="this.src='https://placehold.co/600x400/5D4037/ffffff?text=القرآن+الكريم'">
+            </div>
         </div>
     </div>
+</section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">مميزات التطبيق</h2>
+            <p class="lead">تطبيق ختمة يوفر العديد من المميزات لتسهيل ختم القرآن الكريم</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-book feature-icon"></i>
+                        <h3>ختمات فردية وجماعية</h3>
+                        <p>إنشاء ختمات فردية أو جماعية ومشاركتها مع الأصدقاء والعائلة</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-people feature-icon"></i>
+                        <h3>مجموعات القراءة</h3>
+                        <p>إنشاء وإدارة مجموعات للقراءة الجماعية والتواصل مع الأعضاء</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-heart feature-icon"></i>
+                        <h3>إهداء الثواب</h3>
+                        <p>إهداء ثواب القراءة للمتوفين وتخصيص صفحات تذكارية لهم</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="cta-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="display-5 fw-bold mb-4">ابدأ رحلتك مع القرآن الكريم</h2>
+                <p class="lead mb-5">انضم إلينا اليوم وابدأ في المشاركة في ختمات القرآن الكريم</p>
+                <div class="auth-buttons">
+                    <a href="{% url 'login' %}" class="btn btn-primary">تسجيل الدخول</a>
+                    <a href="{% url 'account_signup' %}" class="btn btn-outline-primary">إنشاء حساب جديد</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">آراء المستخدمين</h2>
+            <p class="lead">ماذا يقول مستخدمو تطبيق ختمة</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <p class="testimonial-quote">"تطبيق رائع ساعدني على ختم القرآن مع عائلتي وإهداء الثواب لوالدي المتوفى."</p>
+                    <p class="testimonial-author">- أحمد محمد</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <p class="testimonial-quote">"أحب ميزة مجموعات القراءة، تساعدنا على التواصل والتشجيع المتبادل لإكمال الختمة."</p>
+                    <p class="testimonial-author">- فاطمة علي</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <p class="testimonial-quote">"واجهة سهلة الاستخدام وميزات رائعة. أنصح به بشدة لكل من يرغب في ختم القرآن."</p>
+                    <p class="testimonial-author">- محمد خالد</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

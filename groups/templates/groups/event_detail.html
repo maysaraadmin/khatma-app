@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ event.title }} - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'groups:group_list' %}">المجموعات</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'groups:group_detail' group.id %}">{{ group.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'groups:group_events' group.id %}">الفعاليات</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">{{ event.title }}</h2>
+                {% if is_admin or is_moderator or event.creator == request.user %}
+                    <div>
+                        <a href="{% url 'groups:edit_event' group.id event.id %}" class="btn btn-light btn-sm me-2">
+                            <i class="bi bi-pencil-square me-1"></i> تعديل
+                        </a>
+                        <a href="{% url 'groups:delete_event' group.id event.id %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-trash me-1"></i> حذف
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-4">
+                        <h5 class="text-info mb-3">تفاصيل الفعالية</h5>
+                        <p class="lead">{{ event.description }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">
+                                        <i class="bi bi-calendar-event me-2"></i> التاريخ والوقت
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>البداية:</strong> {{ event.start_time|date:"Y-m-d H:i" }}<br>
+                                        {% if event.end_time %}
+                                            <strong>النهاية:</strong> {{ event.end_time|date:"Y-m-d H:i" }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">
+                                        <i class="bi bi-geo-alt me-2"></i> المكان
+                                    </h5>
+                                    <p class="card-text">
+                                        {% if event.location %}
+                                            {{ event.location }}
+                                        {% else %}
+                                            عبر الإنترنت
+                                        {% endif %}
+                                    </p>
+                                    {% if event.location_url %}
+                                        <a href="{{ event.location_url }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                            <i class="bi bi-link-45deg me-1"></i> رابط الموقع
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if event.start_time > now %}
+                        <div class="mb-4">
+                            <h5 class="text-info mb-3">المشاركة</h5>
+                            {% if is_member %}
+                                {% if is_attending %}
+                                    <form method="post" action="{% url 'groups:attend_event' group.id event.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="cancel">
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="bi bi-x-circle me-1"></i> إلغاء المشاركة
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{% url 'groups:attend_event' group.id event.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="attend">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-check-circle me-1"></i> المشاركة في الفعالية
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> يجب أن تكون عضواً في المجموعة للمشاركة في الفعالية.
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-people me-2"></i> المشاركون ({{ attendees_count }})
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if attendees %}
+                                <ul class="list-group list-group-flush">
+                                    {% for attendee in attendees %}
+                                        <li class="list-group-item d-flex align-items-center">
+                                            <div class="me-3">
+                                                {% if attendee.profile.profile_picture %}
+                                                    <img src="{{ attendee.profile.profile_picture.url }}" alt="{{ attendee.username }}" class="rounded-circle" width="40" height="40">
+                                                {% else %}
+                                                    <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-person-fill"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ attendee.username }}</h6>
+                                                {% if attendee == event.creator %}
+                                                    <small class="text-muted">منشئ الفعالية</small>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div class="p-4 text-center">
+                                    <p class="text-muted mb-0">لا يوجد مشاركون حتى الآن</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i> معلومات إضافية
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>منشئ الفعالية:</strong> {{ event.creator.username }}</p>
+                            <p><strong>تاريخ الإنشاء:</strong> {{ event.created_at|date:"Y-m-d" }}</p>
+                            {% if event.max_attendees %}
+                                <p>
+                                    <strong>الحد الأقصى للمشاركين:</strong> 
+                                    {{ attendees_count }}/{{ event.max_attendees }}
+                                </p>
+                                <div class="progress mb-2" style="height: 10px;">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ attendees_count|floatformat:0|default:0|mul:100|div:event.max_attendees|floatformat:0 }}%;" aria-valuenow="{{ attendees_count }}" aria-valuemin="0" aria-valuemax="{{ event.max_attendees }}"></div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

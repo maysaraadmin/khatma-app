@@ -103,29 +103,28 @@ class GroupKhatmaForm(forms.ModelForm):
     group = forms.ModelChoiceField(label='المجموعة', queryset=ReadingGroup.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}))
     auto_distribute_parts = forms.BooleanField(label='توزيع الأجزاء تلقائياً على أعضاء المجموعة', initial=True, required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
     start_date = forms.DateField(label='تاريخ البدء', widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), initial=timezone.now)
-    end_date = forms.DateField(label='تاريخ الانتهاء', widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=True)
+    target_completion_date = forms.DateField(label='تاريخ الانتهاء المتوقع', widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=True)
 
     class Meta:
         '''"""Class representing Meta."""'''
         model = Khatma
-        fields = ['title', 'description', 'group', 'auto_distribute_parts', 'start_date', 'end_date']
+        fields = ['title', 'description', 'group', 'auto_distribute_parts', 'start_date', 'target_completion_date']
 
     def clean(self):
         '''"""Function to clean."""'''
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
-        end_date = cleaned_data.get('end_date')
+        target_completion_date = cleaned_data.get('target_completion_date')
         group = cleaned_data.get('group')
-        if start_date and end_date and (start_date >= end_date):
-            raise ValidationError('تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء')
+        if start_date and target_completion_date and (start_date >= target_completion_date):
+            raise ValidationError('تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء المتوقع')
         if group and (not group.is_active):
             raise ValidationError('المجموعة المحددة غير نشطة')
         return cleaned_data
 
-    def save(self, user, commit=True):
+    def save(self, commit=True):
         """Save the group Khatma with appropriate settings"""
         khatma = super().save(commit=False)
-        khatma.creator = user
         khatma.khatma_type = 'group'
         khatma.is_group_khatma = True
         khatma.visibility = 'group'

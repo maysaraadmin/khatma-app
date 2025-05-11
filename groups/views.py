@@ -487,6 +487,43 @@ def create_event(request, group_id):
     return render(request, 'groups/create_event.html', context)
 
 @login_required
+def event_detail(request, group_id, event_id):
+    """View for displaying event details"""
+    try:
+        group = get_object_or_404(ReadingGroup, id=group_id)
+        event = get_object_or_404(GroupEvent, id=event_id, group=group)
+
+        is_member = request.user.is_authenticated and group.members.filter(id=request.user.id).exists()
+        if not group.is_public and (not is_member):
+            messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
+            return redirect('groups:group_list')
+
+        member_role = None
+        if is_member:
+            membership = GroupMembership.objects.get(user=request.user, group=group)
+            member_role = membership.role
+
+        is_attending = request.user.is_authenticated and event.attendees.filter(id=request.user.id).exists()
+        attendees = event.attendees.all()
+
+        context = {
+            'group': group,
+            'event': event,
+            'is_member': is_member,
+            'member_role': member_role,
+            'is_admin': member_role == 'admin',
+            'is_moderator': member_role in ['admin', 'moderator'],
+            'is_attending': is_attending,
+            'attendees': attendees,
+            'attendees_count': attendees.count(),
+        }
+
+        return render(request, 'groups/event_detail.html', context)
+    except Exception as e:
+        logging.error('Error in event_detail: ' + str(e))
+        return render(request, 'core/error.html', context={'error': e})
+
+@login_required
 def edit_event(request, group_id, event_id):
     """View for editing a group event"""
     group = get_object_or_404(ReadingGroup, id=group_id)
@@ -663,18 +700,45 @@ def create_group_khatma(request, group_id):
                 khatma.is_group_khatma = True
                 khatma.khatma_type = 'group'
                 khatma.save()
+
+                # Create parts for the khatma
+                from khatma.models import KhatmaPart
+                for i in range(1, 31):  # 30 parts of Quran
+                    KhatmaPart.objects.create(
+                        khatma=khatma,
+                        part_number=i
+                    )
+
+                # Add creator as participant
+                from khatma.models import Participant
+                Participant.objects.create(
+                    user=request.user,
+                    khatma=khatma
+                )
+
                 try:
                     from notifications.models import Notification
                     for member in group.members.all():
                         if member != request.user:
-                            Notification.objects.create(user=member, notification_type='new_group_khatma', message=f'تم إنشاء ختمة جديدة في مجموعة "{group.name}": {khatma.title}', related_khatma=khatma, related_group=group)
+                            Notification.objects.create(
+                                user=member,
+                                notification_type='new_group_khatma',
+                                message=f'تم إنشاء ختمة جديدة في مجموعة "{group.name}": {khatma.title}',
+                                related_khatma=khatma,
+                                related_group=group
+                            )
                 except (ImportError, AttributeError):
                     pass
+
                 messages.success(request, 'تم إنشاء الختمة بنجاح')
                 return redirect('khatma:khatma_detail', khatma_id=khatma.id)
         else:
             form = GroupKhatmaForm(initial={'group': group})
-        context = {'form': form, 'group': group}
+        context = {
+            'form': form,
+            'group': group,
+            'today': timezone.now()
+        }
         return render(request, 'groups/create_group_khatma.html', context)
     except Exception as e:
         logging.error('Error in create_group_khatma: ' + str(e))

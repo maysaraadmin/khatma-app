@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load socialaccount %}
+
+{% block title %}تسجيل الدخول{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
+          <h2 class="card-title text-center mb-4 fw-bold text-primary">تسجيل الدخول</h2>
+
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            <p>اسم المستخدم أو كلمة المرور غير صحيحة. الرجاء المحاولة مرة أخرى.</p>
+          </div>
+          {% endif %}
+
+          {% if next %}
+            {% if user.is_authenticated %}
+            <div class="alert alert-warning">
+              <p>ليس لديك صلاحية للوصول إلى هذه الصفحة. للمتابعة، الرجاء تسجيل الدخول بحساب له صلاحية الوصول.</p>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+              <p>الرجاء تسجيل الدخول للوصول إلى هذه الصفحة.</p>
+            </div>
+            {% endif %}
+          {% endif %}
+
+          <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="id_username" class="form-label">اسم المستخدم</label>
+              <input type="text" name="username" id="id_username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="id_password" class="form-label">كلمة المرور</label>
+              <input type="password" name="password" id="id_password" class="form-control" required>
+            </div>
+            <input type="hidden" name="next" value="{{ next }}">
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg">تسجيل الدخول</button>
+            </div>
+          </form>
+
+          <div class="text-center mt-3">
+            <a href="{% url 'password_reset' %}" class="text-muted">نسيت كلمة المرور؟</a>
+            <div class="mt-2">
+              <span class="text-muted">ليس لديك حساب؟</span>
+              <a href="{% url 'users:register' %}" class="text-primary">إنشاء حساب جديد</a>
+            </div>
+          </div>
+
+          {% get_providers as socialaccount_providers %}
+          {% if socialaccount_providers %}
+          <div class="mt-4">
+            <hr>
+            <p class="text-center">{% trans "أو تسجيل الدخول باستخدام" %}</p>
+            <div class="d-flex justify-content-center gap-2">
+              {% for provider in socialaccount_providers %}
+                {% if provider.id == "google" %}
+                <a href="{% provider_login_url provider.id %}" class="btn btn-outline-danger">
+                  <i class="bi bi-google me-2"></i>Google
+                </a>
+                {% elif provider.id == "facebook" %}
+                <a href="{% provider_login_url provider.id %}" class="btn btn-outline-primary">
+                  <i class="bi bi-facebook me-2"></i>Facebook
+                </a>
+                {% elif provider.id == "apple" %}
+                <a href="{% provider_login_url provider.id %}" class="btn btn-outline-dark">
+                  <i class="bi bi-apple me-2"></i>Apple
+                </a>
+                {% else %}
+                <a href="{% provider_login_url provider.id %}" class="btn btn-outline-secondary">
+                  {{ provider.name }}
+                </a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

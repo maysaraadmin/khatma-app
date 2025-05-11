@@ -95,7 +95,7 @@
                     {% if user_khatmas %}
                         <div class="list-group list-group-flush">
                             {% for khatma in user_khatmas|slice:":5" %}
-                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <a href="{% url 'khatma:khatma_detail' khatma.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="mb-1">{{ khatma.title }}</h6>
                                         <p class="text-muted small mb-0">
@@ -113,14 +113,14 @@
                         </div>
                         {% if user_khatmas.count > 5 %}
                             <div class="text-center mt-3">
-                                <a href="#" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+                                <a href="{% url 'khatma:khatma_list' %}" class="btn btn-sm btn-outline-primary">عرض الكل</a>
                             </div>
                         {% endif %}
                     {% else %}
                         <div class="text-center py-4">
                             <i class="bi bi-book display-1 text-muted mb-3"></i>
                             <p>ليس لديك أي ختمات حالياً</p>
-                            <a href="#" class="btn btn-primary">إنشاء ختمة جديدة</a>
+                            <a href="{% url 'khatma:create_khatma' %}" class="btn btn-primary">إنشاء ختمة جديدة</a>
                         </div>
                     {% endif %}
                 </div>
@@ -187,7 +187,7 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3 col-sm-6">
-                            <a href="#" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
+                            <a href="{% url 'khatma:create_khatma' %}" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
                                 <div class="card-body text-center">
                                     <i class="bi bi-plus-circle display-5 text-primary mb-3"></i>
                                     <h5>ختمة جديدة</h5>
@@ -195,7 +195,7 @@
                             </a>
                         </div>
                         <div class="col-md-3 col-sm-6">
-                            <a href="#" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
+                            <a href="{% url 'groups:group_list' %}" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
                                 <div class="card-body text-center">
                                     <i class="bi bi-people display-5 text-primary mb-3"></i>
                                     <h5>المجموعات</h5>
@@ -203,7 +203,7 @@
                             </a>
                         </div>
                         <div class="col-md-3 col-sm-6">
-                            <a href="#" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
+                            <a href="{% url 'quran:surah_list' %}" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
                                 <div class="card-body text-center">
                                     <i class="bi bi-book display-5 text-primary mb-3"></i>
                                     <h5>قراءة القرآن</h5>
@@ -211,7 +211,7 @@
                             </a>
                         </div>
                         <div class="col-md-3 col-sm-6">
-                            <a href="#" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
+                            <a href="{% url 'core:achievements' %}" class="card h-100 text-decoration-none text-dark border-0 shadow-sm hover-card">
                                 <div class="card-body text-center">
                                     <i class="bi bi-trophy display-5 text-primary mb-3"></i>
                                     <h5>إنجازاتي</h5>

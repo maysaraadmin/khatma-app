@@ -1,0 +1,182 @@
+/* Custom CSS for Khatma App */
+
+:root {
+    --primary-color: #5D4037;
+    --primary-dark: #3E2723;
+    --primary-light: #8D6E63;
+    --accent-color: #4CAF50;
+    --accent-dark: #2E7D32;
+    --accent-light: #81C784;
+    --text-color: #212121;
+    --text-secondary: #757575;
+    --background-color: #F5F5F5;
+    --card-bg: #FFFFFF;
+    --border-color: #E0E0E0;
+    --shadow-sm: 0 2px 5px rgba(0,0,0,0.1);
+    --shadow-md: 0 5px 15px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+body {
+    font-family: 'Tajawal', sans-serif;
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+/* Navbar Styles */
+.navbar {
+    background-color: var(--card-bg) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+.navbar-brand {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.nav-link {
+    color: var(--text-color);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--primary-color);
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    border-bottom: none;
+    background-color: transparent;
+    padding: 1.25rem 1.25rem 0.75rem;
+}
+
+.card-header.bg-primary {
+    background-color: var(--primary-color) !important;
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+
+.card-header.bg-success {
+    background-color: var(--accent-color) !important;
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-success {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-success:hover, .btn-success:focus {
+    background-color: var(--accent-dark);
+    border-color: var(--accent-dark);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Progress Bar */
+.progress {
+    background-color: #E0E0E0;
+    border-radius: 50px;
+    height: 10px;
+}
+
+.progress-bar {
+    background-color: var(--accent-color);
+    border-radius: 50px;
+}
+
+/* Animations */
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Footer Styles */
+footer {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+footer a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+}
+
+footer a:hover {
+    color: white;
+    text-decoration: none;
+}
+
+/* Dark Mode */
+.dark-mode {
+    --text-color: #E0E0E0;
+    --text-secondary: #9E9E9E;
+    --background-color: #121212;
+    --card-bg: #1E1E1E;
+    --border-color: #333333;
+}
+
+.dark-mode .card {
+    background-color: var(--card-bg);
+}
+
+.dark-mode .navbar {
+    background-color: #1A1A1A !important;
+}
+
+.dark-mode .navbar-brand, 
+.dark-mode .nav-link {
+    color: #E0E0E0;
+}
+
+.dark-mode .nav-link:hover, 
+.dark-mode .nav-link.active {
+    color: var(--accent-light);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem;
+    }
+}

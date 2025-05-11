@@ -47,9 +47,9 @@ def group_chat(request, group_id):
     try:
         'View for group chat functionality'
         group = get_object_or_404(ReadingGroup, id=group_id)
-        if not GroupMembership.objects.filter(user=request.user, group=group, is_active=True).exists():
+        if not GroupMembership.objects.filter(user=request.user, group=group).exists():
             messages.error(request, _('You must be a member of the group to participate in chat'))
-            return redirect('groups:detail', group_id=group.id)
+            return redirect('groups:group_detail', group_id=group.id)
         user_membership = GroupMembership.objects.get(user=request.user, group=group)
         user_role = user_membership.role
         if request.method == 'POST':
@@ -61,13 +61,13 @@ def group_chat(request, group_id):
                 messages.error(request, _('Cannot send an empty message'))
                 return redirect('chat:group_chat', group_id=group.id)
             GroupChat.objects.create(group=group, user=request.user, message=message_text, message_type=message_type, image=image, audio=audio)
-            other_members = GroupMembership.objects.filter(group=group, is_active=True).exclude(user=request.user)
+            other_members = GroupMembership.objects.filter(group=group).exclude(user=request.user)
             for membership in other_members:
                 Notification.objects.create(user=membership.user, notification_type='group_chat', message=f'{request.user.username} sent a new message in group {group.name}', related_user=request.user)
             messages.success(request, _('Message sent successfully'))
             return redirect('chat:group_chat', group_id=group.id)
         chat_messages = GroupChat.objects.filter(group=group).order_by('created_at')
-        members_count = group.get_active_members_count()
+        members_count = group.members.count()
         pinned_messages = GroupChat.objects.filter(group=group, is_pinned=True).order_by('-created_at')
         context = {'group': group, 'chat_messages': chat_messages, 'members_count': members_count, 'pinned_messages': pinned_messages, 'user_role': user_role, 'is_admin': user_role == 'admin', 'is_moderator': user_role in ['admin', 'moderator']}
         return render(request, 'chat/group_chat.html', context)

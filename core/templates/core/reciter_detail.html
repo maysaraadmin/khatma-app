@@ -29,7 +29,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-8">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-primary text-white py-3 rounded-top-4">
@@ -42,12 +42,28 @@
                         {% for surah in surahs %}
                             <div class="col">
                                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title">{{ surah.name }}</h5>
-                                        <p class="text-muted small">{{ surah.verses }} آية</p>
-                                        <a href="#" class="btn btn-sm btn-primary">
-                                            <i class="bi bi-play-fill me-1"></i> استماع
-                                        </a>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h5 class="card-title mb-0">{{ surah.name }}</h5>
+                                            <span class="badge bg-secondary">{{ surah.verses }} آية</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="audio-container">
+                                                <div class="audio-loading d-none">
+                                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <span class="ms-2 small">جاري التحميل...</span>
+                                                </div>
+                                                <audio controls class="mt-2 w-100" preload="none">
+                                                    <source src="https://server7.mp3quran.net/shur/{{ surah.id|stringformat:'03d' }}.mp3" type="audio/mpeg">
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            </div>
+                                            <button class="btn btn-sm btn-primary mt-2 download-btn" data-surah-id="{{ surah.id }}">
+                                                <i class="bi bi-download me-1"></i> تحميل
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -58,4 +74,79 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add download functionality to download buttons
+        const downloadButtons = document.querySelectorAll('.download-btn');
+
+        downloadButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Get the surah ID from the data attribute
+                const surahId = this.getAttribute('data-surah-id');
+                const formattedId = surahId.toString().padStart(3, '0');
+                const audioUrl = `https://server7.mp3quran.net/shur/${formattedId}.mp3`;
+
+                // Create a temporary link to download the file
+                const link = document.createElement('a');
+                link.href = audioUrl;
+                link.download = `surah_${formattedId}.mp3`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+
+        // Add loading and error handling for audio elements
+        const audioElements = document.querySelectorAll('audio');
+
+        audioElements.forEach(audio => {
+            // Show loading indicator when loading starts
+            audio.addEventListener('loadstart', function() {
+                const container = this.closest('.audio-container');
+                const loadingIndicator = container.querySelector('.audio-loading');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.remove('d-none');
+                }
+            });
+
+            // Hide loading indicator when metadata is loaded
+            audio.addEventListener('loadedmetadata', function() {
+                const container = this.closest('.audio-container');
+                const loadingIndicator = container.querySelector('.audio-loading');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('d-none');
+                }
+            });
+
+            // Hide loading indicator when audio is loaded
+            audio.addEventListener('canplay', function() {
+                const container = this.closest('.audio-container');
+                const loadingIndicator = container.querySelector('.audio-loading');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('d-none');
+                }
+            });
+
+            // Error handling
+            audio.addEventListener('error', function() {
+                const container = this.closest('.audio-container');
+                const loadingIndicator = container.querySelector('.audio-loading');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('d-none');
+                }
+
+                // Create error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-warning mt-2';
+                errorDiv.textContent = 'عذراً، الملف الصوتي غير متوفر حالياً';
+
+                // Replace the audio container with the error message
+                container.parentNode.replaceChild(errorDiv, container);
+            });
+        });
+    });
+</script>
 {% endblock %}
