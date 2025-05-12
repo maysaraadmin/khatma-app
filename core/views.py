@@ -149,6 +149,12 @@ def index(request):
         return render(request, 'core/welcome.html')
     except Exception as e:
         logger.error(f"Error in index view: {str(e)}")
+
+        # For anonymous users, just show the welcome page even if there's an error
+        if not request.user.is_authenticated:
+            return render(request, 'core/welcome.html')
+
+        # For authenticated users, show the error page
         return render(request, 'core/error.html', {'error': str(e)})
 
 

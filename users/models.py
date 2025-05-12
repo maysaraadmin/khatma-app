@@ -1,10 +1,12 @@
-'''"""This module contains Module functionality."""'''
+"""Models for the users app."""
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Profile(models.Model):
-    """Enhanced user profile with additional features"""
+    """Enhanced user profile with additional features."""
     ACCOUNT_TYPES = [('individual', 'حساب فردي'), ('family', 'حساب عائلي'), ('charity', 'مؤسسة خيرية'), ('mosque', 'مسجد'), ('school', 'مدرسة'), ('organization', 'مؤسسة')]
     READING_PREFERENCES = [('uthmani', 'الرسم العثماني'), ('simple', 'الرسم الإملائي البسيط'), ('tajweed', 'مع علامات التجويد')]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -31,25 +33,25 @@ class Profile(models.Model):
     push_notifications = models.BooleanField(default=True, verbose_name='إشعارات الدفع')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the Profile."""
         return f"{self.user.username}'s Profile"
 
     def get_total_khatmas(self):
-        """Get total number of khatmas created by user"""
+        """Get total number of khatmas created by user."""
         return self.user.created_khatmas.count()
 
     def get_total_parts_read(self):
-        """Get total number of Quran parts read by user"""
+        """Get total number of Quran parts read by user."""
         return self.user.quran_readings.filter(status='completed').count()
 
     def get_family_members(self):
-        """Get family members if this is a family account admin"""
+        """Get family members if this is a family account admin."""
         if self.account_type == 'family' and self.family_admin:
             return Profile.objects.filter(family_group=self)
         return Profile.objects.none()
 
 class UserAchievement(models.Model):
-    """Track user achievements and points"""
+    """Track user achievements and points."""
     ACHIEVEMENT_TYPES = [('first_khatma', 'أول ختمة'), ('memorial_khatma', 'ختمة تذكارية'), ('full_quran', 'ختمة كاملة'), ('ramadan_khatma', 'ختمة رمضان'), ('community_khatma', 'ختمة مجتمعية')]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     achievement_type = models.CharField(max_length=30, choices=ACHIEVEMENT_TYPES)
@@ -57,5 +59,24 @@ class UserAchievement(models.Model):
     achieved_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the UserAchievement."""
         return f'{self.user.username} - {self.get_achievement_type_display()}'
+
+
+# Signal to create a profile when a user is created
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Create a Profile when a User is created."""
+    if created:
+        Profile.objects.create(
+            user=instance,
+            preferred_language='ar',
+            account_type='individual'
+        )
+
+
+# Signal to save the profile when the user is saved
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Save the Profile when the User is saved."""
+    instance.profile.save()

@@ -1,18 +1,17 @@
-'''"""This module contains Module functionality."""'''
+"""Models for the Quran application."""
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
 
 class QuranPart(models.Model):
     """Represents a Juz' (part) of the Quran."""
     part_number = models.IntegerField(unique=True, primary_key=True, verbose_name='رقم الجزء')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the QuranPart."""
         return f'الجزء {self.part_number}'
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for the QuranPart model."""
         verbose_name = 'جزء قرآن'
         verbose_name_plural = 'أجزاء قرآن'
         ordering = ['part_number']
@@ -27,19 +26,19 @@ class Surah(models.Model):
     revelation_order = models.IntegerField(default=0)
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the Surah."""
         return f'{self.surah_number}. {self.name_arabic}'
 
     def get_revelation_type_display(self):
-        """Return the display value for revelation_type"""
+        """Return the display value for revelation_type."""
         return dict([('meccan', 'مكية'), ('medinan', 'مدنية')]).get(self.revelation_type, self.revelation_type)
 
     def get_revelation_order_display(self):
-        """Return the revelation order as string"""
+        """Return the revelation order as string."""
         return str(self.revelation_order) if self.revelation_order > 0 else '-'
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for the Surah model."""
         ordering = ['surah_number']
 
 class Ayah(models.Model):
@@ -52,14 +51,14 @@ class Ayah(models.Model):
     page = models.IntegerField(null=True, blank=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for the Ayah model."""
         unique_together = ('surah', 'ayah_number_in_surah')
         verbose_name = 'آية'
         verbose_name_plural = 'آيات'
         ordering = ['surah', 'ayah_number_in_surah']
 
 class QuranReciter(models.Model):
-    """Model for Quran reciters"""
+    """Model for Quran reciters."""
     name = models.CharField(max_length=100, unique=True, verbose_name='اسم القارئ')
     name_arabic = models.CharField(max_length=100, unique=True, verbose_name='اسم القارئ بالعربية')
     bio = models.TextField(blank=True, null=True, verbose_name='نبذة عن القارئ')
@@ -67,16 +66,16 @@ class QuranReciter(models.Model):
     style = models.CharField(max_length=100, blank=True, null=True, verbose_name='نمط القراءة')
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for the QuranReciter model."""
         verbose_name = 'قارئ'
         verbose_name_plural = 'القراء'
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the QuranReciter."""
         return self.name_arabic
 
 class QuranRecitation(models.Model):
-    """Model for Quran recitations (audio)"""
+    """Model for Quran recitations (audio)."""
     reciter = models.ForeignKey(QuranReciter, on_delete=models.CASCADE, related_name='recitations', verbose_name='القارئ')
     surah = models.ForeignKey(Surah, on_delete=models.CASCADE, related_name='recitations', verbose_name='السورة')
     audio_file = models.FileField(upload_to='recitations/', verbose_name='ملف الصوت')
@@ -87,19 +86,19 @@ class QuranRecitation(models.Model):
     end_ayah = models.IntegerField(null=True, blank=True, verbose_name='آية النهاية')
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for the QuranRecitation model."""
         verbose_name = 'تلاوة'
         verbose_name_plural = 'التلاوات'
         unique_together = ('reciter', 'surah', 'start_ayah', 'end_ayah')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the QuranRecitation."""
         if self.start_ayah and self.end_ayah:
             return f'{self.reciter.name} - {self.surah.name_arabic} ({self.start_ayah}-{self.end_ayah})'
         return f'{self.reciter.name} - {self.surah.name_arabic}'
 
 class QuranTranslation(models.Model):
-    """Model for Quran translations"""
+    """Model for Quran translations."""
     LANGUAGE_CHOICES = [('en', 'English'), ('fr', 'French'), ('ur', 'Urdu'), ('id', 'Indonesian'), ('tr', 'Turkish'), ('ru', 'Russian'), ('fa', 'Persian')]
     language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, verbose_name='اللغة')
     translator = models.CharField(max_length=100, verbose_name='المترجم')
@@ -107,17 +106,17 @@ class QuranTranslation(models.Model):
     text = models.TextField(verbose_name='نص الترجمة')
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for the QuranTranslation model."""
         verbose_name = 'ترجمة'
         verbose_name_plural = 'الترجمات'
         unique_together = ('language', 'translator', 'ayah')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the QuranTranslation."""
         return f'{self.get_language_display()} translation of {self.ayah.surah.name_arabic} {self.ayah.ayah_number_in_surah}'
 
 class QuranBookmark(models.Model):
-    """User's bookmarks in the Quran"""
+    """User's bookmarks in the Quran."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quran_bookmarks')
     ayah = models.ForeignKey(Ayah, on_delete=models.CASCADE, related_name='bookmarks')
     title = models.CharField(max_length=100, verbose_name='عنوان الإشارة المرجعية')
@@ -126,17 +125,17 @@ class QuranBookmark(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for the QuranBookmark model."""
         unique_together = ('user', 'ayah')
         verbose_name = 'إشارة مرجعية'
         verbose_name_plural = 'إشارات مرجعية'
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the QuranBookmark."""
         return f'Bookmark: {self.title} - {self.ayah.surah.name_arabic} {self.ayah.ayah_number_in_surah}'
 
 class QuranReadingSettings(models.Model):
-    """User's Quran reading settings and preferences"""
+    """User's Quran reading settings and preferences."""
     FONT_CHOICES = [('uthmani', 'الخط العثماني'), ('naskh', 'خط النسخ'), ('hafs', 'خط حفص'), ('simple', 'خط بسيط')]
     THEME_CHOICES = [('light', 'فاتح'), ('dark', 'داكن'), ('sepia', 'سيبيا'), ('green', 'أخضر فاتح')]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='quran_settings')
@@ -151,5 +150,5 @@ class QuranReadingSettings(models.Model):
     last_read_time = models.DateTimeField(null=True, blank=True, verbose_name='وقت آخر قراءة')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
+        """Return a string representation of the QuranReadingSettings."""
         return f'Quran Settings for {self.user.username}'

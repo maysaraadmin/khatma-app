@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}إكمال التسجيل{% endblock %}
+
+{% block extra_css %}
+<style>
+  .account-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+    height: 100%;
+  }
+
+  .account-type-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  }
+
+  .account-type-card.selected {
+    border-color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.1);
+    box-shadow: 0 0.5rem 1rem rgba(76, 175, 80, 0.15);
+  }
+
+  .account-type-icon {
+    font-size: 2rem;
+    color: #4CAF50;
+    margin-bottom: 0.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
+          <h2 class="card-title text-center mb-4 fw-bold text-success">إكمال التسجيل</h2>
+          
+          <div class="alert alert-info">
+            <p>أنت تقوم بالتسجيل باستخدام حساب {{ account.get_provider.name }}. يرجى إكمال المعلومات التالية لإنشاء حسابك.</p>
+          </div>
+
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            {% if form.errors %}
+              <div class="alert alert-danger">
+                {% for field, errors in form.errors.items %}
+                  {% for error in errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="id_username" class="form-label">اسم المستخدم</label>
+              <input type="text" name="username" id="id_username" class="form-control" value="{{ form.username.value|default:'' }}" required>
+              <div class="invalid-feedback">
+                يرجى إدخال اسم مستخدم صالح.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="id_email" class="form-label">البريد الإلكتروني</label>
+              <input type="email" name="email" id="id_email" class="form-control" value="{{ form.email.value|default:'' }}" required {% if form.email.value %}readonly{% endif %}>
+              <div class="invalid-feedback">
+                يرجى إدخال بريد إلكتروني صالح.
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label">نوع الحساب</label>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <div class="card account-type-card" id="individual-card" onclick="selectAccountType('individual')">
+                    <div class="card-body text-center">
+                      <i class="bi bi-person-fill account-type-icon"></i>
+                      <h5 class="card-title">حساب فردي</h5>
+                      <p class="card-text small">للاستخدام الشخصي</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card account-type-card" id="family-card" onclick="selectAccountType('family')">
+                    <div class="card-body text-center">
+                      <i class="bi bi-people-fill account-type-icon"></i>
+                      <h5 class="card-title">حساب عائلي</h5>
+                      <p class="card-text small">للعائلات والمجموعات الصغيرة</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card account-type-card" id="charity-card" onclick="selectAccountType('charity')">
+                    <div class="card-body text-center">
+                      <i class="bi bi-building-fill account-type-icon"></i>
+                      <h5 class="card-title">مؤسسة خيرية</h5>
+                      <p class="card-text small">للمؤسسات والجمعيات الخيرية</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" name="account_type" id="account_type" value="individual">
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check-circle-fill me-2"></i>إكمال التسجيل
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.getElementsByClassName('needs-validation');
+    // Loop over them and prevent submission
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+
+    // Set default account type selection
+    selectAccountType('individual');
+  }, false);
+})();
+
+// Account type selection
+function selectAccountType(type) {
+  // Remove selected class from all cards
+  document.querySelectorAll('.account-type-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+
+  // Add selected class to the clicked card
+  document.getElementById(type + '-card').classList.add('selected');
+
+  // Update the hidden input value
+  document.getElementById('account_type').value = type;
+}
+</script>
+{% endblock %}
