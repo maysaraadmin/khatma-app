@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import include
 
 from core.social_views import CustomSocialSignupView
 from core.admin_views import admin_dashboard
@@ -12,6 +13,9 @@ urlpatterns = [
     # Admin URLs
     path('admin/dashboard/', admin_dashboard, name='admin_dashboard'),
     path('admin/', admin.site.urls),
+
+    # Debug toolbar (only in development)
+    path('__debug__/', include('debug_toolbar.urls')),
 
     # Authentication URLs - All handled by django-allauth
     path('accounts/', include('allauth.urls')),

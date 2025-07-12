@@ -1,5 +1,6 @@
 """Django settings for Khatma project."""
 import os
+import socket
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -18,12 +19,10 @@ def generate_secret_key(length=50):
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', generate_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+DEBUG = True  # Set to True to see detailed error pages
 
 # Configure allowed hosts
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-if 'DJANGO_ALLOWED_HOSTS' in os.environ:
-    ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -46,16 +45,19 @@ INSTALLED_APPS = [
     'chat.apps.ChatConfig',
 
     # Third-party apps
+    'debug_toolbar',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
 ]
+
 SITE_ID = 1
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'localhost:8000')
 
 # Middleware
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -68,6 +70,37 @@ MIDDLEWARE = [
     'core.middleware.PreventLeaderboardRedirectMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
+
+# Debug Toolbar Configuration
+if DEBUG:
+    # Configure internal IPs
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = ['127.0.0.1', 'localhost'] + [ip[: ip.rfind('.')] + '.1' for ip in ips]
+    
+    # Debug toolbar settings
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+    }
+
+# Show SQL queries in console
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        },
+    },
+}
+
+if 'DJANGO_ALLOWED_HOSTS' in os.environ:
+    ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 
 # Static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -201,18 +234,30 @@ AUTHENTICATION_BACKENDS = [
 # Django-allauth settings
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory' if not DEBUG else 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
 # Authentication settings
 ACCOUNT_LOGOUT_ON_GET = True  # Allow logout without confirmation
-ACCOUNT_LOGIN_METHODS = {'email'}  # Use only email for login
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # Required signup fields
-ACCOUNT_USERNAME_MIN_LENGTH = 4  # Minimum username length
-ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Khatma] '  # Customize email subject
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'  # Use HTTP for development
 
-# Backward compatibility (remove in future versions if no longer needed)
+# Authentication and signup configuration
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use email for authentication
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # 'mandatory' for production
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
+ACCOUNT_SESSION_REMEMBER = True  # Remember users
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 7
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Khatma] '
+
+# New style settings (removes deprecation warnings)
+ACCOUNT_FORMS = {
+    'signup': 'users.forms.CustomSignupForm',
+}
+
+# Required for new style configuration
+ACCOUNT_SIGNUP_FORM_CLASS = None
+ACCOUNT_USERNAME_VALIDATORS = None
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
 # Social account settings
 SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'

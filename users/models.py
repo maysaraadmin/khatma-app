@@ -1,5 +1,5 @@
 """Models for the users app."""
-from django.db import models
+from django.db import models, transaction, IntegrityError
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models.signals import post_save
@@ -62,21 +62,33 @@ class UserAchievement(models.Model):
         """Return a string representation of the UserAchievement."""
         return f'{self.user.username} - {self.get_achievement_type_display()}'
 
-
-# Signal to create a profile when a user is created
+# Signal to create or get a profile for a user
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    """Create a Profile when a User is created."""
-    if created:
-        Profile.objects.create(
-            user=instance,
-            preferred_language='ar',
-            account_type='individual'
-        )
-
-
-# Signal to save the profile when the user is saved
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    """Save the Profile when the User is saved."""
-    instance.profile.save()
+def handle_user_profile(sender, instance, created, **kwargs):
+    """Create or get a Profile when a User is created or updated."""
+    try:
+        # Try to get existing profile
+        instance.profile
+    except Profile.DoesNotExist:
+        # If profile doesn't exist, create it safely
+        try:
+            with transaction.atomic():
+                Profile.objects.create(
+                    user=instance,
+                    preferred_language='ar',
+                    account_type='individual'
+                )
+        except IntegrityError:
+            # Another request might have created the profile already
+            # Just get the existing one
+            instance.profile = Profile.objects.get(user=instance)
+    except Exception as e:
+        # Log any other errors
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in handle_user_profile: {str(e)}")
+        
+        # If we're in debug mode, re-raise the exception
+        from django.conf import settings
+        if settings.DEBUG:
+            raise

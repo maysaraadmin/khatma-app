@@ -2,7 +2,9 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-'\n'
+from allauth.account.forms import SignupForm
+from django.utils.translation import gettext_lazy as _
+
 from .models import Profile
 
 class ExtendedUserCreationForm(UserCreationForm):
@@ -39,6 +41,35 @@ class ExtendedUserCreationForm(UserCreationForm):
                 preferred_language='ar',
                 account_type=self.cleaned_data.get('account_type', 'individual')
             )
+        return user
+
+class CustomSignupForm(SignupForm):
+    """Custom signup form for allauth with additional fields"""
+    first_name = forms.CharField(max_length=30, required=False, label=_('First Name'))
+    last_name = forms.CharField(max_length=30, required=False, label=_('Last Name'))
+    account_type = forms.ChoiceField(
+        choices=Profile.ACCOUNT_TYPES,
+        initial='individual',
+        required=True,
+        label=_('Account Type')
+    )
+    
+    def save(self, request):
+        # Save the user first
+        user = super().save(request)
+        
+        # Add first and last name
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.save()
+        
+        # Create user profile
+        Profile.objects.create(
+            user=user,
+            preferred_language='ar',
+            account_type=self.cleaned_data['account_type']
+        )
+        
         return user
 
 class UserProfileForm(forms.ModelForm):

@@ -132,6 +132,7 @@ def index(request):
     Home page view.
     """
     try:
+        logger.info("Index view accessed")
         # Check if we're being redirected from the leaderboard
         referer = request.META.get('HTTP_REFERER', '')
         if 'leaderboard' in referer:
@@ -140,22 +141,37 @@ def index(request):
 
         # If user is authenticated, show dashboard
         if request.user.is_authenticated:
-            dashboard_data = get_dashboard_data(request.user)
-            # Add a flag to prevent redirection
-            dashboard_data['prevent_redirect'] = True
-            return render(request, 'core/user_dashboard.html', dashboard_data)
+            logger.info(f"User {request.user.username} is authenticated")
+            try:
+                dashboard_data = get_dashboard_data(request.user)
+                logger.info("Dashboard data retrieved successfully")
+                # Add a flag to prevent redirection
+                dashboard_data['prevent_redirect'] = True
+                return render(request, 'core/user_dashboard.html', dashboard_data)
+            except Exception as e:
+                logger.error(f"Error getting dashboard data: {str(e)}")
+                logger.error(traceback.format_exc())
+                return render(request, 'core/error.html', {
+                    'error': 'Error loading dashboard data',
+                    'details': str(e)
+                })
 
         # Otherwise show welcome page
+        logger.info("Showing welcome page for anonymous user")
         return render(request, 'core/welcome.html')
     except Exception as e:
         logger.error(f"Error in index view: {str(e)}")
+        logger.error(traceback.format_exc())
 
         # For anonymous users, just show the welcome page even if there's an error
         if not request.user.is_authenticated:
             return render(request, 'core/welcome.html')
 
         # For authenticated users, show the error page
-        return render(request, 'core/error.html', {'error': str(e)})
+        return render(request, 'core/error.html', {
+            'error': 'An error occurred',
+            'details': str(e)
+        })
 
 
 def global_search(request):
