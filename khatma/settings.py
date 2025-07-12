@@ -5,13 +5,25 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Security settings
+# Generate a secure secret key if not in environment
+import secrets
+import string
+
+def generate_secret_key(length=50):
+    chars = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'development_secret_key_change_in_production')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', generate_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Configure allowed hosts
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+if 'DJANGO_ALLOWED_HOSTS' in os.environ:
+    ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -123,6 +135,34 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# Security middleware settings
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = not DEBUG  # Only redirect to HTTPS if not in debug mode
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Session settings
+SESSION_COOKIE_SECURE = not DEBUG  # Only send session cookie over HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# CSRF settings
+CSRF_COOKIE_SECURE = not DEBUG  # Only send CSRF cookie over HTTPS
+CSRF_COOKIE_HTTPONLY = True
+
+# X-Frame-Options
+X_FRAME_OPTIONS = 'DENY'
+
+# X-Content-Type-Options
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# X-XSS-Protection
+SECURE_BROWSER_XSS_FILTER = True
+
+# Referrer-Policy
+SECURE_REFERRER_POLICY = 'same-origin'
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -156,14 +196,16 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Django-allauth settings
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory' if not DEBUG else 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_LOGOUT_ON_GET = True  # Allow logout without confirmation
 ACCOUNT_LOGIN_METHOD = 'email'  # Use email for login
 ACCOUNT_EMAIL_REQUIRED = True  # Email is required
 ACCOUNT_USERNAME_MIN_LENGTH = 4  # Minimum username length
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use email for authentication
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Khatma] '  # Customize email subject
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'  # Always use HTTPS for account links
 
 # Social account settings
 SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'
