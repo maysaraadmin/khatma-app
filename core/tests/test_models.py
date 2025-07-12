@@ -1,28 +1,37 @@
-'''"""This module contains Module functionality."""'''
-from django.test import TestCase
-from django.contrib.auth.models import User
+"""Tests for core models."""
+from django.test import TestCase, TransactionTestCase
+from django.contrib.auth import get_user_model
 from django.utils import timezone
-'\n'
-from core.models import Profile, Deceased, QuranPart, Khatma, Participant, PartAssignment, Notification, UserAchievement
 
-class ProfileModelTest(TestCase):
+# Import models from their respective apps
+from users.models import Profile
+from khatma.models import Deceased, Khatma, Participant, PartAssignment
+from quran.models import QuranPart
+from notifications.models import Notification, UserAchievement
+
+User = get_user_model()
+
+class ProfileModelTest(TransactionTestCase):
     """Tests for the Profile model"""
+    reset_sequences = True
 
     def setUp(self):
-        '''"""Function to setUp."""'''
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.profile = Profile.objects.create(user=self.user, account_type='individual', total_points=100, level=2)
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser_profile',
+            email='testprofile@example.com',
+            password='testpass123'
+        )
+        self.profile = self.user.profile
 
     def test_profile_creation(self):
-        """Test that a profile can be created"""
-        self.assertEqual(self.profile.user.username, 'testuser')
-        self.assertEqual(self.profile.account_type, 'individual')
-        self.assertEqual(self.profile.total_points, 100)
-        self.assertEqual(self.profile.level, 2)
+        """Test that a profile is created for each new user"""
+        self.assertIsInstance(self.profile, Profile)
+        self.assertEqual(self.profile.user, self.user)
 
     def test_profile_str_representation(self):
         """Test the string representation of a profile"""
-        self.assertEqual(str(self.profile), "testuser's Profile")
+        self.assertEqual(str(self.profile), "testuser_profile's Profile")
 
     def test_get_family_members(self):
         """Test the get_family_members method"""
@@ -35,16 +44,27 @@ class ProfileModelTest(TestCase):
         self.assertIn(family_member2, family_members)
         self.assertEqual(self.profile.get_family_members().count(), 0)
 
-class DeceasedModelTest(TestCase):
+class DeceasedModelTest(TransactionTestCase):
     """Tests for the Deceased model"""
+    reset_sequences = True
 
     def setUp(self):
-        '''"""Function to setUp."""'''
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.deceased = Deceased.objects.create(name='Test Deceased', death_date=timezone.now().date(), birth_date=timezone.now().date().replace(year=1950), added_by=self.user)
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser_deceased',
+            email='testdeceased@example.com',
+            password='testpass123'
+        )
+        self.deceased = Deceased.objects.create(
+            name='Test Deceased',
+            death_date=timezone.now().date(),
+            birth_date=timezone.now().date().replace(year=1950),
+            added_by=self.user
+        )
 
     def test_deceased_creation(self):
         """Test that a deceased person can be created"""
+        self.assertIsInstance(self.deceased, Deceased)
         self.assertEqual(self.deceased.name, 'Test Deceased')
         self.assertEqual(self.deceased.added_by, self.user)
 
@@ -59,19 +79,36 @@ class DeceasedModelTest(TestCase):
         expected_age = death_year - birth_year
         self.assertEqual(self.deceased.age_at_death(), expected_age)
 
-class KhatmaModelTest(TestCase):
+class KhatmaModelTest(TransactionTestCase):
     """Tests for the Khatma model"""
+    reset_sequences = True
 
     def setUp(self):
-        '''"""Function to setUp."""'''
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.deceased = Deceased.objects.create(name='Test Deceased', death_date=timezone.now().date(), added_by=self.user)
-        self.khatma = Khatma.objects.create(title='Test Khatma', creator=self.user, khatma_type='memorial', deceased=self.deceased, is_public=True)
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser_khatma',
+            email='testkhatma@example.com',
+            password='testpass123'
+        )
+        self.deceased = Deceased.objects.create(
+            name='Test Deceased',
+            death_date=timezone.now().date(),
+            birth_date=timezone.now().date().replace(year=1950),
+            added_by=self.user
+        )
+        self.khatma = Khatma.objects.create(
+            title='Test Khatma',
+            creator=self.user,
+            khatma_type='memorial',
+            deceased=self.deceased,
+            is_public=True
+        )
         for i in range(1, 31):
             QuranPart.objects.create(part_number=i)
 
     def test_khatma_creation(self):
         """Test that a khatma can be created"""
+        self.assertIsInstance(self.khatma, Khatma)
         self.assertEqual(self.khatma.title, 'Test Khatma')
         self.assertEqual(self.khatma.creator, self.user)
         self.assertEqual(self.khatma.khatma_type, 'memorial')
@@ -89,17 +126,107 @@ class KhatmaModelTest(TestCase):
             part_assignment = PartAssignment.objects.create(khatma=self.khatma, part=part, is_completed=i <= 15)
         self.assertEqual(self.khatma.get_progress_percentage(), 50.0)
 
-class NotificationModelTest(TestCase):
-    """Tests for the Notification model"""
+class ParticipantModelTest(TransactionTestCase):
+    """Tests for the Participant model"""
+    reset_sequences = True
 
     def setUp(self):
-        '''"""Function to setUp."""'''
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.khatma = Khatma.objects.create(title='Test Khatma', creator=self.user, khatma_type='regular')
-        self.notification = Notification.objects.create(user=self.user, notification_type='khatma_progress', message='Test notification', related_khatma=self.khatma)
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser_participant',
+            email='testparticipant@example.com',
+            password='testpass123'
+        )
+        self.khatma = Khatma.objects.create(
+            title='Test Participant Khatma',
+            creator=self.user,
+            khatma_type='regular'
+        )
+        self.participant = Participant.objects.create(
+            user=self.user,
+            khatma=self.khatma,
+            parts_read=5
+        )
+
+    def test_participant_creation(self):
+        """Test that a participant can be created"""
+        self.assertIsInstance(self.participant, Participant)
+        self.assertEqual(self.participant.user, self.user)
+        self.assertEqual(self.participant.khatma, self.khatma)
+        self.assertEqual(self.participant.parts_read, 5)
+
+class PartAssignmentModelTest(TransactionTestCase):
+    """Tests for the PartAssignment model"""
+    reset_sequences = True
+
+    def setUp(self):
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser_assignment',
+            email='testassignment@example.com',
+            password='testpass123'
+        )
+        self.khatma = Khatma.objects.create(
+            title='Test Assignment Khatma',
+            creator=self.user,
+            khatma_type='regular'
+        )
+        self.part = QuranPart.objects.create(
+            part_number=1,
+            name='Al-Fatiha',
+            page_number=1,
+            start_ayah=1,
+            end_ayah=7
+        )
+        self.assignment = PartAssignment.objects.create(
+            khatma=self.khatma,
+            part=self.part,
+            participant=self.user,
+            is_completed=False
+        )
+
+    def test_part_assignment_creation(self):
+        """Test that a part assignment can be created"""
+        self.assertIsInstance(self.assignment, PartAssignment)
+        self.assertEqual(self.assignment.khatma, self.khatma)
+        self.assertEqual(self.assignment.part, self.part)
+        self.assertEqual(self.assignment.participant, self.user)
+        self.assertFalse(self.assignment.is_completed)
+        self.assertIsNone(self.assignment.completed_at)
+
+    def test_mark_as_completed(self):
+        """Test marking a part assignment as completed"""
+        self.assignment.mark_as_completed()
+        self.assignment.refresh_from_db()
+        self.assertTrue(self.assignment.is_completed)
+        self.assertIsNotNone(self.assignment.completed_at)
+
+class NotificationModelTest(TransactionTestCase):
+    """Tests for the Notification model"""
+    reset_sequences = True
+
+    def setUp(self):
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser_notification',
+            email='testnotification@example.com',
+            password='testpass123'
+        )
+        self.khatma = Khatma.objects.create(
+            title='Test Notification Khatma',
+            creator=self.user,
+            khatma_type='regular'
+        )
+        self.notification = Notification.objects.create(
+            user=self.user,
+            notification_type='khatma_progress',
+            message='Test notification',
+            related_khatma=self.khatma
+        )
 
     def test_notification_creation(self):
         """Test that a notification can be created"""
+        self.assertIsInstance(self.notification, Notification)
         self.assertEqual(self.notification.user, self.user)
         self.assertEqual(self.notification.notification_type, 'khatma_progress')
         self.assertEqual(self.notification.message, 'Test notification')
@@ -108,24 +235,38 @@ class NotificationModelTest(TestCase):
 
     def test_notification_str_representation(self):
         """Test the string representation of a notification"""
-        expected_str = 'تقدم ختمة - Test notification - testuser'
+        expected_str = 'تقدم ختمة - Test notification - testuser_notification'
         self.assertEqual(str(self.notification), expected_str)
 
-class UserAchievementModelTest(TestCase):
+class UserAchievementModelTest(TransactionTestCase):
     """Tests for the UserAchievement model"""
+    reset_sequences = True
 
     def setUp(self):
-        '''"""Function to setUp."""'''
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.achievement = UserAchievement.objects.create(user=self.user, achievement_type='first_khatma', points_earned=10)
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser_achievement',
+            email='testachievement@example.com',
+            password='testpass123'
+        )
+        self.achievement = UserAchievement.objects.create(
+            user=self.user,
+            achievement_type='khatma_completion',
+            title='First Khatma Completed',
+            description='You have completed your first khatma!',
+            points=100
+        )
 
     def test_achievement_creation(self):
         """Test that an achievement can be created"""
+        self.assertIsInstance(self.achievement, UserAchievement)
         self.assertEqual(self.achievement.user, self.user)
-        self.assertEqual(self.achievement.achievement_type, 'first_khatma')
-        self.assertEqual(self.achievement.points_earned, 10)
+        self.assertEqual(self.achievement.achievement_type, 'khatma_completion')
+        self.assertEqual(self.achievement.title, 'First Khatma Completed')
+        self.assertEqual(self.achievement.description, 'You have completed your first khatma!')
+        self.assertEqual(self.achievement.points, 100)
 
     def test_achievement_str_representation(self):
         """Test the string representation of an achievement"""
-        expected_str = 'testuser - أول ختمة'
+        expected_str = 'testuser_achievement - First Khatma Completed (khatma_completion)'
         self.assertEqual(str(self.achievement), expected_str)

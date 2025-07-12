@@ -3,9 +3,9 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils import timezone
-'\n'
+
 from users.models import Profile
-from khatma.models import Khatma, PartAssignment
+from khatma.models import Khatma, PartAssignment, Participant
 from groups.models import ReadingGroup, GroupMembership
 from quran.models import QuranPart
 from .models import NewsletterSubscription
@@ -100,19 +100,86 @@ class GroupKhatmaForm(forms.ModelForm):
 
 class PartAssignmentForm(forms.ModelForm):
     """Form for assigning and completing Quran parts"""
+    is_completed = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='مكتمل'
+    )
     dua = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}), required=False, label='دعاء')
     notes = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}), required=False, label='ملاحظات')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = PartAssignment
-        fields = ['dua', 'notes']
+        fields = ['notes', 'dua', 'is_completed']
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'dua': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the form with khatma-specific data"""
+        initial = kwargs.get('initial', {})
+        self.user = kwargs.pop('user', None) or initial.get('user')
+        self.khatma = kwargs.pop('khatma', None) or initial.get('khatma')
+
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            self.fields['is_completed'].initial = self.instance.is_completed
+
+        if self.khatma:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+
+            participant_users = Participant.objects.filter(khatma=self.khatma).values_list('user', flat=True)
+
+            self.fields['participant'] = forms.ModelChoiceField(
+                queryset=User.objects.filter(id__in=participant_users),
+                required=True,
+                label='المشارك',
+                widget=forms.Select(attrs={'class': 'form-select'})
+            )
+
+            if self.instance and self.instance.participant:
+                self.fields['participant'].initial = self.instance.participant
+            elif self.user:
+                self.fields['participant'].initial = self.user
+                self.instance.participant = self.user
+
+    def clean(self):
+        """Custom form validation and data cleaning."""
+        cleaned_data = super().clean()
+
+        if 'is_completed' not in cleaned_data:
+            cleaned_data['is_completed'] = False
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        """Save the form data to the model."""
+        instance = super().save(commit=False)
+
+        if 'participant' in self.cleaned_data and self.cleaned_data['participant']:
+            instance.participant = self.cleaned_data['participant']
+
+        is_completed = self.cleaned_data.get('is_completed', False)
+
+        instance.is_completed = is_completed
+
+        if is_completed and not instance.completed_at:
+            instance.completed_at = timezone.now()
+        elif not is_completed:
+            instance.completed_at = None
+
+        if commit:
+            instance.save()
+
+        return instance
 
 # These forms are commented out because the models are not available
 # class KhatmaChatForm(forms.ModelForm):
 #     """Form for Khatma chat messages"""
 #
-#     class Meta:
 #         '''"""Class representing Meta."""'''
 #         model = KhatmaChat
 #         fields = ['message']

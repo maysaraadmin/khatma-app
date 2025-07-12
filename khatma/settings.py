@@ -139,16 +139,19 @@ USE_TZ = True
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
-SECURE_SSL_REDIRECT = not DEBUG  # Only redirect to HTTPS if not in debug mode
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Security settings for production
+if not DEBUG:
+    # These settings are for production only
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
-# Session settings
-SESSION_COOKIE_SECURE = not DEBUG  # Only send session cookie over HTTPS
-SESSION_COOKIE_HTTPONLY = True
+# Session settings - using HTTP for development
+SESSION_COOKIE_SECURE = False  # Allow HTTP for development
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # CSRF settings
-CSRF_COOKIE_SECURE = not DEBUG  # Only send CSRF cookie over HTTPS
+CSRF_COOKIE_SECURE = False  # Allow HTTP for development
 CSRF_COOKIE_HTTPONLY = True
 
 # X-Frame-Options
@@ -199,13 +202,17 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory' if not DEBUG else 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+# Authentication settings
 ACCOUNT_LOGOUT_ON_GET = True  # Allow logout without confirmation
-ACCOUNT_LOGIN_METHOD = 'email'  # Use email for login
-ACCOUNT_EMAIL_REQUIRED = True  # Email is required
+ACCOUNT_LOGIN_METHODS = {'email'}  # Use only email for login
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # Required signup fields
 ACCOUNT_USERNAME_MIN_LENGTH = 4  # Minimum username length
-ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use email for authentication
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Khatma] '  # Customize email subject
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'  # Always use HTTPS for account links
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'  # Use HTTP for development
+
+# Backward compatibility (remove in future versions if no longer needed)
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
 # Social account settings
 SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'

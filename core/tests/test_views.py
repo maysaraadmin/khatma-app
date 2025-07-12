@@ -1,12 +1,19 @@
-'''"""This module contains Module functionality."""'''
-import json
-'\n'
-from django.test import TestCase, Client
+"""Tests for core views."""
+from django.test import TestCase, RequestFactory
+from django.contrib.auth.models import User, AnonymousUser
 from django.urls import reverse
-from django.contrib.auth.models import User
 from django.utils import timezone
-'\n'
-from core.models import Profile, Deceased, QuranPart, Khatma, Participant, PartAssignment, Notification, UserAchievement
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client
+
+# Import models from their respective apps
+from users.models import Profile
+from khatma.models import Deceased, Khatma, Participant, PartAssignment
+from quran.models import QuranPart
+from notifications.models import Notification, UserAchievement
+
+# Import views
+from core.views import dashboard, profile, edit_profile, create_khatma, khatma_detail, complete_part, family_dashboard, manage_family
 
 class IndexViewTest(TestCase):
     """Tests for the index view"""
