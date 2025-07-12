@@ -1,7 +1,0 @@
-'''"""This module contains Module functionality."""'''
-from django.db import migrations, models
-
-class Migration(migrations.Migration):
-    '''"""Class representing Migration."""'''
-    dependencies = [('core', '0001_initial')]
-    operations = [migrations.AddField(model_name='deceased', name='birth_date', field=models.DateField(blank=True, null=True, verbose_name='تاريخ الميلاد'))]

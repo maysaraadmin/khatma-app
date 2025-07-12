@@ -280,10 +280,16 @@ def community_khatmas(request):
 
         # Get public khatmas
         public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
-
+        
+        # Get memorial khatmas
+        memorial_khatmas = public_khatmas.filter(khatma_type='memorial')
+        
         # Filter by type if specified
         if khatma_type:
             public_khatmas = public_khatmas.filter(khatma_type=khatma_type)
+        else:
+            # Exclude memorial khatmas from the main list if not filtered by type
+            public_khatmas = public_khatmas.exclude(khatma_type='memorial')
 
         # Paginate results
         paginator = Paginator(public_khatmas, 12)
@@ -294,7 +300,8 @@ def community_khatmas(request):
         khatma_types = dict(Khatma.KHATMA_TYPE_CHOICES)
 
         return render(request, 'core/community_khatmas.html', {
-            'page_obj': page_obj,
+            'community_khatmas': page_obj,
+            'memorial_khatmas': memorial_khatmas[:6],  # Show only 6 memorial khatmas
             'khatma_types': khatma_types,
             'selected_type': khatma_type
         })

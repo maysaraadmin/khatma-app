@@ -158,12 +158,12 @@ AUTHENTICATION_BACKENDS = [
 # Django-allauth settings
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_LOGOUT_ON_GET = True  # Allow logout without confirmation
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'  # Allow login with username or email
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_LOGIN_METHOD = 'email'  # Use email for login
+ACCOUNT_EMAIL_REQUIRED = True  # Email is required
+ACCOUNT_USERNAME_MIN_LENGTH = 4  # Minimum username length
 
 # Social account settings
 SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'
