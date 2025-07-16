@@ -25,33 +25,99 @@ The project is organized into several Django apps:
 
 ## Setup Instructions
 
+### Prerequisites
+
+- Python 3.8 or higher
+- PostgreSQL (recommended for production) or SQLite (for development)
+- pip (Python package manager)
+
 ### Local Development
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/khatma-app.git
+   cd khatma-app
    ```
+
+2. **Set up a virtual environment**
+   ```bash
+   python -m venv venv
+   # On Windows
+   .\venv\Scripts\activate
+   # On macOS/Linux
+   # source venv/bin/activate
+   ```
+
+3. **Install dependencies**
+   ```bash
    pip install -r requirements.txt
    ```
-3. Set up environment variables (create a `.env` file):
-   ```
-   DJANGO_SETTINGS_MODULE=khatma.settings
-   DJANGO_SECRET_KEY=your_secret_key
-   DJANGO_DEBUG=True
-   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
-   SITE_DOMAIN=localhost:8000
-   ```
-4. Run migrations:
-   ```
+
+4. **Set up environment variables**
+   - Copy the example environment file:
+     ```bash
+     copy .env.example .env
+     ```
+   - Update the `.env` file with your configuration:
+     ```env
+     # Django Settings
+     DJANGO_SECRET_KEY=your-secret-key-here
+     DJANGO_DEBUG=True
+     DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+
+     # Database Settings (SQLite for development)
+     DATABASE_URL=sqlite:///db.sqlite3
+     
+     # For production with PostgreSQL:
+     # DATABASE_URL=postgres://user:password@localhost:5432/khatma
+
+     # Email Settings
+     EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+     DEFAULT_FROM_EMAIL=webmaster@example.com
+
+     # Allauth Settings
+     SITE_DOMAIN=localhost:8000
+     ACCOUNT_EMAIL_VERIFICATION=optional
+
+     # Google OAuth Settings (optional)
+     # SOCIALACCOUNT_PROVIDER_GOOGLE_CLIENT_ID=your-google-client-id
+     # SOCIALACCOUNT_PROVIDER_GOOGLE_SECRET=your-google-secret-key
+     ```
+
+5. **Apply database migrations**
+   ```bash
    python manage.py migrate
    ```
-5. Load Quran data:
+
+6. **Create a superuser** (admin account)
+   ```bash
+   python manage.py createsuperuser
    ```
+
+7. **Load initial data**
+   ```bash
    python manage.py loaddata quran_data
    ```
-6. Run the development server:
-   ```
+
+8. **Run the development server**
+   ```bash
    python manage.py runserver
    ```
+   The application will be available at http://127.0.0.1:8000/
+
+### Production Deployment
+
+1. Set `DJANGO_DEBUG=False` in your `.env` file
+2. Configure a production database (PostgreSQL recommended)
+3. Set up a production web server (Gunicorn + Nginx/Apache)
+4. Configure a production email backend
+5. Set up SSL/TLS for secure connections
+6. Configure proper static and media file serving
+
+Example Gunicorn command:
+```bash
+gunicorn --workers 3 --bind 0.0.0.0:8000 khatma.wsgi:application
+
 
 ### Staging Deployment
 

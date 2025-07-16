@@ -1,22 +1,29 @@
+"""This module contains Khatma functionality."""
 import logging
-'"""This module contains Module functionality."""'
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count, Q
-from django.http import JsonResponse
-from django.core.paginator import Paginator
+from django.http import JsonResponse, Http404
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 from django.db import transaction
-'\n'
+
+# Import models
 from chat.models import KhatmaChat
 from quran.models import QuranPart
-'\n'
-from .models import Khatma, Deceased, Participant, PartAssignment, KhatmaPart, QuranReading, PublicKhatma, KhatmaComment, KhatmaInteraction
-from .forms import KhatmaCreationForm, KhatmaEditForm, DeceasedForm, PartAssignmentForm, QuranReadingForm, KhatmaPartForm, KhatmaShareForm, KhatmaFilterForm, KhatmaChatForm, KhatmaInteractionForm
+from .models import (
+    Khatma, Deceased, Participant, PartAssignment, KhatmaPart, 
+    QuranReading, PublicKhatma, KhatmaComment, KhatmaInteraction
+)
+from .forms import (
+    KhatmaCreationForm, KhatmaEditForm, DeceasedForm, PartAssignmentForm, 
+    QuranReadingForm, KhatmaPartForm, KhatmaShareForm, KhatmaFilterForm, 
+    KhatmaChatForm, KhatmaInteractionForm
+)
 
 @login_required
 def create_khatma(request):
@@ -128,11 +135,27 @@ def khatma_detail(request, khatma_id):
     try:
         # Get the khatma object or return 404 if not found
         khatma = get_object_or_404(Khatma, id=khatma_id)
+        
+        # Check khatma privacy
+        if not khatma.is_public and not request.user.is_authenticated:
+            return redirect(f'{settings.LOGIN_URL}?next={request.path}')
+            
+        if not khatma.is_public and khatma.creator != request.user:
+            # Check if user is a participant
+            is_participant = Participant.objects.filter(
+                user=request.user, 
+                khatma=khatma
+            ).exists()
+            if not is_participant:
+                raise Http404("This khatma is private.")
 
         # Check if the user is a participant
         is_participant = False
         if request.user.is_authenticated:
-            is_participant = Participant.objects.filter(user=request.user, khatma=khatma).exists()
+            is_participant = Participant.objects.filter(
+                user=request.user, 
+                khatma=khatma
+            ).exists()
 
         # Get all parts for this khatma
         parts = KhatmaPart.objects.filter(khatma=khatma).order_by('part_number')
@@ -821,21 +844,90 @@ def khatma_chat(request, khatma_id):
 
 @login_required
 def community_khatmas(request):
+    """
+    View for displaying public khatmas in the community with filtering, search, and pagination.
+    """
     try:
-        'View for displaying public khatmas in the community'
-        public_khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
-        khatma_type = request.GET.get('type')
+        # Base queryset
+        public_khatmas = Khatma.objects.filter(is_public=True).select_related('creator', 'deceased')
+        
+        # Get filter parameters with default values
+        khatma_type = request.GET.get('type', '')
+        search_query = request.GET.get('q', '')
+        sort_by = request.GET.get('sort', '-created_at')
+        
+        # Apply filters
         if khatma_type:
             public_khatmas = public_khatmas.filter(khatma_type=khatma_type)
-        paginator = Paginator(public_khatmas, 12)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        khatma_types = dict(Khatma.KHATMA_TYPE_CHOICES)
-        context = {'page_obj': page_obj, 'khatma_types': khatma_types, 'selected_type': khatma_type}
-        return render(request, 'khatma/community_khatmas.html', context)
+            
+        if search_query:
+            public_khatmas = public_khatmas.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(creator__username__icontains=search_query)
+            )
+        
+        # Apply sorting with validation
+        valid_sort_fields = ['title', 'created_at', 'start_date', 'end_date']
+        sort_field = sort_by.lstrip('-')
+        sort_direction = '-' if sort_by.startswith('-') else ''
+        
+        if sort_field not in valid_sort_fields:
+            sort_field = 'created_at'
+            sort_direction = '-'
+            
+        public_khatmas = public_khatmas.order_by(f'{sort_direction}{sort_field}')
+        
+        # Add annotations for additional data
+        public_khatmas = public_khatmas.annotate(
+            participant_count=Count('participants', distinct=True)
+        )
+        
+        # Pagination
+        items_per_page = 12
+        paginator = Paginator(public_khatmas, items_per_page)
+        page_number = request.GET.get('page', 1)
+        
+        try:
+            page_obj = paginator.page(page_number)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        
+        # Calculate total participants safely
+        total_participants = 0
+        for k in page_obj.object_list:
+            if hasattr(k, 'participant_count') and k.participant_count is not None:
+                total_participants += k.participant_count
+        
+        # Prepare context with default values
+        context = {
+            'page_obj': page_obj,
+            'khatma_types': dict(Khatma.KHATMA_TYPE_CHOICES) if hasattr(Khatma, 'KHATMA_TYPE_CHOICES') else {},
+            'khatma_type': khatma_type,  # Add this line to ensure the template has access to khatma_type
+            'search_query': search_query,
+            'sort_by': sort_by,
+            'total_khatmas': public_khatmas.count() if public_khatmas.exists() else 0,
+            'total_participants': total_participants,
+        }
+        
+        return render(request, 'core/community_khatmas.html', context)
+        
     except Exception as e:
-        logging.error('Error in community_khatmas: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        logging.error(f'Error in community_khatmas: {str(e)}', exc_info=True)
+        # Provide a safe context in case of error
+        safe_context = {
+            'page_obj': None,
+            'khatma_types': {},
+            'khatma_type': '',
+            'search_query': '',
+            'sort_by': '-created_at',
+            'total_khatmas': 0,
+            'total_participants': 0,
+            'error': 'حدث خطأ أثناء تحميل الختمات المجتمعية. يرجى تحديث الصفحة والمحاولة مرة أخرى.'
+        }
+        return render(request, 'core/community_khatmas.html', safe_context)
 
 @login_required
 def create_khatma_post(request, khatma_id):

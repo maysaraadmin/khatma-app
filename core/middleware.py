@@ -50,6 +50,19 @@ class ErrorHandlerMiddleware:
         """
         Get error data based on exception type
         """
+        # Handle NoReverseMatch for debug_toolbar
+        from django.urls.exceptions import NoReverseMatch
+        if isinstance(exception, NoReverseMatch) and 'djdt' in str(exception):
+            # If it's a debug toolbar URL, just return a 404
+            return {
+                'error_title': _('Page not found'),
+                'error_message': _('The requested page could not be found.'),
+                'error_details': str(exception) if settings.DEBUG else None,
+                'status_code': 404
+            }
+        """
+        Get error data based on exception type
+        """
         if isinstance(exception, DatabaseError):
             if isinstance(exception, OperationalError) and 'connection' in str(exception).lower():
                 return {'error_title': _('Database Connection Error'), 'error_message': _('Unable to connect to the database. Please try again later.'), 'error_details': str(exception), 'error_type': 'database_connection', 'status_code': 503}

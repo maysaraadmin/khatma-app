@@ -15,11 +15,16 @@ import logging
 import traceback
 import os
 
+# Import models
+from khatma.models import Khatma, QuranReading
+from users.models import Profile
+
 # Import for social authentication
 from allauth.socialaccount.views import SignupView
 
 # Import models from other apps
 from users.models import Profile, UserAchievement
+from khatma.models import Deceased, PartAssignment, Participant, QuranReading
 from khatma.models import Khatma, Deceased, PartAssignment, Participant, QuranReading
 from quran.models import QuranPart, Surah, Ayah
 from groups.models import ReadingGroup, GroupMembership

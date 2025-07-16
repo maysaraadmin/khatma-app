@@ -41,11 +41,50 @@ admin.site.register(User, CustomUserAdmin)
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
     '''"""Class representing ProfileAdmin."""'''
-    list_display = ('user', 'account_type', 'total_points', 'level', 'preferred_language')
+    list_display = ('user', 'get_account_type', 'get_total_points', 'get_level', 'preferred_language')
     list_filter = ('account_type', 'preferred_language', 'night_mode')
     search_fields = ('user__username', 'user__email', 'bio', 'location')
-    readonly_fields = ('total_points', 'level', 'consecutive_days', 'last_activity_date')
-    fieldsets = (('معلومات المستخدم', {'fields': ('user', 'account_type', 'profile_picture', 'bio', 'location', 'birth_date')}), ('الإحصائيات', {'fields': ('total_points', 'level', 'consecutive_days', 'last_activity_date')}), ('التفضيلات', {'fields': ('preferred_language', 'reading_preference', 'font_size', 'night_mode')}), ('معلومات العائلة', {'fields': ('family_name', 'family_admin', 'family_group'), 'classes': ('collapse',)}), ('معلومات المؤسسة', {'fields': ('organization_name', 'organization_website', 'organization_logo'), 'classes': ('collapse',)}))
+    readonly_fields = ('get_total_points', 'get_level', 'get_consecutive_days', 'get_last_activity_date')
+    fieldsets = (
+        ('معلومات المستخدم', {
+            'fields': ('user', 'account_type', 'profile_picture', 'bio', 'location', 'birth_date')
+        }),
+        ('الإحصائيات', {
+            'fields': ('get_total_points', 'get_level', 'get_consecutive_days', 'get_last_activity_date'),
+            'classes': ('collapse',)
+        }),
+        ('التفضيلات', {
+            'fields': ('preferred_language', 'reading_preference', 'font_size', 'night_mode')
+        }),
+        ('معلومات العائلة', {
+            'fields': ('family_name', 'family_admin', 'family_group'),
+            'classes': ('collapse',)
+        }),
+        ('معلومات المؤسسة', {
+            'fields': ('organization_name', 'organization_website', 'organization_logo'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_total_points(self, obj):
+        return 0  # Default value, implement actual logic
+    get_total_points.short_description = 'النقاط'
+    
+    def get_level(self, obj):
+        return 1  # Default value, implement actual logic
+    get_level.short_description = 'المستوى'
+    
+    def get_consecutive_days(self, obj):
+        return 0  # Default value, implement actual logic
+    get_consecutive_days.short_description = 'أيام متتالية'
+    
+    def get_last_activity_date(self, obj):
+        return None  # Default value, implement actual logic
+    get_last_activity_date.short_description = 'آخر نشاط'
+    
+    def get_account_type(self, obj):
+        return dict(Profile.ACCOUNT_TYPES).get(obj.account_type, '-')
+    get_account_type.short_description = 'نوع الحساب'
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):

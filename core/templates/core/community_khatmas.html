@@ -1,53 +1,142 @@
-{% extends "base.html" %}
+{% extends "core/base.html" %}
+{% load i18n %}
+{% load core_extras %}
 
 {% block extra_css %}
 <style>
-    .khatma-category {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
     .khatma-card {
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
     }
     .khatma-card:hover {
-        transform: scale(1.02);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .khatma-card .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .khatma-card .card-footer {
+        background: transparent;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .khatma-type-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
+    }
+    .khatma-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: auto;
+        padding-top: 10px;
+        font-size: 0.85rem;
+    }
+    .search-box {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .search-box .form-control {
+        padding-right: 2.5rem;
+        border-radius: 20px;
+    }
+    .search-box i {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    .sort-options .btn-group {
+        width: 100%;
+    }
+    .sort-options .dropdown-menu {
+        width: 100%;
+    }
+    .filter-tags {
+        margin-bottom: 1rem;
+    }
+    .filter-tag {
+        display: inline-block;
+        background: #f8f9fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        margin-left: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+    }
+    .filter-tag .close {
+        margin-right: 0.5rem;
+        cursor: pointer;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="mb-4 text-center">🌐 مجتمع ختمة</h1>
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold">🌐 مجتمع الختمات</h1>
+            <p class="lead text-muted">استكشف وشارك في ختمات القرآن الكريم مع المجتمع</p>
+        </div>
+    </div>
 
-    {% if error_message %}
+    {% if error %}
     <div class="alert alert-danger">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        {{ error_message }}
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ error }}
     </div>
     {% endif %}
 
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>فلترة الختمات</h5>
+    <!-- Search and Filter Row -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form method="get" class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       class="form-control" 
+                       id="searchInput" 
+                       placeholder="ابحث عن ختمة..." 
+                       name="q"
+                       value="{{ search_query|default:'' }}">
+            </form>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex">
+                <div class="sort-options me-2 flex-grow-1">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if sort_by == '-created_at' %}
+                                الأحدث
+                            {% elif sort_by == 'created_at' %}
+                                الأقدم
+                            {% elif sort_by == 'title' %}
+                                العنوان (أ-ي)
+                            {% elif sort_by == '-title' %}
+                                العنوان (ي-أ)
+                            {% else %}
+                                ترتيب حسب
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu w-100" aria-labelledby="sortDropdown">
+                            <li><a class="dropdown-item" href="?{% url_replace request 'sort' '-created_at' %}">الأحدث</a></li>
+                            <li><a class="dropdown-item" href="?{% url_replace request 'sort' 'created_at' %}">الأقدم</a></li>
+                            <li><a class="dropdown-item" href="?{% url_replace request 'sort' 'title' %}">العنوان (أ-ي)</a></li>
+                            <li><a class="dropdown-item" href="?{% url_replace request 'sort' '-title' %}">العنوان (ي-أ)</a></li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="khatma_type" id="all_khatmas" checked>
-                        <label class="form-check-label" for="all_khatmas">
-                            كل الختمات
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="khatma_type" id="memorial_khatmas">
-                        <label class="form-check-label" for="memorial_khatmas">
-                            ختمات تذكارية
-                        </label>
-                    </div>
-                    <div class="form-check">
+                <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
+                    <i class="fas fa-filter"></i>
+                    <span class="d-none d-md-inline">تصفية</span>
+                </button>
+            </div>
+        </div>
+    </div>
                         <input class="form-check-input" type="radio" name="khatma_type" id="regular_khatmas">
                         <label class="form-check-label" for="regular_khatmas">
                             ختمات عادية
@@ -67,11 +156,37 @@
             </div>
         </div>
 
-        <div class="col-md-9">
-            <div class="khatma-category">
-                <h3>الختمات العامة</h3>
-                <div class="row">
-                    {% for khatma in community_khatmas %}
+    <!-- Active Filters -->
+    {% if khatma_type or search_query %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="filter-tags">
+                {% if search_query %}
+                <span class="filter-tag">
+                    بحث: "{{ search_query }}"
+                    <a href="?{% url_replace request 'q' '' %}" class="text-muted"><i class="fas fa-times"></i></a>
+                </span>
+                {% endif %}
+                {% if khatma_type %}
+                <span class="filter-tag">
+                    النوع: {{ khatma_types|get_item:khatma_type|default:'' }}
+                    <a href="?{% url_replace request 'type' '' %}" class="text-muted"><i class="fas fa-times"></i></a>
+                </span>
+                {% endif %}
+                {% if khatma_type or search_query %}
+                <a href="{% url 'khatma:community_khatmas' %}" class="btn btn-sm btn-link text-decoration-none">
+                    مسح الكل
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Khatmas Grid -->
+    <div id="khatmasContainer">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for khatma in page_obj %}
                         <div class="col-md-4 mb-4">
                             <div class="card khatma-card shadow-sm">
                                 <div class="card-header d-flex justify-content-between">
@@ -143,6 +258,41 @@
 
 {% block extra_js %}
 <script>
+    // Function to handle URL parameter replacement
+    function updateUrlParameter(url, param, value) {
+        var re = new RegExp("([?&])" + param + "=.*?(&|$)", "i");
+        var separator = url.indexOf('?') !== -1 ? "&" : "?";
+        if (url.match(re)) {
+            return url.replace(re, '$1' + param + "=" + value + '$2');
+        }
+        else {
+            return url + separator + param + "=" + value;
+        }
+    }
+
+    // Handle search form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Handle search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            let searchTimer;
+            searchInput.addEventListener('keyup', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function() {
+                    const form = searchInput.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
+                }, 500);
+            });
+        }
+    });
     // Optional: Add filtering functionality for khatmas
     document.addEventListener('DOMContentLoaded', function() {
         const allKhatmas = document.querySelectorAll('.khatma-card');

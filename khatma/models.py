@@ -6,20 +6,63 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
 
+def validate_image_file_extension(value):
+    import os
+    from django.core.exceptions import ValidationError
+    ext = os.path.splitext(value.name)[1]  # Get the file extension
+    valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+    if not ext.lower() in valid_extensions:
+        raise ValidationError('Unsupported file extension. Allowed extensions are: ' + ', '.join(valid_extensions))
+
 class Deceased(models.Model):
     """Enhanced Deceased model with more details"""
-    name = models.CharField(max_length=200, unique=True, verbose_name='اسم المتوفى')
-    death_date = models.DateField(verbose_name='تاريخ الوفاة')
+    name = models.CharField(max_length=200, verbose_name='اسم المتوفى', db_index=True)
+    death_date = models.DateField(verbose_name='تاريخ الوفاة', db_index=True)
     birth_date = models.DateField(null=True, blank=True, verbose_name='تاريخ الميلاد')
-    photo = models.ImageField(upload_to='deceased_photos/', null=True, blank=True, verbose_name='صورة المتوفى')
+    photo = models.ImageField(
+        upload_to='deceased_photos/%Y/%m/%d/',
+        null=True, 
+        blank=True, 
+        verbose_name='صورة المتوفى',
+        validators=[validate_image_file_extension],
+        help_text='Maximum file size: 2MB. Allowed formats: JPG, JPEG, PNG, GIF.'
+    )
     biography = models.TextField(blank=True, verbose_name='نبذة عن المتوفى')
     relation = models.CharField(max_length=100, blank=True, null=True, verbose_name='صلة القرابة')
     cause_of_death = models.CharField(max_length=200, blank=True, null=True, verbose_name='سبب الوفاة')
     burial_place = models.CharField(max_length=200, blank=True, null=True, verbose_name='مكان الدفن')
-    added_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='deceased_persons')
-    created_at = models.DateTimeField(auto_now_add=True)
+    added_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='deceased_persons',
+        db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
     memorial_day = models.BooleanField(default=False, verbose_name='إنشاء ختمة في ذكرى الوفاة')
-    memorial_frequency = models.CharField(max_length=20, choices=[('yearly', 'سنوياً'), ('monthly', 'شهرياً'), ('weekly', 'أسبوعياً'), ('daily', 'يومياً')], default='yearly', blank=True, null=True, verbose_name='تكرار الختمة التذكارية')
+    memorial_frequency = models.CharField(
+        max_length=20, 
+        choices=[
+            ('yearly', 'سنوياً'), 
+            ('monthly', 'شهرياً'), 
+            ('weekly', 'أسبوعياً'), 
+            ('daily', 'يومياً')
+        ], 
+        default='yearly', 
+        blank=True, 
+        null=True, 
+        verbose_name='تكرار الختمة التذكارية'
+    )
+
+    class Meta:
+        verbose_name = 'المتوفى'
+        verbose_name_plural = 'المتوفين'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['name'], name='deceased_name_idx'),
+            models.Index(fields=['death_date'], name='deceased_death_date_idx'),
+        ]
+        unique_together = ['name', 'death_date', 'added_by']
 
     def __str__(self):
         '''"""Function to   str  ."""'''
@@ -33,11 +76,35 @@ class Deceased(models.Model):
 
 class Khatma(models.Model):
     """Main Khatma model"""
-    FREQUENCY_CHOICES = [('once', 'مرة واحدة'), ('daily', 'يومية'), ('weekly', 'أسبوعية'), ('monthly', 'شهرية'), ('yearly', 'سنوية'), ('ramadan', 'رمضان'), ('friday', 'كل جمعة')]
-    KHATMA_TYPE_CHOICES = [('regular', 'ختمة عادية'), ('memorial', 'ختمة للمتوفى'), ('charity', 'ختمة خيرية'), ('birth', 'ختمة مولود'), ('healing', 'ختمة شفاء'), ('graduation', 'ختمة تخرج'), ('wedding', 'ختمة زواج'), ('group', 'ختمة جماعية')]
-    VISIBILITY_CHOICES = [('public', 'عامة - متاحة للجميع'), ('private', 'خاصة - بدعوة فقط'), ('family', 'عائلية - للعائلة فقط'), ('group', 'مجموعة - لأعضاء المجموعة فقط')]
-    title = models.CharField(max_length=200, verbose_name='عنوان الختمة')
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_khatmas', verbose_name='منشئ الختمة')
+    FREQUENCY_CHOICES = [
+        ('once', 'مرة واحدة'), 
+        ('daily', 'يومية'), 
+        ('weekly', 'أسبوعية'), 
+        ('monthly', 'شهرية'), 
+        ('yearly', 'سنوية'), 
+        ('ramadan', 'رمضان'), 
+        ('friday', 'كل جمعة')
+    ]
+    
+    KHATMA_TYPE_CHOICES = [
+        ('regular', 'ختمة عادية'), 
+        ('memorial', 'ختمة للمتوفى'), 
+        ('charity', 'ختمة خيرية'), 
+        ('birth', 'ختمة مولود'), 
+        ('healing', 'ختمة شفاء'), 
+        ('graduation', 'ختمة تخرج'), 
+        ('wedding', 'ختمة زواج'), 
+        ('group', 'ختمة جماعية')
+    ]
+    
+    VISIBILITY_CHOICES = [
+        ('public', 'عامة - متاحة للجميع'), 
+        ('private', 'خاصة - بدعوة فقط'), 
+        ('family', 'عائلية - للعائلة فقط'), 
+        ('group', 'مجموعة - لأعضاء المجموعة فقط')
+    ]
+    title = models.CharField(max_length=200, verbose_name='عنوان الختمة', db_index=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_khatmas', verbose_name='منشئ الختمة', db_index=True)
     description = models.TextField(blank=True, null=True, verbose_name='وصف الختمة')
     khatma_type = models.CharField(max_length=20, choices=KHATMA_TYPE_CHOICES, default='regular', verbose_name='نوع الختمة')
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='once', verbose_name='تكرار الختمة')

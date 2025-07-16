@@ -1,41 +1,12 @@
-"""URL Configuration for the Khatma project."""
-from django.urls import path, include
-from django.contrib import admin
+"""URL Configuration for the khatma app."""
+from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import include
-
-from core.social_views import CustomSocialSignupView
-from core.admin_views import admin_dashboard
 from . import views
-
-urlpatterns = [
-    # Admin URLs
-    path('admin/dashboard/', admin_dashboard, name='admin_dashboard'),
-    path('admin/', admin.site.urls),
-
-    # Debug toolbar (only in development)
-    path('__debug__/', include('debug_toolbar.urls')),
-
-    # Authentication URLs - All handled by django-allauth
-    path('accounts/', include('allauth.urls')),
-
-    # Custom social signup view
-    path('accounts/social/signup/', CustomSocialSignupView.as_view(), name='socialaccount_signup'),
-
-    # App URLs
-    path('', include('core.urls')),
-    path('users/', include('users.urls')),
-    path('quran/', include('quran.urls')),
-    path('groups/', include('groups.urls')),
-    path('notifications/', include('notifications.urls')),
-    path('chat/', include('chat.urls')),
-]
 
 app_name = 'khatma'
 
-# Khatma-specific URL patterns
-khatma_patterns = [
+urlpatterns = [
     # Khatma management
     path('create/', views.create_khatma, name='create_khatma'),
     path('<int:khatma_id>/', views.khatma_detail, name='khatma_detail'),
@@ -85,8 +56,6 @@ khatma_patterns = [
     path('api/khatma/<int:khatma_id>/part/<int:part_id>/status/', views.part_status_api, name='part_status_api'),
 ]
 
-# Include khatma patterns with namespace
-urlpatterns += [path('khatma/', include((khatma_patterns, 'khatma'), namespace='khatma'))]
-
 # Serve media files in development
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -13,15 +13,14 @@ urlpatterns = [
     path('language/set/', views.set_language, name='set_language'),
     path('community/', views.community, name='community'),
     path('community/khatmas/', views.community_khatmas, name='community_khatmas'),
+
     # Remove the community/leaderboard path and use leaderboard directly
     path('leaderboard/', views.community_leaderboard, name='community_leaderboard'),
     path('groups/', views.group_list, name='group_list'),  # Changed to use the group_list view
     path('groups/create/', views.create_group, name='create_group'),  # Added create_group view
     path('khatma/dashboard/', views.khatma_dashboard, name='khatma_dashboard'),
     # Removed duplicate khatma URLs to avoid conflicts with khatma app URLs
-    path('deceased/create/', views.create_deceased, name='create_deceased'),
-    path('deceased/', views.deceased_list, name='deceased_list'),
-    path('deceased/<int:deceased_id>/', views.deceased_detail, name='deceased_detail'),
+
     # Add missing URLs from the template
     path('profile/', views.profile, name='profile'),
     path('my-profile/', views.my_profile, name='my_profile'),
