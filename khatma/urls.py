@@ -44,9 +44,8 @@ urlpatterns = [
     path('share/<uuid:sharing_link>/', views.shared_khatma, name='shared_khatma'),
     path('<int:khatma_id>/share/', views.share_khatma, name='share_khatma'),
 
-    # Posts and community
+    # Posts
     path('<int:khatma_id>/post/create/', views.create_khatma_post, name='create_khatma_post'),
-    path('community/', views.community_khatmas, name='community_khatmas'),
 
     # Chat
     path('<int:khatma_id>/chat/', views.khatma_chat, name='khatma_chat'),

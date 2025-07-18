@@ -12,7 +12,6 @@ urlpatterns = [
     path('contact/', views.contact_us, name='contact_us'),
     path('language/set/', views.set_language, name='set_language'),
     path('community/', views.community, name='community'),
-    path('community/khatmas/', views.community_khatmas, name='community_khatmas'),
 
     # Remove the community/leaderboard path and use leaderboard directly
     path('leaderboard/', views.community_leaderboard, name='community_leaderboard'),

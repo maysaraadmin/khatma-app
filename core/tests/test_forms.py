@@ -317,13 +317,18 @@ class UserProfileFormTest(BaseTestCase):
             user=self.user,
             defaults={
                 'bio': 'Test bio',
-                'account_type': 'reader',  # Add any required fields here
+                'account_type': 'reader',
+                'last_activity_date': timezone.now().date(),  # Add required field
+                'consecutive_days': 0,  # Add default value for consecutive_days
+                'level': 1,  # Add default value for level
+                'total_points': 0,  # Add default value for total_points
             }
         )
         
         # Update the user's profile with any additional fields
         if not created:
             self.profile.bio = 'Test bio'
+            self.profile.last_activity_date = timezone.now().date()
             self.profile.save()
         
         self.valid_data = {
