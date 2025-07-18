@@ -443,12 +443,12 @@
             </a>
         </div>
         <div class="col-md-3 col-6 mb-4">
-            <a href="{% url 'core:community_khatmas' %}" class="action-card d-block text-decoration-none">
+            <a href="{% url 'core:group_list' %}" class="action-card d-block text-decoration-none">
                 <div class="action-icon">
                     <i class="bi bi-people"></i>
                 </div>
-                <h4 class="action-title">المجتمع</h4>
-                <p class="action-desc">استكشف ختمات المجتمع</p>
+                <h4 class="action-title">مجموعات القراءة</h4>
+                <p class="action-desc">استكشف مجموعات القراءة</p>
             </a>
         </div>
         <div class="col-md-3 col-6 mb-4">
@@ -554,8 +554,8 @@
                             <div class="khatma-empty">
                                 <i class="bi bi-people"></i>
                                 <p>أنت لا تشارك في أي ختمات حالياً.</p>
-                                <a href="{% url 'core:community_khatmas' %}" style="background: var(--accent-color);">
-                                    <i class="bi bi-search"></i> استكشف الختمات المتاحة
+                                <a href="{% url 'core:group_list' %}" class="btn btn-primary">
+                                    <i class="bi bi-people"></i> تصفح مجموعات القراءة
                                 </a>
                             </div>
                         {% endif %}
