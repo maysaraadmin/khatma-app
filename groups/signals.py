@@ -12,7 +12,7 @@ def create_group_membership_for_creator(sender, instance, created, **kwargs):
     """Create admin membership for the group creator"""
     if created:
         GroupMembership.objects.create(user=instance.creator, group=instance, role='admin')
-        GroupChat.objects.create(group=instance, sender=instance.creator, message=f'تم إنشاء المجموعة "{instance.name}" بواسطة {instance.creator.username}', is_system_message=True)
+        GroupChat.objects.create(group=instance, user=instance.creator, message=f'تم إنشاء المجموعة "{instance.name}" بواسطة {instance.creator.username}', message_type='system')
 
 @receiver(post_save, sender=JoinRequest)
 def handle_join_request_approval(sender, instance, **kwargs):
@@ -20,7 +20,7 @@ def handle_join_request_approval(sender, instance, **kwargs):
     if instance.status == 'approved' and instance.processed_at:
         if not GroupMembership.objects.filter(user=instance.user, group=instance.group).exists():
             GroupMembership.objects.create(user=instance.user, group=instance.group, role='member')
-            GroupChat.objects.create(group=instance.group, sender=instance.user, message=f'انضم {instance.user.username} إلى المجموعة', is_system_message=True)
+            GroupChat.objects.create(group=instance.group, user=instance.user, message=f'انضم {instance.user.username} إلى المجموعة', message_type='system')
             try:
                 from notifications.models import Notification
                 Notification.objects.create(user=instance.user, notification_type='group_join_approved', message=f'تمت الموافقة على طلب انضمامك إلى مجموعة "{instance.group.name}"', related_group=instance.group)
@@ -41,7 +41,7 @@ def handle_new_membership(sender, instance, created, **kwargs):
 @receiver(pre_delete, sender=GroupMembership)
 def handle_membership_removal(sender, instance, **kwargs):
     """Handle group membership removal"""
-    GroupChat.objects.create(group=instance.group, sender=instance.user, message=f'غادر {instance.user.username} المجموعة', is_system_message=True)
+    GroupChat.objects.create(group=instance.group, user=instance.user, message=f'غادر {instance.user.username} المجموعة', message_type='system')
     try:
         from notifications.models import Notification
         if instance.user != instance.group.creator:

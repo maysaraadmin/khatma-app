@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "إنشاء فعالية" %} - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between border-b pb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        <span class="text-blue-600">{{ group.name }}</span> - {% trans "إنشاء فعالية جديدة" %}
+                    </h1>
+                    <p class="text-gray-600 mt-2 text-sm">{% trans "تنظيم فعالية لأعضاء المجموعة" %}</p>
+                </div>
+                <div class="flex space-x-3 space-x-reverse">
+                    <a href="{% url 'groups:group_detail' group.id %}" 
+                       class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors duration-200">
+                        <svg class="w-4 h-4 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7l-7-7m18 0l-7 7"></path>
+                        </svg>
+                        {% trans "العودة للمجموعة" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Event Form -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    {% trans "تفاصيل الفعالية" %}
+                </h2>
+            </div>
+            
+            <div class="p-6">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Title Field -->
+                    <div class="mb-6">
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% trans "عنوان الفعالية" %} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {% for error in form.title.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">{% trans "اختر عنواناً واضحاً وموجزاً للفعالية" %}</p>
+                    </div>
+
+                    <!-- Description Field -->
+                    <div class="mb-6">
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% trans "وصف الفعالية" %} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {% for error in form.description.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">{% trans "اكتب تفاصيل الفعالية وما سيحدث فيها" %}</p>
+                    </div>
+
+                    <!-- Date and Time Fields -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="{{ form.start_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {% trans "وقت البدء" %} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.start_time }}
+                            {% if form.start_time.errors %}
+                                <div class="mt-1 text-sm text-red-600">
+                                    {% for error in form.start_time.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.end_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {% trans "وقت الانتهاء" %}
+                            </label>
+                            {{ form.end_time }}
+                            {% if form.end_time.errors %}
+                                <div class="mt-1 text-sm text-red-600">
+                                    {% for error in form.end_time.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Location Field -->
+                    <div class="mb-6">
+                        <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% trans "مكان الفعالية" %}
+                        </label>
+                        {{ form.location }}
+                        {% if form.location.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {% for error in form.location.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">{% trans "أدخل مكان انعقاد الفعالية (اختياري)" %}</p>
+                    </div>
+
+                    <!-- Max Attendees Field -->
+                    <div class="mb-6">
+                        <label for="{{ form.max_attendees.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% trans "الحد الأقصى للحضور" %}
+                        </label>
+                        {{ form.max_attendees }}
+                        {% if form.max_attendees.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {% for error in form.max_attendees.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">{% trans "اتركه فارغاً لعدم تحديد حد أقصى" %}</p>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                        <a href="{% url 'groups:group_detail' group.id %}" 
+                           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors duration-200">
+                            {% trans "إلغاء" %}
+                        </a>
+                        <div class="flex space-x-3 space-x-reverse">
+                            <button type="submit" 
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m0-4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                {% trans "إنشاء الفعالية" %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tips Section -->
+        <div class="mt-8 bg-yellow-50 rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                {% trans "نصائح لتنظيم فعالية ناجحة" %}
+            </h3>
+            <ul class="space-y-2 text-yellow-800">
+                <li class="flex items-start">
+                    <svg class="w-4 h-4 mr-2 mt-0.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {% trans "اختر وقتاً مناسباً يناسب أغلبية الأعضاء" %}
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-4 h-4 mr-2 mt-0.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {% trans "اكتب وصفاً واضحاً يحتوي على كل التفاصيل الهامة" %}
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-4 h-4 mr-2 mt-0.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {% trans "حدد مكاناً واضحاً وسهل الوصول إليه" %}
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-4 h-4 mr-2 mt-0.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {% trans "ضع حداً معقولاً للحضور إذا كان المكان محدوداً" %}
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add date/time validation
+document.addEventListener('DOMContentLoaded', function() {
+    const startTimeField = document.getElementById('{{ form.start_time.id_for_label }}');
+    const endTimeField = document.getElementById('{{ form.end_time.id_for_label }}');
+    
+    if (startTimeField && endTimeField) {
+        // Set minimum date to today
+        const today = new Date().toISOString().slice(0, 16);
+        startTimeField.min = today;
+        
+        // Update end time minimum when start time changes
+        startTimeField.addEventListener('change', function() {
+            endTimeField.min = this.value;
+            if (endTimeField.value && endTimeField.value < this.value) {
+                endTimeField.value = this.value;
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* Form styling */
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #eab308;
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.1);
+}
+
+textarea.form-control {
+    min-height: 150px;
+    resize: vertical;
+}
+</style>
+{% endblock %}

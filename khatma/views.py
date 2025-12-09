@@ -11,6 +11,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 from django.db import transaction
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 # Import models
 from chat.models import KhatmaChat
@@ -462,7 +464,7 @@ def create_deceased(request):
     try:
         'View for creating a new deceased person'
         if request.method == 'POST':
-            form = DeceasedForm(request.POST, request.FILES)
+            form = DeceasedForm(request.POST, request.FILES, user=request.user)
             if form.is_valid():
                 deceased = form.save(commit=False)
                 deceased.added_by = request.user
@@ -470,7 +472,7 @@ def create_deceased(request):
                 messages.success(request, 'تم إضافة المتوفى بنجاح')
                 return redirect('khatma:deceased_list')
         else:
-            form = DeceasedForm()
+            form = DeceasedForm(user=request.user)
         context = {'form': form}
         return render(request, 'khatma/create_deceased.html', context)
     except Exception as e:
@@ -515,13 +517,13 @@ def edit_deceased(request, deceased_id):
             messages.error(request, 'ليس لديك صلاحية لتعديل هذا المتوفى')
             return redirect('khatma:deceased_list')
         if request.method == 'POST':
-            form = DeceasedForm(request.POST, request.FILES, instance=deceased)
+            form = DeceasedForm(request.POST, request.FILES, instance=deceased, user=request.user)
             if form.is_valid():
                 form.save()
                 messages.success(request, 'تم تحديث بيانات المتوفى بنجاح')
                 return redirect('khatma:deceased_detail', deceased_id=deceased.id)
         else:
-            form = DeceasedForm(instance=deceased)
+            form = DeceasedForm(instance=deceased, user=request.user)
         context = {'form': form, 'deceased': deceased}
         return render(request, 'khatma/edit_deceased.html', context)
     except Exception as e:
@@ -618,7 +620,6 @@ def remove_participant(request, khatma_id, user_id):
         if khatma.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لإزالة المشاركين')
             return redirect('khatma:khatma_detail', khatma_id=khatma.id)
-        from django.contrib.auth.models import User
         participant_user = get_object_or_404(User, id=user_id)
         participant = get_object_or_404(Participant, user=participant_user, khatma=khatma)
         if participant_user == khatma.creator:
@@ -825,7 +826,7 @@ def khatma_chat(request, khatma_id):
             if form.is_valid():
                 message = form.save(commit=False)
                 message.khatma = khatma
-                message.sender = request.user
+                message.user = request.user
                 message.save()
                 try:
                     from notifications.models import Notification

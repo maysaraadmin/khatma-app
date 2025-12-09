@@ -755,7 +755,7 @@ def achievements(request):
     """
     try:
         # Get user's achievements
-        user_achievements = UserAchievement.objects.filter(user=request.user).order_by('-achieved_at')
+        user_achievements = UserAchievement.objects.filter(user=request.user).order_by('-unlocked_at')
 
         # Create a list of user achievement objects with additional properties to match the template
         user_achievements_list = []
@@ -763,7 +763,7 @@ def achievements(request):
             user_achievements_list.append({
                 'get_achievement_type_display': achievement.get_achievement_type_display(),
                 'description': 'إنجاز ' + achievement.get_achievement_type_display(),
-                'date_earned': achievement.achieved_at,
+                'date_earned': achievement.unlocked_at,
                 'points': achievement.points_earned
             })
 
@@ -782,7 +782,7 @@ def achievements(request):
             achievement_type = next((k for k, v in dict(UserAchievement.ACHIEVEMENT_TYPES).items() if v == achievement['name']), None)
             achievement['achieved'] = user_achievements.filter(achievement_type=achievement_type).exists()
             if achievement['achieved']:
-                achievement['date_earned'] = user_achievements.get(achievement_type=achievement_type).achieved_at
+                achievement['date_earned'] = user_achievements.get(achievement_type=achievement_type).unlocked_at
 
         # Get user profile for total points and level
         profile, created = Profile.objects.get_or_create(user=request.user)

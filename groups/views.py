@@ -313,23 +313,12 @@ def group_chat(request, group_id):
         if form.is_valid():
             message = form.save(commit=False)
             message.group = group
-            message.sender = request.user
-            if message.attachment:
-                message.has_attachment = True
-                file_name = message.attachment.name.lower()
-                if file_name.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                    message.attachment_type = 'image'
-                elif file_name.endswith('.pdf'):
-                    message.attachment_type = 'pdf'
-                elif file_name.endswith(('.doc', '.docx')):
-                    message.attachment_type = 'document'
-                else:
-                    message.attachment_type = 'file'
+            message.user = request.user
             message.save()
             return redirect('groups:group_chat', group_id=group.id)
     else:
         form = GroupChatForm()
-    messages_list = GroupChat.objects.filter(group=group).select_related('sender').order_by('-created_at')[:100]
+    messages_list = GroupChat.objects.filter(group=group).select_related('user').order_by('-created_at')[:100]
     messages_list = reversed(list(messages_list))
     context = {'group': group, 'chat_messages': messages_list, 'form': form, 'member_role': membership.role}
     return render(request, 'groups/group_chat.html', context)
@@ -376,7 +365,7 @@ def create_announcement(request, group_id):
             announcement.group = group
             announcement.creator = request.user
             announcement.save()
-            GroupChat.objects.create(group=group, sender=request.user, message=f'تم إنشاء إعلان جديد: {announcement.title}', is_system_message=True)
+            GroupChat.objects.create(group=group, user=request.user, message=f'تم إنشاء إعلان جديد: {announcement.title}', message_type='system')
             messages.success(request, 'تم إنشاء الإعلان بنجاح')
             return redirect('groups:group_announcements', group_id=group.id)
     else:
@@ -471,7 +460,7 @@ def create_event(request, group_id):
             event.group = group
             event.creator = request.user
             event.save()
-            GroupChat.objects.create(group=group, sender=request.user, message=f"تم إنشاء حدث جديد: {event.title} ({event.start_time.strftime('%Y-%m-%d %H:%M')})", is_system_message=True)
+            GroupChat.objects.create(group=group, user=request.user, message=f"تم إنشاء حدث جديد: {event.title} ({event.start_time.strftime('%Y-%m-%d %H:%M')})", message_type='system')
             try:
                 from notifications.models import Notification
                 for member in group.members.all():
@@ -703,11 +692,13 @@ def create_group_khatma(request, group_id):
 
                 # Create parts for the khatma
                 from khatma.models import KhatmaPart
+                existing_parts = set(KhatmaPart.objects.filter(khatma=khatma).values_list('part_number', flat=True))
                 for i in range(1, 31):  # 30 parts of Quran
-                    KhatmaPart.objects.create(
-                        khatma=khatma,
-                        part_number=i
-                    )
+                    if i not in existing_parts:
+                        KhatmaPart.objects.create(
+                            khatma=khatma,
+                            part_number=i
+                        )
 
                 # Add creator as participant
                 from khatma.models import Participant
@@ -758,7 +749,7 @@ def send_group_chat(request, group_id):
             message_type = request.POST.get('message_type', 'text')
             if not message_text:
                 return JsonResponse({'status': 'error', 'message': 'الرسالة لا يمكن أن تكون فارغة'})
-            chat_message = GroupChat.objects.create(group=group, sender=request.user, message=message_text, message_type=message_type)
+            chat_message = GroupChat.objects.create(group=group, user=request.user, message=message_text, message_type=message_type)
             try:
                 from notifications.models import Notification
                 for member in group.members.all():
@@ -766,7 +757,7 @@ def send_group_chat(request, group_id):
                         Notification.objects.create(user=member, notification_type='group_chat', message=f'رسالة جديدة من {request.user.username} في محادثة مجموعة "{group.name}"', related_group=group)
             except (ImportError, AttributeError):
                 pass
-            return JsonResponse({'status': 'success', 'message': 'تم إرسال الرسالة بنجاح', 'chat_message': {'id': chat_message.id, 'sender': chat_message.sender.username, 'message': chat_message.message, 'message_type': chat_message.message_type, 'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')}})
+            return JsonResponse({'status': 'success', 'message': 'تم إرسال الرسالة بنجاح', 'chat_message': {'id': chat_message.id, 'user': chat_message.user.username, 'message': chat_message.message, 'message_type': chat_message.message_type, 'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')}})
         return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})
     except Exception as e:
         logging.error('Error in send_group_chat: ' + str(e))

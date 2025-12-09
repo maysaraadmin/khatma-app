@@ -289,6 +289,13 @@ class Profile(models.Model):
         help_text=_("User's family name")
     )
     
+    family_admin = models.BooleanField(
+        _('family admin'),
+        default=False,
+        null=False,
+        help_text=_('Designates whether the user is a family admin')
+    )
+    
     # Organization Information
     organization_name = models.CharField(
         _('organization name'),

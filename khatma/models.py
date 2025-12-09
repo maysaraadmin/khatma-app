@@ -2,9 +2,11 @@
 import uuid
 '\n'
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.urls import reverse
+
+User = get_user_model()
 
 def validate_image_file_extension(value):
     import os

@@ -151,35 +151,26 @@
             <div class="mb-4">
               <label class="form-label">نوع الحساب</label>
               <div class="row g-3">
-                <div class="col-md-4">
-                  <div class="card account-type-card" id="individual-card" onclick="selectAccountType('individual')">
+                <div class="col-md-6">
+                  <div class="card account-type-card" id="standard-card" onclick="selectAccountType('standard')">
                     <div class="card-body text-center">
                       <i class="bi bi-person-fill account-type-icon"></i>
-                      <h5 class="card-title">حساب فردي</h5>
+                      <h5 class="card-title">حساب عادي</h5>
                       <p class="card-text small">للاستخدام الشخصي</p>
                     </div>
                   </div>
                 </div>
-                <div class="col-md-4">
-                  <div class="card account-type-card" id="family-card" onclick="selectAccountType('family')">
+                <div class="col-md-6">
+                  <div class="card account-type-card" id="premium-card" onclick="selectAccountType('premium')">
                     <div class="card-body text-center">
-                      <i class="bi bi-people-fill account-type-icon"></i>
-                      <h5 class="card-title">حساب عائلي</h5>
-                      <p class="card-text small">للعائلات والمجموعات الصغيرة</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card account-type-card" id="charity-card" onclick="selectAccountType('charity')">
-                    <div class="card-body text-center">
-                      <i class="bi bi-building-fill account-type-icon"></i>
-                      <h5 class="card-title">مؤسسة خيرية</h5>
-                      <p class="card-text small">للمؤسسات والجمعيات الخيرية</p>
+                      <i class="bi bi-star-fill account-type-icon"></i>
+                      <h5 class="card-title">حساب مميز</h5>
+                      <p class="card-text small">مميزات إضافية</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <input type="hidden" name="account_type" id="account_type" value="individual">
+              <input type="hidden" name="account_type" id="account_type" value="standard">
             </div>
 
             <div class="d-grid gap-2 mb-4">
@@ -253,22 +244,26 @@
     password2.addEventListener('keyup', validatePassword);
 
     // Set default account type selection
-    selectAccountType('individual');
-  }, false);
-})();
+    document.addEventListener('DOMContentLoaded', function() {
+      selectAccountType('standard');
+    });
 
-// Account type selection
-function selectAccountType(type) {
-  // Remove selected class from all cards
-  document.querySelectorAll('.account-type-card').forEach(card => {
-    card.classList.remove('selected');
-  });
-
-  // Add selected class to the clicked card
-  document.getElementById(type + '-card').classList.add('selected');
-
-  // Update the hidden input value
-  document.getElementById('account_type').value = type;
-}
+    function selectAccountType(type) {
+      // Remove selected class from all cards
+      document.querySelectorAll('.account-type-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Add selected class to clicked card
+      const card = document.getElementById(type + '-card');
+      if (card) {
+        card.classList.add('selected');
+      }
+      
+      // Update hidden input value
+      document.getElementById('account_type').value = type;
+    }
+  }); // Close the load event listener
+})(); // Close the IIFE
 </script>
 {% endblock %}

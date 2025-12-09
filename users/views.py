@@ -65,7 +65,7 @@ def user_profile(request):
                 return redirect('users:profile')
         else:
             form = UserProfileForm(instance=profile)
-        achievements = UserAchievement.objects.filter(user=request.user).order_by('-achieved_at')
+        achievements = UserAchievement.objects.filter(user=request.user).order_by('-unlocked_at')
         context = {'profile': profile, 'form': form, 'achievements': achievements}
         return render(request, 'users/profile.html', context)
     except Exception as e:
@@ -95,7 +95,7 @@ def edit_profile(request):
 def user_achievements(request):
     try:
         'View for displaying user achievements'
-        achievements = UserAchievement.objects.filter(user=request.user).order_by('-achieved_at')
+        achievements = UserAchievement.objects.filter(user=request.user).order_by('-unlocked_at')
         context = {'achievements': achievements, 'total_points': sum((a.points_earned for a in achievements))}
         return render(request, 'users/achievements.html', context)
     except Exception as e:
@@ -133,7 +133,7 @@ def settings(request):
 def achievements_list(request):
     try:
         'View for listing all achievements'
-        user_achievements = UserAchievement.objects.filter(user=request.user).order_by('-achieved_at')
+        user_achievements = UserAchievement.objects.filter(user=request.user).order_by('-unlocked_at')
         top_users = Profile.objects.annotate(total_points=Sum('user__userachievement__points_earned')).filter(total_points__gt=0).order_by('-total_points')[:10]
         context = {'user_achievements': user_achievements, 'top_users': top_users, 'total_points': sum((a.points_earned for a in user_achievements))}
         return render(request, 'users/achievements_list.html', context)
