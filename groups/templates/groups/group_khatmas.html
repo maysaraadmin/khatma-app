@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "الختمات" %} - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Group Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="group-header p-4" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-book text-success" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="text-white">
+                                <h1 class="h2 mb-1">{{ group.name }}</h1>
+                                <p class="mb-0 opacity-90">{% trans "الختمات الجماعية" %}</p>
+                            </div>
+                        </div>
+                        <p class="text-white mb-0 opacity-90">{% trans "إدارة ومراقبة الختمات الجماعية للمجموعة" %}</p>
+                    </div>
+                    <div class="col-md-4 text-center text-md-end">
+                        <a href="{% url 'groups:create_group_khatma' group.id %}" class="btn btn-light">
+                            <i class="fas fa-plus ms-2"></i>
+                            {% trans "إنشاء ختمة جديدة" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Khatmas -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-play-circle ms-2"></i>
+                {% trans "الختمات النشطة" %}
+                <span class="badge bg-white text-success ms-2">{{ active_khatmas|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if active_khatmas %}
+                <div class="row">
+                    {% for khatma in active_khatmas %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 border-success">
+                            <div class="card-body">
+                                <h6 class="card-title text-success">
+                                    <i class="fas fa-book-open ms-2"></i>
+                                    {{ khatma.title }}
+                                </h6>
+                                {% if khatma.description %}
+                                <p class="card-text text-muted small">{{ khatma.description|truncatewords:20 }}</p>
+                                {% endif %}
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar ms-1"></i>
+                                        {% trans "بدأت في" %}: {{ khatma.start_date|date:"Y-m-d" }}
+                                    </small>
+                                </div>
+                                <div class="progress mb-3" style="height: 8px;">
+                                    {% with progress=khatma.progress_percentage|default:0 %}
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         data-progress="{{ progress }}"
+                                         aria-valuenow="{{ progress }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                    {% endwith %}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-users ms-1"></i>
+                                        {{ khatma.participants.count }} {% trans "مشارك" %}
+                                    </small>
+                                    <a href="#" class="btn btn-sm btn-outline-success">
+                                        {% trans "التفاصيل" %}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-book text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">{% trans "لا توجد ختمات نشطة حالياً" %}</h5>
+                    <p class="text-muted">{% trans "ابدأ ختمة جديدة لمجموعتك" %}</p>
+                    <a href="{% url 'groups:create_group_khatma' group.id %}" class="btn btn-success">
+                        <i class="fas fa-plus ms-2"></i>
+                        {% trans "إنشاء ختمة جديدة" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Completed Khatmas -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-check-circle ms-2"></i>
+                {% trans "الختمات المكتملة" %}
+                <span class="badge bg-white text-secondary ms-2">{{ completed_khatmas|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if completed_khatmas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>{% trans "عنوان الختمة" %}</th>
+                                <th>{% trans "تاريخ البدء" %}</th>
+                                <th>{% trans "تاريخ الإنجاز" %}</th>
+                                <th>{% trans "عدد المشاركين" %}</th>
+                                <th>{% trans "الإجراءات" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for khatma in completed_khatmas %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-book text-secondary ms-2"></i>
+                                    {{ khatma.title }}
+                                </td>
+                                <td>{{ khatma.start_date|date:"Y-m-d" }}</td>
+                                <td>
+                                    <span class="badge bg-success">{{ khatma.completed_at|date:"Y-m-d" }}</span>
+                                </td>
+                                <td>{{ khatma.participants.count }}</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-eye ms-1"></i>
+                                        {% trans "عرض" %}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">{% trans "لا توجد ختمات مكتملة بعد" %}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set progress bar widths from data attributes
+    const progressBars = document.querySelectorAll('[data-progress]');
+    progressBars.forEach(function(bar) {
+        const progress = bar.getAttribute('data-progress');
+        bar.style.width = progress + '%';
+    });
+});
+</script>
+{% endblock %}

@@ -12,7 +12,7 @@
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="fas fa-exclamation-triangle ms-2"></i>
                         <strong>تحذير:</strong> أنت على وشك حذف هذه الختمة. هذا الإجراء لا يمكن التراجع عنه.
                     </div>
                     
@@ -31,10 +31,10 @@
                         
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-1"></i> إلغاء
+                                <i class="fas fa-arrow-left ms-1"></i> إلغاء
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-1"></i> نعم، حذف الختمة
+                                <i class="fas fa-trash ms-1"></i> نعم، حذف الختمة
                             </button>
                         </div>
                     </form>

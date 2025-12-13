@@ -10,7 +10,7 @@
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">المشاركون في الختمة</h4>
                     <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}" class="btn btn-light btn-sm">
-                        <i class="bi bi-arrow-right me-1"></i> العودة للختمة
+                        <i class="fas fa-arrow-left ms-1"></i> العودة للختمة
                     </a>
                 </div>
                 <div class="card-body">
@@ -39,7 +39,7 @@
                                         {% if participant.user != khatma.creator %}
                                             <div>
                                                 <a href="{% url 'khatma:remove_participant' khatma_id=khatma.id user_id=participant.user.id %}" class="btn btn-outline-danger btn-sm">
-                                                    <i class="bi bi-person-x me-1"></i> إزالة
+                                                    <i class="fas fa-user-times ms-1"></i> إزالة
                                                 </a>
                                             </div>
                                         {% endif %}

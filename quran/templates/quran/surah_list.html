@@ -100,10 +100,10 @@
         <div class="col-md-4 text-md-end">
             <div class="btn-group">
                 <a href="{% url 'quran:juz_list' %}" class="btn btn-outline-primary">
-                    <i class="bi bi-grid-3x3-gap me-1"></i> عرض حسب الأجزاء
+                    <i class="fas fa-th ms-1"></i> عرض حسب الأجزاء
                 </a>
                 <a href="{% url 'quran:surah_list' %}?show_verses=true" class="btn btn-outline-success">
-                    <i class="bi bi-book me-1"></i> عرض الآيات
+                    <i class="fas fa-book ms-1"></i> عرض الآيات
                 </a>
             </div>
         </div>
@@ -137,10 +137,10 @@
             <div class="row">
                 <div class="col-12 text-center">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-filter me-1"></i> تطبيق الفلتر
+                        <i class="fas fa-filter ms-1"></i> تطبيق الفلتر
                     </button>
                     <a href="{% url 'quran:surah_list' %}" class="btn btn-outline-secondary ms-2">
-                        <i class="bi bi-x-circle me-1"></i> إعادة ضبط
+                        <i class="fas fa-times-circle ms-1"></i> إعادة ضبط
                     </a>
                 </div>
             </div>
@@ -179,7 +179,7 @@
                     </div>
                     <div class="text-center mt-3">
                         <a href="{% url 'quran:surah_detail' surah_number=surah.surah_number %}" class="btn btn-primary">
-                            <i class="bi bi-book me-1"></i> قراءة السورة
+                            <i class="fas fa-book ms-1"></i> قراءة السورة
                         </a>
                     </div>
                 </div>

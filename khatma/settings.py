@@ -280,6 +280,9 @@ AUTHENTICATION_BACKENDS = [
 
 # Django-allauth settings
 ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
 
 # Authentication settings
 ACCOUNT_LOGOUT_ON_GET = True  # Allow logout without confirmation
@@ -287,7 +290,7 @@ ACCOUNT_LOGOUT_ON_GET = True  # Allow logout without confirmation
 # Modern Allauth configuration
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory' if not DEBUG else 'optional'
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = ['email']
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True

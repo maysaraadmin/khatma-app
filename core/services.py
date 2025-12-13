@@ -70,12 +70,12 @@ def get_dashboard_data(user):
         # Add recent khatma creations
         recent_khatmas = Khatma.objects.filter(
             creator=user
-        ).order_by('-creation_date')[:5]
+        ).order_by('-created_at')[:5]
 
         for khatma in recent_khatmas:
             recent_activities.append({
                 'type': 'khatma_creation',
-                'date': khatma.creation_date,
+                'date': khatma.created_at,
                 'khatma': khatma
             })
 
@@ -126,7 +126,7 @@ def get_community_data():
         # Get public khatmas
         public_khatmas = Khatma.objects.filter(
             is_public=True
-        ).order_by('-creation_date').select_related('creator', 'deceased')
+        ).order_by('-created_at').select_related('creator', 'deceased')
 
         # Get top users by completed parts
         top_users = User.objects.annotate(
@@ -144,7 +144,7 @@ def get_community_data():
         total_completed_parts = QuranReading.objects.count()
 
         # Get recent khatmas
-        recent_khatmas = Khatma.objects.order_by('-creation_date')[:5].select_related('creator')
+        recent_khatmas = Khatma.objects.order_by('-created_at')[:5].select_related('creator')
 
         return {
             'public_khatmas': public_khatmas,
