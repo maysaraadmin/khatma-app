@@ -15,28 +15,30 @@ from .forms import UserProfileForm, UserProfileEditForm, ExtendedUserCreationFor
 def register(request):
     try:
         'User registration view'
-        print("Register view called")
         if request.method == 'POST':
-            print("POST request received")
             form = ExtendedUserCreationForm(request.POST)
             if form.is_valid():
-                print("Form is valid")
                 user = form.save()
                 messages.success(request, 'تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.')
                 return redirect('login')
             else:
-                print(f"Form errors: {form.errors}")
+                logging.error(f"Registration form errors: {form.errors}")
         else:
-            print("GET request received")
             form = ExtendedUserCreationForm()
         return render(request, 'users/register.html', {'form': form, 'page_title': 'إنشاء حساب'})
     except Exception as e:
-        print(f"Exception in register view: {str(e)}")
-        print(f"Exception type: {type(e)}")
         import traceback
-        traceback.print_exc()
-        logging.error('Error in register: ' + str(e))
-        return render(request, 'core/error.html', context={'error_title': 'خطأ في التسجيل', 'error_message': str(e), 'error_details': traceback.format_exc()})
+        error_details = traceback.format_exc()
+        logging.exception("Exception in register view")
+        return render(
+            request,
+            'core/error.html',
+            context={
+                'error_title': 'خطأ في التسجيل',
+                'error_message': 'حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.',
+                'error_details': 'فشل إنشاء الحساب بسبب خطأ غير متوقع.'
+            }
+        )
 
 @login_required
 def logout_view(request):

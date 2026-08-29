@@ -162,36 +162,22 @@ class PartAssignmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         """Initialize the form with khatma-specific data"""
-        # Get user and khatma from initial data or kwargs
         initial = kwargs.get('initial', {})
         self.user = kwargs.pop('user', None) or initial.get('user')
         self.khatma = kwargs.pop('khatma', None) or initial.get('khatma')
         
-        # Debug: Print incoming data
-        print(f"[FORM DEBUG] Initial data: {kwargs.get('data')}")
-        print(f"[FORM DEBUG] Initial files: {kwargs.get('files')}")
-        
-        # Initialize the form with the remaining arguments
         super().__init__(*args, **kwargs)
         
-        # Debug: Print form data after initialization
-        print(f"[FORM DEBUG] Form data after init: {self.data}")
-        
-        # Set initial is_completed from instance if it exists
         if self.instance and self.instance.pk:
             self.fields['is_completed'].initial = self.instance.is_completed
-            print(f"[FORM DEBUG] Set initial is_completed from instance: {self.instance.is_completed}")
         
-        # If we have a khatma, add a participant field
         if self.khatma:
             from django.contrib.auth import get_user_model
             User = get_user_model()
             
-            # Get all participants in this khatma
             from .models import Participant
             participant_users = Participant.objects.filter(khatma=self.khatma).values_list('user', flat=True)
             
-            # Add participant field
             self.fields['participant'] = forms.ModelChoiceField(
                 queryset=User.objects.filter(id__in=participant_users),
                 required=True,
@@ -199,31 +185,18 @@ class PartAssignmentForm(forms.ModelForm):
                 widget=forms.Select(attrs={'class': 'form-select'})
             )
             
-            # Set initial participant if instance exists and has an assigned user
-            if self.instance and self.instance.assigned_to:
-                self.fields['participant'].initial = self.instance.assigned_to
-                print(f"[FORM DEBUG] Set initial participant from instance: {self.instance.assigned_to}")
-            # Otherwise, set the current user as the initial value if available
+            if self.instance and self.instance.participant:
+                self.fields['participant'].initial = self.instance.participant
             elif self.user:
                 self.fields['participant'].initial = self.user
-                self.instance.assigned_to = self.user
-                print(f"[FORM DEBUG] Set initial participant from user: {self.user}")
-        
-        # Debug: Print form fields and their initial values
-        print("[FORM DEBUG] Form fields and initial values:")
-        for field_name, field in self.fields.items():
-            print(f"  {field_name}: initial={field.initial}, required={field.required}")
+                self.instance.participant = self.user
     
     def clean(self):
         """Custom form validation and data cleaning."""
         cleaned_data = super().clean()
-        print(f"[FORM DEBUG] In clean() - cleaned_data: {cleaned_data}")
-        print(f"[FORM DEBUG] In clean() - POST data: {self.data}")
         
-        # Ensure is_completed is in cleaned_data, even if not in POST data
         if 'is_completed' not in cleaned_data:
             cleaned_data['is_completed'] = False
-            print("[FORM DEBUG] is_completed not in cleaned_data, setting to False")
         
         return cleaned_data
     
@@ -231,34 +204,19 @@ class PartAssignmentForm(forms.ModelForm):
         """Save the form data to the model."""
         instance = super().save(commit=False)
         
-        # Debug print before save
-        print(f"[FORM DEBUG] In save() - cleaned_data: {self.cleaned_data}")
-        print(f"[FORM DEBUG] In save() - instance before save: is_completed={instance.is_completed}, completed_at={instance.completed_at}")
-        
-        # Get the participant from the form data if it exists
         if 'participant' in self.cleaned_data and self.cleaned_data['participant']:
-            instance.assigned_to = self.cleaned_data['participant']
+            instance.participant = self.cleaned_data['participant']
         
-        # Get is_completed from form data, default to False if not present
         is_completed = self.cleaned_data.get('is_completed', False)
-        print(f"[FORM DEBUG] is_completed from cleaned_data: {is_completed}")
-        
-        # Update the instance fields
         instance.is_completed = is_completed
         
-        # Set completed_at if is_completed is True and it's not already set
         if is_completed and not instance.completed_at:
             instance.completed_at = timezone.now()
-            print("[FORM DEBUG] Setting completed_at to now")
-        # Clear completed_at if is_completed is False
         elif not is_completed:
             instance.completed_at = None
-            print("[FORM DEBUG] Clearing completed_at")
         
         if commit:
             instance.save()
-            print(f"[FORM DEBUG] After save - instance.is_completed: {instance.is_completed}")
-            print(f"[FORM DEBUG] After save - instance.completed_at: {instance.completed_at}")
             
         return instance
 

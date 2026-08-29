@@ -5,10 +5,11 @@ import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.http import JsonResponse
+from core.validators import validate_search_query
 
 from .models import QuranPart, Surah, Ayah, QuranReciter, QuranRecitation, QuranBookmark, QuranReadingSettings
 from .forms import QuranBookmarkForm, QuranReadingSettingsForm, QuranSearchForm, ReciterFilterForm
@@ -60,11 +61,13 @@ def surah_list(request):
 def surah_detail(request, surah_number):
     """View for displaying a specific Surah"""
     try:
-        # Get the surah directly
+        # Get the surah directly with related data
         surah = get_object_or_404(Surah, surah_number=surah_number)
 
-        # Get all ayahs for the surah
-        ayahs = Ayah.objects.filter(surah=surah).order_by('ayah_number_in_surah')
+        # Get all ayahs for the surah (prefetch for efficiency)
+        ayahs = Ayah.objects.filter(surah=surah).select_related(
+            'quran_part'
+        ).order_by('ayah_number_in_surah')
 
         # Get reciters who have recited this surah
         reciters = QuranReciter.objects.all()[:5]  # Just get a few for now
@@ -78,12 +81,12 @@ def surah_detail(request, surah_number):
         previous_surah = Surah.objects.filter(surah_number__lt=surah_number).order_by('-surah_number').first()
         next_surah = Surah.objects.filter(surah_number__gt=surah_number).order_by('surah_number').first()
 
-        # Add recitations to the context
+        # Add recitations to the context (with select_related)
         recitations = QuranRecitation.objects.filter(
             surah=surah,
             start_ayah__isnull=True,
             end_ayah__isnull=True
-        )
+        ).select_related('reciter')
 
         context = {
             'surah': surah,
@@ -333,7 +336,7 @@ def reading_settings(request):
 def update_last_read(request):
     try:
         'AJAX view for updating last read position'
-        if request.method == 'POST' and request.is_ajax():
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             surah_id = request.POST.get('surah_id')
             ayah_number = request.POST.get('ayah_number')
             try:
