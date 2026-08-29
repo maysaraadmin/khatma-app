@@ -28,6 +28,7 @@ from .forms import NewsletterSubscriptionForm
 
 # Import services
 from core.services import get_dashboard_data, get_community_data, search_global
+from django.core.exceptions import Http404, PermissionDenied
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,7 @@ def create_group(request):
             form = ReadingGroupForm()
 
         return render(request, 'core/create_group.html', {'form': form})
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in create_group view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -147,6 +149,7 @@ def index(request):
                 # Add a flag to prevent redirection
                 dashboard_data['prevent_redirect'] = True
                 return render(request, 'core/user_dashboard.html', dashboard_data)
+            except (Http404, PermissionDenied): raise
             except Exception as e:
                 logger.error(f"Error getting dashboard data: {str(e)}")
                 logger.error(traceback.format_exc())
@@ -158,6 +161,7 @@ def index(request):
         # Otherwise show welcome page
         logger.info("Showing welcome page for anonymous user")
         return render(request, 'core/welcome.html')
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in index view: {str(e)}")
         logger.error(traceback.format_exc())
@@ -186,6 +190,7 @@ def global_search(request):
                 'results': results
             })
         return render(request, 'core/global_search.html', {'query': ''})
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in global_search view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -248,6 +253,7 @@ def newsletter_subscribe(request):
         if referer:
             return HttpResponseRedirect(referer)
         return redirect('core:index')
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in newsletter_subscribe view: {str(e)}")
         messages.error(request, 'حدث خطأ أثناء الاشتراك في النشرة البريدية. يرجى المحاولة مرة أخرى.')
@@ -281,6 +287,7 @@ def community(request):
     try:
         community_data = get_community_data()
         return render(request, 'core/community.html', community_data)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in community view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -291,66 +298,22 @@ def community_leaderboard(request):
     Community leaderboard page view.
     """
     try:
-        # Create a list of top readers with completed parts
-        users = User.objects.select_related('profile').all()
-        top_readers_list = []
+        top_readers = User.objects.annotate(
+            completed_parts_count=Count(
+                'participant__part_assignments__quran_reading',
+                filter=Q(participant__part_assignments__is_completed=True)
+            )
+        ).filter(completed_parts_count__gt=0).select_related('profile').order_by('-completed_parts_count')[:10]
 
-        for user in users:
-            # Get profile or create if it doesn't exist
-            try:
-                profile = Profile.objects.get(user=user)
-            except Profile.DoesNotExist:
-                profile = Profile.objects.create(user=user)
-
-            # Count completed readings
-            completed_parts_count = QuranReading.objects.filter(
-                participant=user,
-                status='completed'
-            ).count()
-
-            if completed_parts_count > 0:
-                top_readers_list.append({
-                    'username': user.email,
-                    'date_joined': user.date_joined,
-                    'completed_parts': completed_parts_count,
-                    'profile': profile
-                })
-
-        # Sort by completed parts (descending)
-        top_readers_list.sort(key=lambda x: x['completed_parts'], reverse=True)
-        # Take top 10
-        top_readers = top_readers_list[:10]
-
-        # Create a list of top creators with khatma count
-        top_creators_list = []
-
-        for user in users:
-            # Get profile or create if it doesn't exist
-            try:
-                profile = Profile.objects.get(user=user)
-            except Profile.DoesNotExist:
-                profile = Profile.objects.create(user=user)
-
-            # Count created khatmas
-            created_khatmas_count = Khatma.objects.filter(creator=user).count()
-
-            if created_khatmas_count > 0:
-                top_creators_list.append({
-                    'username': user.email,
-                    'date_joined': user.date_joined,
-                    'created_khatmas': created_khatmas_count,
-                    'profile': profile
-                })
-
-        # Sort by created khatmas (descending)
-        top_creators_list.sort(key=lambda x: x['created_khatmas'], reverse=True)
-        # Take top 10
-        top_creators = top_creators_list[:10]
+        top_creators = User.objects.annotate(
+            created_khatmas_count=Count('created_khatmas')
+        ).filter(created_khatmas_count__gt=0).select_related('profile').order_by('-created_khatmas_count')[:10]
 
         return render(request, 'core/community_leaderboard.html', {
             'top_readers': top_readers,
             'top_creators': top_creators
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in community_leaderboard view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -370,51 +333,10 @@ def khatma_dashboard(request):
         return render(request, 'core/khatma_dashboard.html', {
             'khatmas': user_khatmas
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in khatma_dashboard view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
-
-
-@login_required
-def create_khatma(request):
-    """
-    Create khatma view - redirects to the khatma app's create_khatma view.
-    """
-    # Redirect to the khatma app's create_khatma view
-    return redirect('khatma:create_khatma')
-
-
-def khatma_detail(request, khatma_id):
-    """
-    Khatma detail view.
-    """
-    # Redirect to the khatma app's khatma_detail view
-    return redirect('khatma:khatma_detail', khatma_id=khatma_id)
-
-
-@login_required
-def create_deceased(request):
-    """
-    Create deceased view.
-    """
-    # Redirect to the khatma app's create_deceased view
-    return redirect('khatma:create_deceased')
-
-
-def deceased_list(request):
-    """
-    Deceased list view.
-    """
-    # Redirect to the khatma app's deceased_list view
-    return redirect('khatma:deceased_list')
-
-
-def deceased_detail(request, deceased_id):
-    """
-    Deceased detail view.
-    """
-    # Redirect to the khatma app's deceased_detail view
-    return redirect('khatma:deceased_detail', deceased_id=deceased_id)
 
 
 @login_required
@@ -433,6 +355,7 @@ def profile(request):
             'completion_percentage': 0,
             'recent_activities': []
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
@@ -474,6 +397,7 @@ def settings(request):
         return render(request, 'core/settings.html', {
             'profile': profile
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in settings view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -492,6 +416,7 @@ def quran_reciters(request):
         return render(request, 'core/quran_reciters.html', {
             'reciters': reciters
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in quran_reciters view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -502,7 +427,6 @@ def reciter_detail(request, folder):
     Reciter detail view.
     """
     try:
-        # Get the reciter information
         reciters = [
             {'id': 1, 'name': 'محمد أحمد الزين', 'style': 'مرتل', 'image': 'reciters/alzain.mohamed.ahmed/profile.jpg', 'folder': 'alzain.mohamed.ahmed'},
         ]
@@ -512,126 +436,12 @@ def reciter_detail(request, folder):
         if not reciter:
             return render(request, 'core/error.html', {'error': 'Reciter not found'})
 
-        # Get the list of all 114 surahs
-        # Define a dictionary of all Quran surahs with their names and verse counts
-        all_surahs_data = {
-            1: {'name': 'الفاتحة', 'verses': 7},
-            2: {'name': 'البقرة', 'verses': 286},
-            3: {'name': 'آل عمران', 'verses': 200},
-            4: {'name': 'النساء', 'verses': 176},
-            5: {'name': 'المائدة', 'verses': 120},
-            6: {'name': 'الأنعام', 'verses': 165},
-            7: {'name': 'الأعراف', 'verses': 206},
-            8: {'name': 'الأنفال', 'verses': 75},
-            9: {'name': 'التوبة', 'verses': 129},
-            10: {'name': 'يونس', 'verses': 109},
-            11: {'name': 'هود', 'verses': 123},
-            12: {'name': 'يوسف', 'verses': 111},
-            13: {'name': 'الرعد', 'verses': 43},
-            14: {'name': 'إبراهيم', 'verses': 52},
-            15: {'name': 'الحجر', 'verses': 99},
-            16: {'name': 'النحل', 'verses': 128},
-            17: {'name': 'الإسراء', 'verses': 111},
-            18: {'name': 'الكهف', 'verses': 110},
-            19: {'name': 'مريم', 'verses': 98},
-            20: {'name': 'طه', 'verses': 135},
-            21: {'name': 'الأنبياء', 'verses': 112},
-            22: {'name': 'الحج', 'verses': 78},
-            23: {'name': 'المؤمنون', 'verses': 118},
-            24: {'name': 'النور', 'verses': 64},
-            25: {'name': 'الفرقان', 'verses': 77},
-            26: {'name': 'الشعراء', 'verses': 227},
-            27: {'name': 'النمل', 'verses': 93},
-            28: {'name': 'القصص', 'verses': 88},
-            29: {'name': 'العنكبوت', 'verses': 69},
-            30: {'name': 'الروم', 'verses': 60},
-            31: {'name': 'لقمان', 'verses': 34},
-            32: {'name': 'السجدة', 'verses': 30},
-            33: {'name': 'الأحزاب', 'verses': 73},
-            34: {'name': 'سبأ', 'verses': 54},
-            35: {'name': 'فاطر', 'verses': 45},
-            36: {'name': 'يس', 'verses': 83},
-            37: {'name': 'الصافات', 'verses': 182},
-            38: {'name': 'ص', 'verses': 88},
-            39: {'name': 'الزمر', 'verses': 75},
-            40: {'name': 'غافر', 'verses': 85},
-            41: {'name': 'فصلت', 'verses': 54},
-            42: {'name': 'الشورى', 'verses': 53},
-            43: {'name': 'الزخرف', 'verses': 89},
-            44: {'name': 'الدخان', 'verses': 59},
-            45: {'name': 'الجاثية', 'verses': 37},
-            46: {'name': 'الأحقاف', 'verses': 35},
-            47: {'name': 'محمد', 'verses': 38},
-            48: {'name': 'الفتح', 'verses': 29},
-            49: {'name': 'الحجرات', 'verses': 18},
-            50: {'name': 'ق', 'verses': 45},
-            51: {'name': 'الذاريات', 'verses': 60},
-            52: {'name': 'الطور', 'verses': 49},
-            53: {'name': 'النجم', 'verses': 62},
-            54: {'name': 'القمر', 'verses': 55},
-            55: {'name': 'الرحمن', 'verses': 78},
-            56: {'name': 'الواقعة', 'verses': 96},
-            57: {'name': 'الحديد', 'verses': 29},
-            58: {'name': 'المجادلة', 'verses': 22},
-            59: {'name': 'الحشر', 'verses': 24},
-            60: {'name': 'الممتحنة', 'verses': 13},
-            61: {'name': 'الصف', 'verses': 14},
-            62: {'name': 'الجمعة', 'verses': 11},
-            63: {'name': 'المنافقون', 'verses': 11},
-            64: {'name': 'التغابن', 'verses': 18},
-            65: {'name': 'الطلاق', 'verses': 12},
-            66: {'name': 'التحريم', 'verses': 12},
-            67: {'name': 'الملك', 'verses': 30},
-            68: {'name': 'القلم', 'verses': 52},
-            69: {'name': 'الحاقة', 'verses': 52},
-            70: {'name': 'المعارج', 'verses': 44},
-            71: {'name': 'نوح', 'verses': 28},
-            72: {'name': 'الجن', 'verses': 28},
-            73: {'name': 'المزمل', 'verses': 20},
-            74: {'name': 'المدثر', 'verses': 56},
-            75: {'name': 'القيامة', 'verses': 40},
-            76: {'name': 'الإنسان', 'verses': 31},
-            77: {'name': 'المرسلات', 'verses': 50},
-            78: {'name': 'النبأ', 'verses': 40},
-            79: {'name': 'النازعات', 'verses': 46},
-            80: {'name': 'عبس', 'verses': 42},
-            81: {'name': 'التكوير', 'verses': 29},
-            82: {'name': 'الانفطار', 'verses': 19},
-            83: {'name': 'المطففين', 'verses': 36},
-            84: {'name': 'الانشقاق', 'verses': 25},
-            85: {'name': 'البروج', 'verses': 22},
-            86: {'name': 'الطارق', 'verses': 17},
-            87: {'name': 'الأعلى', 'verses': 19},
-            88: {'name': 'الغاشية', 'verses': 26},
-            89: {'name': 'الفجر', 'verses': 30},
-            90: {'name': 'البلد', 'verses': 20},
-            91: {'name': 'الشمس', 'verses': 15},
-            92: {'name': 'الليل', 'verses': 21},
-            93: {'name': 'الضحى', 'verses': 11},
-            94: {'name': 'الشرح', 'verses': 8},
-            95: {'name': 'التين', 'verses': 8},
-            96: {'name': 'العلق', 'verses': 19},
-            97: {'name': 'القدر', 'verses': 5},
-            98: {'name': 'البينة', 'verses': 8},
-            99: {'name': 'الزلزلة', 'verses': 8},
-            100: {'name': 'العاديات', 'verses': 11},
-            101: {'name': 'القارعة', 'verses': 11},
-            102: {'name': 'التكاثر', 'verses': 8},
-            103: {'name': 'العصر', 'verses': 3},
-            104: {'name': 'الهمزة', 'verses': 9},
-            105: {'name': 'الفيل', 'verses': 5},
-            106: {'name': 'قريش', 'verses': 4},
-            107: {'name': 'الماعون', 'verses': 7},
-            108: {'name': 'الكوثر', 'verses': 3},
-            109: {'name': 'الكافرون', 'verses': 6},
-            110: {'name': 'النصر', 'verses': 3},
-            111: {'name': 'المسد', 'verses': 5},
-            112: {'name': 'الإخلاص', 'verses': 4},
-            113: {'name': 'الفلق', 'verses': 5},
-            114: {'name': 'الناس', 'verses': 6}
-        }
+        from quran.models import Surah
+        surahs_qs = Surah.objects.all().order_by('surah_number')
 
-        # Check if MP3 files exist for each surah
+        if not surahs_qs.exists():
+            return render(request, 'core/error.html', {'error': 'No Quran data available. Please run the Quran data import scripts.'})
+
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         reciter_path = os.path.join(base_dir, 'reciters', folder)
         existing_mp3s = {}
@@ -645,25 +455,18 @@ def reciter_detail(request, folder):
                             surah_number = int(filename_without_ext)
                             if 1 <= surah_number <= 114:
                                 existing_mp3s[surah_number] = file
+        except (Http404, PermissionDenied): raise
         except Exception as e:
             logger.error(f'Error reading directory {reciter_path}: {e}')
 
-        # Generate the list of all 114 surahs
         surahs = []
-        for surah_id in range(1, 115):  # 1 to 114 inclusive
-            surah_data = all_surahs_data.get(surah_id, {'name': f'سورة {surah_id}', 'verses': 0})
-
-            # Check if we have an MP3 file for this surah
-            if surah_id in existing_mp3s:
-                mp3_filename = existing_mp3s[surah_id]
-            else:
-                # Create a placeholder filename for surahs without MP3 files
-                mp3_filename = f"{surah_id}.mp3"
-
+        for surah in surahs_qs:
+            surah_id = surah.surah_number
+            mp3_filename = existing_mp3s.get(surah_id, f"{surah_id}.mp3")
             surahs.append({
                 'id': surah_id,
-                'name': surah_data['name'],
-                'verses': surah_data['verses'],
+                'name': surah.name_arabic,
+                'verses': surah.verses_count,
                 'filename': mp3_filename,
                 'has_audio': surah_id in existing_mp3s
             })
@@ -672,6 +475,7 @@ def reciter_detail(request, folder):
             'reciter': reciter,
             'surahs': surahs
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in reciter_detail view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -707,6 +511,7 @@ def quran_part(request, part_number):
             'prev_part': part_number - 1 if part_number > 1 else None,
             'next_part': part_number + 1 if part_number < 30 else None
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in quran_part view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -735,6 +540,7 @@ def notifications(request):
         return render(request, 'core/notifications.html', {
             'page_obj': page_obj
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in notifications view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})
@@ -788,6 +594,7 @@ def achievements(request):
             'level': level,
             'available_achievements': []  # Placeholder value
         })
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in achievements view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})

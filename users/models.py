@@ -69,6 +69,11 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
+def get_default_token_expiry():
+    """Return default verification token expiry time."""
+    return timezone.now() + timedelta(days=1)
+
+
 class CustomUser(AbstractUser):
     """Custom user model that uses email as the unique identifier."""
     
@@ -181,6 +186,14 @@ class CustomUser(AbstractUser):
     
     objects = CustomUserManager()
     
+    @property
+    def username(self):
+        """Return email as username for backward compatibility."""
+        return self.email
+    
+    def get_username(self):
+        """Return email as username for Django auth compatibility."""
+        return self.email
     
     def __str__(self):
         """Return the email address as the string representation."""
@@ -246,11 +259,6 @@ class CustomUser(AbstractUser):
             'failed_login_attempts',
             'locked_until'
         ])
-
-
-def get_default_token_expiry():
-    """Return default verification token expiry time."""
-    return timezone.now() + timedelta(days=1)
 
 
 class Profile(models.Model):
@@ -836,20 +844,8 @@ def create_user_profile(sender, instance, created, **kwargs):
             logger.error(f'Error creating profile for user {instance.id}: {str(e)}')
 
 
-def save_user_profile(sender, instance, **kwargs):
-    """
-    Signal handler to save the profile when the user is saved.
-    """
-    if hasattr(instance, 'profile'):
-        try:
-            instance.profile.save(update_fields=['updated_at'])
-        except Exception:
-            pass
-
-
 # Connect signals
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 post_save.connect(create_user_profile, sender=settings.AUTH_USER_MODEL)
-post_save.connect(save_user_profile, sender=settings.AUTH_USER_MODEL)

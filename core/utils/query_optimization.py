@@ -7,6 +7,7 @@ from functools import wraps
 '\n'
 from django.db import connection, reset_queries
 from django.conf import settings
+from notifications.models import Notification
 logger = logging.getLogger(__name__)
 
 def count_queries(func):
@@ -92,5 +93,4 @@ def get_optimized_notification_queryset(user):
     """
     Get an optimized queryset for Notification objects for a specific user.
     """
-    from notifications.models import Notification
     return Notification.objects.filter(user=user).select_related('related_khatma', 'related_group', 'related_user').order_by('-created_at')

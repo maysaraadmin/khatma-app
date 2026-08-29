@@ -13,12 +13,13 @@ from core.validators import validate_search_query
 
 from .models import QuranPart, Surah, Ayah, QuranReciter, QuranRecitation, QuranBookmark, QuranReadingSettings
 from .forms import QuranBookmarkForm, QuranReadingSettingsForm, QuranSearchForm, ReciterFilterForm
+from django.core.exceptions import Http404, PermissionDenied
 logger = logging.getLogger(__name__)
 SURAH_NAMES = {'001': 'الفاتحة', '002': 'البقرة', '003': 'آل عمران', '004': 'النساء', '005': 'المائدة', '006': 'الأنعام', '007': 'الأعراف', '008': 'الأنفال', '009': 'التوبة', '010': 'يونس', '011': 'هود', '012': 'يوسف', '013': 'الرعد', '014': 'إبراهيم', '015': 'الحجر', '016': 'النحل', '017': 'الإسراء', '018': 'الكهف', '019': 'مريم', '020': 'طه', '021': 'الأنبياء', '022': 'الحج', '023': 'المؤمنون', '024': 'النور', '025': 'الفرقان', '026': 'الشعراء', '027': 'النمل', '028': 'القصص', '029': 'العنكبوت', '030': 'الروم', '031': 'لقمان', '032': 'السجدة', '033': 'الأحزاب', '034': 'سبأ', '035': 'فاطر', '036': 'يس', '037': 'الصافات', '038': 'ص', '039': 'الزمر', '040': 'غافر', '041': 'فصلت', '042': 'الشورى', '043': 'الزخرف', '044': 'الدخان', '045': 'الجاثية', '046': 'الأحقاف', '047': 'محمد', '048': 'الفتح', '049': 'الحجرات', '050': 'ق', '051': 'الذاريات', '052': 'الطور', '053': 'النجم', '054': 'القمر', '055': 'الرحمن', '056': 'الواقعة', '057': 'الحديد', '058': 'المجادلة', '059': 'الحشر', '060': 'الممتحنة', '061': 'الصف', '062': 'الجمعة', '063': 'المنافقون', '064': 'التغابن', '065': 'الطلاق', '066': 'التحريم', '067': 'الملك', '068': 'القلم', '069': 'الحاقة', '070': 'المعارج', '071': 'نوح', '072': 'الجن', '073': 'المزمل', '074': 'المدثر', '075': 'القيامة', '076': 'الإنسان', '077': 'المرسلات', '078': 'النبأ', '079': 'النازعات', '080': 'عبس', '081': 'التكوير', '082': 'الانفطار', '083': 'المطففين', '084': 'الانشقاق', '085': 'البروج', '086': 'الطارق', '087': 'الأعلى', '088': 'الغاشية', '089': 'الفجر', '090': 'البلد', '091': 'الشمس', '092': 'الليل', '093': 'الضحى', '094': 'الشرح', '095': 'التين', '096': 'العلق', '097': 'القدر', '098': 'البينة', '099': 'الزلزلة', '100': 'العاديات', '101': 'القارعة', '102': 'التكاثر', '103': 'العصر', '104': 'الهمزة', '105': 'الفيل', '106': 'قريش', '107': 'الماعون', '108': 'الكوثر', '109': 'الكافرون', '110': 'النصر', '111': 'المسد', '112': 'الإخلاص', '113': 'الفلق', '114': 'الناس'}
 
 def surah_list(request):
     try:
-        'View for listing all Surahs'
+        
         show_verses = request.GET.get('show_verses', 'false').lower() == 'true'
 
         # Get all surahs with their ayahs prefetched for efficiency
@@ -54,6 +55,7 @@ def surah_list(request):
         template = 'quran/surah_list_with_verses.html' if show_verses else 'quran/surah_list.html'
 
         return render(request, template, context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in surah_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -99,6 +101,7 @@ def surah_detail(request, surah_number):
         }
 
         return render(request, 'quran/surah_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in surah_detail: {str(e)}")
         error_title = "خطأ في عرض السورة"
@@ -115,6 +118,7 @@ def juz_list(request):
         parts = QuranPart.objects.all().order_by('part_number')
         context = {'parts': parts}
         return render(request, 'quran/juz_list.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in juz_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -132,13 +136,14 @@ def juz_detail(request, part_number):
             return render(request, 'core/error.html', context={'error': f'Part {part_number} not found'})
 
         return render(request, 'quran/juz_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in juz_detail: {str(e)}")
         return render(request, 'core/error.html', context={'error': e})
 
 def reciter_list(request):
     try:
-        'View for listing all Quran reciters'
+        
         form = ReciterFilterForm(request.GET)
         reciters = QuranReciter.objects.all().order_by('name_arabic')
         if form.is_valid():
@@ -153,6 +158,7 @@ def reciter_list(request):
         page_obj = paginator.get_page(page_number)
         context = {'page_obj': page_obj, 'form': form}
         return render(request, 'quran/reciter_list.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in reciter_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -180,6 +186,7 @@ def reciter_detail(request, reciter_id):
         context['recitations_by_surah'] = recitations_by_surah
 
         return render(request, 'quran/reciter_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in reciter_detail: {str(e)}")
         return render(request, 'core/error.html', context={'error': e})
@@ -224,6 +231,7 @@ def search_quran(request):
             }
 
         return render(request, 'quran/search.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in search_quran: {str(e)}")
         return render(request, 'core/error.html', context={'error': e})
@@ -265,6 +273,7 @@ def bookmark_ayah(request, surah_number, ayah_number):
             'is_edit': existing_bookmark is not None
         }
         return render(request, 'quran/bookmark_form.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in bookmark_ayah: {str(e)}")
         return render(request, 'core/error.html', context={'error': str(e)})
@@ -279,6 +288,7 @@ def bookmarks_list(request):
         page_obj = paginator.get_page(page_number)
         context = {'page_obj': page_obj}
         return render(request, 'quran/bookmarks_list.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in bookmarks_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -286,7 +296,7 @@ def bookmarks_list(request):
 @login_required
 def delete_bookmark(request, bookmark_id):
     try:
-        'View for deleting a bookmark'
+        
         bookmark = get_object_or_404(QuranBookmark, id=bookmark_id, user=request.user)
         if request.method == 'POST':
             bookmark.delete()
@@ -294,6 +304,7 @@ def delete_bookmark(request, bookmark_id):
             return redirect('quran:bookmarks_list')
         context = {'bookmark': bookmark}
         return render(request, 'quran/delete_bookmark.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_bookmark: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -328,6 +339,7 @@ def reading_settings(request):
 
         context = {'form': form, 'settings': settings}
         return render(request, 'quran/reading_settings.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in reading_settings: {str(e)}")
         return render(request, 'core/error.html', context={'error': e})
@@ -350,6 +362,7 @@ def update_last_read(request):
             except (Surah.DoesNotExist, Ayah.DoesNotExist):
                 return JsonResponse({'status': 'error', 'message': 'Invalid surah or ayah'})
         return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in update_last_read: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -378,13 +391,14 @@ def quran_home(request):
         from .services import get_quran_home_data
         context = get_quran_home_data(request.user)
         return render(request, 'quran/quran_home.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in quran_home: {str(e)}")
         return render(request, 'core/error.html', context={'error': e})
 
 def list_reciters(request):
     try:
-        'View for listing available Quran reciters'
+        
         db_reciters = QuranReciter.objects.all().order_by('name_arabic')
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         reciters_path = os.path.join(current_dir, 'reciters')
@@ -395,6 +409,7 @@ def list_reciters(request):
                     fs_reciters.append(item)
         context = {'db_reciters': db_reciters, 'fs_reciters': fs_reciters}
         return render(request, 'quran/reciters.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in list_reciters: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -415,6 +430,7 @@ def reciter_surahs(request, reciter_name):
         logger.warning(f'No existing path found. Using: {reciter_path}')
         try:
             os.makedirs(reciter_path, exist_ok=True)
+        except (Http404, PermissionDenied): raise
         except Exception as e:
             logger.error(f'Failed to create reciter directory: {e}')
     reciters_path = os.path.join(base_dir, 'reciters')
@@ -432,6 +448,7 @@ def reciter_surahs(request, reciter_name):
         for file in os.listdir(reciter_path):
             if file.endswith('.mp3'):
                 mp3_files.append(file)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f'Error reading directory {reciter_path}: {e}')
         # Continue with empty mp3_files list instead of returning an error
@@ -446,6 +463,7 @@ def reciter_surahs(request, reciter_name):
                 surah_number = int(filename_without_ext)
                 if 1 <= surah_number <= 114:
                     existing_mp3s[surah_number] = mp3
+        except (Http404, PermissionDenied): raise
         except Exception as e:
             logger.error(f'Error processing MP3 filename {mp3}: {e}')
 
@@ -486,17 +504,19 @@ def quran_part_view(request, part_number):
             return render(request, 'core/error.html', context={'error': f'Part {part_number} not found'})
 
         return render(request, 'quran/part_view.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in quran_part_view: {str(e)}")
         return render(request, 'core/error.html', context={'error': e})
 
 def khatma_quran_chapters(request):
     try:
-        'View for displaying Quran chapters for Khatma selection'
+        
         surahs = Surah.objects.all().order_by('surah_number')
         parts = QuranPart.objects.all().order_by('part_number')
         context = {'surahs': surahs, 'parts': parts}
         return render(request, 'quran/khatma_chapters.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_quran_chapters: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})

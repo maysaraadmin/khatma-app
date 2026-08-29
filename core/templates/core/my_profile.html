@@ -13,7 +13,7 @@
                 <div class="col-md-auto text-center mb-3 mb-md-0">
                     {% if user.profile.profile_picture %}
                         <img src="{{ user.profile.profile_picture.url }}" 
-                             alt="{{ user.username }}" 
+                             alt="{{ user.email }}" 
                              class="rounded-circle border-4 border-white shadow-lg object-cover"
                              style="width: 120px; height: 120px;">
                     {% else %}
@@ -31,7 +31,7 @@
                     <h1 class="display-5 fw-bold text-white mb-2">
                         {{ user.get_full_name|default:user.username }}
                     </h1>
-                    <p class="text-indigo-100 mb-3">@{{ user.username }}</p>
+                    <p class="text-indigo-100 mb-3">@{{ user.email }}</p>
                     <div class="d-flex flex-wrap justify-content-center justify-content-md-end gap-2">
                         {% if user.profile.bio %}
                             <span class="badge bg-white bg-opacity-20 text-white">

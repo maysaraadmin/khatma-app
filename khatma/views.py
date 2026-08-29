@@ -18,6 +18,7 @@ User = get_user_model()
 from chat.models import KhatmaChat
 from quran.models import QuranPart
 from groups.models import GroupMembership
+from notifications.models import Notification
 from .models import (
     Khatma, Deceased, Participant, PartAssignment, KhatmaPart, 
     QuranReading, PublicKhatma, KhatmaComment, KhatmaInteraction
@@ -27,6 +28,7 @@ from .forms import (
     QuranReadingForm, KhatmaPartForm, KhatmaShareForm, KhatmaFilterForm, 
     KhatmaChatForm, KhatmaInteractionForm
 )
+from django.core.exceptions import Http404, PermissionDenied
 
 @login_required
 def create_khatma(request):
@@ -63,16 +65,12 @@ def create_khatma(request):
                         Participant.objects.get_or_create(user=request.user, khatma=khatma)
 
                         # Create a notification
-                        try:
-                            from notifications.models import Notification
-                            Notification.objects.create(
-                                user=request.user,
-                                notification_type='khatma_progress',
-                                message=f'تم إنشاء ختمة جديدة: {khatma.title}',
-                                related_khatma=khatma
-                            )
-                        except ImportError:
-                            pass
+                        Notification.objects.create(
+                            user=request.user,
+                            notification_type='khatma_progress',
+                            message=f'تم إنشاء ختمة جديدة: {khatma.title}',
+                            related_khatma=khatma
+                        )
 
                     messages.success(request, 'تم إنشاء الختمة بنجاح')
                     return redirect('khatma:khatma_detail', khatma_id=khatma.id)
@@ -99,6 +97,7 @@ def create_khatma(request):
             'deceased_list': deceased_list
         }
         return render(request, 'khatma/create_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in create_khatma view: {str(e)}")
         return render(request, 'core/error.html', context={
@@ -133,6 +132,7 @@ def edit_khatma(request, khatma_id):
             form = KhatmaEditForm(instance=khatma, user=request.user)
         context = {'form': form, 'khatma': khatma}
         return render(request, 'khatma/edit_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in edit_khatma view: {str(e)}")
         return render(request, 'core/error.html', context={
@@ -185,16 +185,12 @@ def khatma_detail(request, khatma_id):
                 is_participant = True
 
                 # Create a notification
-                try:
-                    from notifications.models import Notification
-                    Notification.objects.create(
-                        user=khatma.creator,
-                        notification_type='khatma_progress',
-                        message=f'{request.user.email} انضم إلى الختمة: {khatma.title}',
-                        related_khatma=khatma
-                    )
-                except ImportError:
-                    pass
+                Notification.objects.create(
+                    user=khatma.creator,
+                    notification_type='khatma_progress',
+                    message=f'{request.user.email} انضم إلى الختمة: {khatma.title}',
+                    related_khatma=khatma
+                )
 
         # Prepare context for the template
         context = {
@@ -208,6 +204,7 @@ def khatma_detail(request, khatma_id):
         }
 
         return render(request, 'khatma/khatma_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         # Log the error and display a user-friendly error page
         logging.error(f"Error in khatma_detail view: {str(e)}")
@@ -219,7 +216,7 @@ def khatma_detail(request, khatma_id):
 
 def khatma_list(request):
     try:
-        'View for listing public Khatmas'
+        
         form = KhatmaFilterForm(request.GET)
         khatmas = Khatma.objects.filter(is_public=True).order_by('-created_at')
         if form.is_valid():
@@ -239,6 +236,7 @@ def khatma_list(request):
         page_obj = paginator.get_page(page_number)
         context = {'page_obj': page_obj, 'form': form}
         return render(request, 'khatma/khatma_list.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -252,6 +250,7 @@ def my_khatmas(request):
         completed_khatmas = created_khatmas.filter(is_completed=True)
         context = {'created_khatmas': created_khatmas, 'participating_khatmas': participating_khatmas, 'completed_khatmas': completed_khatmas}
         return render(request, 'khatma/my_khatmas.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in my_khatmas: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -259,7 +258,7 @@ def my_khatmas(request):
 @login_required
 def delete_khatma(request, khatma_id):
     try:
-        'View for deleting a Khatma'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if khatma.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لحذف هذه الختمة')
@@ -270,6 +269,7 @@ def delete_khatma(request, khatma_id):
             return redirect('khatma:my_khatmas')
         context = {'khatma': khatma}
         return render(request, 'khatma/delete_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.exception("Error in delete_khatma view")
         return render(request, 'core/error.html', context={
@@ -281,7 +281,7 @@ def delete_khatma(request, khatma_id):
 @login_required
 def complete_khatma(request, khatma_id):
     try:
-        'View for manually marking a Khatma as completed'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if khatma.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لإكمال هذه الختمة')
@@ -295,6 +295,7 @@ def complete_khatma(request, khatma_id):
             return redirect('khatma:khatma_detail', khatma_id=khatma.id)
         context = {'khatma': khatma}
         return render(request, 'khatma/complete_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in complete_khatma view: {str(e)}")
         return render(request, 'core/error.html', context={
@@ -306,7 +307,7 @@ def complete_khatma(request, khatma_id):
 @login_required
 def part_detail(request, khatma_id, part_id):
     try:
-        'View for displaying and managing a specific part'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         part = get_object_or_404(KhatmaPart, khatma=khatma, part_number=part_id)
         is_participant = Participant.objects.filter(user=request.user, khatma=khatma).exists()
@@ -358,6 +359,7 @@ def part_detail(request, khatma_id, part_id):
             'surahs_in_part': surahs_in_part
         }
         return render(request, 'khatma/part_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in part_detail: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -386,16 +388,12 @@ def assign_part(request, khatma_id, part_id):
                 part.save()
 
                 # Create a notification for the participant
-                try:
-                    from notifications.models import Notification
-                    Notification.objects.create(
-                        user=participant,
-                        notification_type='part_assigned',
-                        message=f'تم تعيين الجزء {part.part_number} لك في الختمة: {khatma.title}',
-                        related_khatma=khatma
-                    )
-                except ImportError:
-                    pass
+                Notification.objects.create(
+                    user=participant,
+                    notification_type='part_assigned',
+                    message=f'تم تعيين الجزء {part.part_number} لك في الختمة: {khatma.title}',
+                    related_khatma=khatma
+                )
 
                 messages.success(request, f'تم تعيين الجزء {part.part_number} للمشارك {participant.email} بنجاح')
                 return redirect('khatma:khatma_detail', khatma_id=khatma.id)
@@ -411,6 +409,7 @@ def assign_part(request, khatma_id, part_id):
         }
 
         return render(request, 'khatma/assign_part.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         # Log the error and display a user-friendly error page
         logging.error(f"Error in assign_part view: {str(e)}")
@@ -436,11 +435,7 @@ def complete_part(request, khatma_id, part_id):
         reading.status = 'completed'
         reading.completion_date = timezone.now()
         reading.save()
-    try:
-        from notifications.models import Notification
-        Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.email} أكمل الجزء {part.part_number} في الختمة: {khatma.title}', related_khatma=khatma)
-    except ImportError:
-        pass
+    Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.email} أكمل الجزء {part.part_number} في الختمة: {khatma.title}', related_khatma=khatma)
     messages.success(request, f'تم إكمال الجزء {part.part_number} بنجاح')
     return redirect('khatma:khatma_detail', khatma_id=khatma.id)
 
@@ -468,7 +463,7 @@ def uncomplete_part(request, khatma_id, part_id):
 @login_required
 def create_deceased(request):
     try:
-        'View for creating a new deceased person'
+        
         if request.method == 'POST':
             form = DeceasedForm(request.POST, request.FILES, user=request.user)
             if form.is_valid():
@@ -481,6 +476,7 @@ def create_deceased(request):
             form = DeceasedForm(user=request.user)
         context = {'form': form}
         return render(request, 'khatma/create_deceased.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_deceased: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -488,13 +484,14 @@ def create_deceased(request):
 @login_required
 def deceased_list(request):
     try:
-        'View for listing deceased persons'
+        
         deceased_persons = Deceased.objects.filter(added_by=request.user).order_by('-death_date')
         paginator = Paginator(deceased_persons, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         context = {'page_obj': page_obj}
         return render(request, 'khatma/deceased_list.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in deceased_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -502,7 +499,7 @@ def deceased_list(request):
 @login_required
 def deceased_detail(request, deceased_id):
     try:
-        'View for displaying deceased person details'
+        
         deceased = get_object_or_404(Deceased, id=deceased_id)
         if deceased.added_by != request.user:
             messages.error(request, 'ليس لديك صلاحية لعرض هذا المتوفى')
@@ -510,6 +507,7 @@ def deceased_detail(request, deceased_id):
         khatmas = Khatma.objects.filter(deceased=deceased).order_by('-created_at')
         context = {'deceased': deceased, 'khatmas': khatmas}
         return render(request, 'khatma/deceased_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in deceased_detail: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -517,7 +515,7 @@ def deceased_detail(request, deceased_id):
 @login_required
 def edit_deceased(request, deceased_id):
     try:
-        'View for editing a deceased person'
+        
         deceased = get_object_or_404(Deceased, id=deceased_id)
         if deceased.added_by != request.user:
             messages.error(request, 'ليس لديك صلاحية لتعديل هذا المتوفى')
@@ -532,6 +530,7 @@ def edit_deceased(request, deceased_id):
             form = DeceasedForm(instance=deceased, user=request.user)
         context = {'form': form, 'deceased': deceased}
         return render(request, 'khatma/edit_deceased.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in edit_deceased: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -539,7 +538,7 @@ def edit_deceased(request, deceased_id):
 @login_required
 def delete_deceased(request, deceased_id):
     try:
-        'View for deleting a deceased person'
+        
         deceased = get_object_or_404(Deceased, id=deceased_id)
         if deceased.added_by != request.user:
             messages.error(request, 'ليس لديك صلاحية لحذف هذا المتوفى')
@@ -551,6 +550,7 @@ def delete_deceased(request, deceased_id):
             return redirect('khatma:deceased_list')
         context = {'deceased': deceased, 'khatmas_count': khatmas_count}
         return render(request, 'khatma/delete_deceased.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_deceased: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -566,18 +566,14 @@ def join_khatma(request, khatma_id):
         messages.error(request, 'تم الوصول إلى الحد الأقصى للمشاركين في هذه الختمة')
         return redirect('khatma:khatma_detail', khatma_id=khatma.id)
     Participant.objects.create(user=request.user, khatma=khatma)
-    try:
-        from notifications.models import Notification
-        Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.email} انضم إلى الختمة: {khatma.title}', related_khatma=khatma)
-    except ImportError:
-        pass
+    Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.email} انضم إلى الختمة: {khatma.title}', related_khatma=khatma)
     messages.success(request, 'تم الانضمام إلى الختمة بنجاح')
     return redirect('khatma:khatma_detail', khatma_id=khatma.id)
 
 @login_required
 def leave_khatma(request, khatma_id):
     try:
-        'View for leaving a Khatma'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         participant = get_object_or_404(Participant, user=request.user, khatma=khatma)
         if khatma.creator == request.user:
@@ -586,15 +582,12 @@ def leave_khatma(request, khatma_id):
         if request.method == 'POST':
             KhatmaPart.objects.filter(khatma=khatma, assigned_to=request.user).update(assigned_to=None)
             participant.delete()
-            try:
-                from notifications.models import Notification
-                Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.email} غادر الختمة: {khatma.title}', related_khatma=khatma)
-            except ImportError:
-                pass
+            Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.email} غادر الختمة: {khatma.title}', related_khatma=khatma)
             messages.success(request, 'تم مغادرة الختمة بنجاح')
             return redirect('khatma:khatma_list')
         context = {'khatma': khatma}
         return render(request, 'khatma/leave_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in leave_khatma: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -602,7 +595,7 @@ def leave_khatma(request, khatma_id):
 @login_required
 def khatma_participants(request, khatma_id):
     try:
-        'View for managing Khatma participants'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if khatma.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لإدارة المشاركين')
@@ -610,6 +603,7 @@ def khatma_participants(request, khatma_id):
         participants = Participant.objects.filter(khatma=khatma).select_related('user')
         context = {'khatma': khatma, 'participants': participants}
         return render(request, 'khatma/khatma_participants.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in khatma_participants view: {str(e)}")
         return render(request, 'core/error.html', context={
@@ -621,7 +615,7 @@ def khatma_participants(request, khatma_id):
 @login_required
 def remove_participant(request, khatma_id, user_id):
     try:
-        'View for removing a participant from a Khatma'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if khatma.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لإزالة المشاركين')
@@ -634,15 +628,12 @@ def remove_participant(request, khatma_id, user_id):
         if request.method == 'POST':
             KhatmaPart.objects.filter(khatma=khatma, assigned_to=participant_user).update(assigned_to=None)
             participant.delete()
-            try:
-                from notifications.models import Notification
-                Notification.objects.create(user=participant_user, notification_type='khatma_progress', message=f'تمت إزالتك من الختمة: {khatma.title}', related_khatma=khatma)
-            except ImportError:
-                pass
+            Notification.objects.create(user=participant_user, notification_type='khatma_progress', message=f'تمت إزالتك من الختمة: {khatma.title}', related_khatma=khatma)
             messages.success(request, f'تم إزالة المشارك {participant_user.email} بنجاح')
             return redirect('khatma:khatma_participants', khatma_id=khatma.id)
         context = {'khatma': khatma, 'participant_user': participant_user}
         return render(request, 'khatma/remove_participant.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in remove_participant: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -650,7 +641,7 @@ def remove_participant(request, khatma_id, user_id):
 @login_required
 def share_khatma(request, khatma_id):
     try:
-        'View for sharing a Khatma'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if khatma.creator != request.user and (not Participant.objects.filter(user=request.user, khatma=khatma).exists()):
             messages.error(request, 'ليس لديك صلاحية لمشاركة هذه الختمة')
@@ -669,6 +660,7 @@ def share_khatma(request, khatma_id):
                     try:
                         send_mail(subject, email_message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
                         messages.success(request, f'تم إرسال دعوات المشاركة إلى {len(emails)} بريد إلكتروني')
+                    except (Http404, PermissionDenied): raise
                     except Exception as e:
                         messages.error(request, f'حدث خطأ أثناء إرسال البريد الإلكتروني: {str(e)}')
                 if share_on_social:
@@ -682,13 +674,14 @@ def share_khatma(request, khatma_id):
         sharing_url = request.build_absolute_uri(reverse('khatma:shared_khatma', args=[khatma.sharing_link]))
         context = {'form': form, 'khatma': khatma, 'sharing_url': sharing_url}
         return render(request, 'khatma/share_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in share_khatma: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
 
 def shared_khatma(request, sharing_link):
     try:
-        'View for accessing a shared Khatma'
+        
         khatma = get_object_or_404(Khatma, sharing_link=sharing_link)
         is_participant = request.user.is_authenticated and Participant.objects.filter(user=request.user, khatma=khatma).exists()
         parts = KhatmaPart.objects.filter(khatma=khatma).order_by('part_number')
@@ -697,6 +690,7 @@ def shared_khatma(request, sharing_link):
         progress_percentage = completed_parts / total_parts * 100 if total_parts > 0 else 0
         context = {'khatma': khatma, 'parts': parts, 'is_participant': is_participant, 'is_creator': request.user.is_authenticated and khatma.creator == request.user, 'completed_parts': completed_parts, 'total_parts': total_parts, 'progress_percentage': progress_percentage, 'is_shared_view': True}
         return render(request, 'khatma/shared_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in shared_khatma: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -715,6 +709,7 @@ def khatma_progress_api(request, khatma_id):
             recent_completions_data.append({'part_number': part.part_number, 'completed_by': part.assigned_to.email if part.assigned_to else khatma.creator.email, 'completed_at': part.completed_at.strftime('%Y-%m-%d %H:%M') if part.completed_at else None})
         data = {'total_parts': total_parts, 'completed_parts': completed_parts, 'progress_percentage': progress_percentage, 'recent_completions': recent_completions_data, 'is_completed': khatma.is_completed}
         return JsonResponse(data)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_progress_api: ' + str(e))
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -740,14 +735,11 @@ def part_status_api(request, khatma_id, part_id):
                 reading.status = 'completed' if is_completed else 'in_progress'
                 reading.completion_date = timezone.now() if is_completed else None
                 reading.save()
-            try:
-                from notifications.models import Notification
-                if is_completed:
-                    Notification.objects.create(user=khatma.creator if khatma.creator != request.user else None, notification_type='part_completed', message=f'{request.user.username} أكمل الجزء {part.part_number} في الختمة: {khatma.title}', related_khatma=khatma)
-            except (ImportError, AttributeError):
-                pass
+            if is_completed:
+                Notification.objects.create(user=khatma.creator if khatma.creator != request.user else None, notification_type='part_completed', message=f'{request.user.username} أكمل الجزء {part.part_number} في الختمة: {khatma.title}', related_khatma=khatma)
             return JsonResponse({'status': 'success', 'is_completed': part.is_completed})
         return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in part_status_api: ' + str(e))
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -755,7 +747,7 @@ def part_status_api(request, khatma_id, part_id):
 @login_required
 def khatma_dashboard(request, khatma_id):
     try:
-        'View for Khatma dashboard with progress and statistics'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if not (khatma.is_public or khatma.creator == request.user or Participant.objects.filter(khatma=khatma, user=request.user).exists()):
             messages.error(request, 'ليس لديك صلاحية لعرض هذه الختمة')
@@ -768,6 +760,7 @@ def khatma_dashboard(request, khatma_id):
         recent_completions = parts.filter(is_completed=True).order_by('-completed_at')[:5]
         context = {'khatma': khatma, 'parts': parts, 'participants': participants, 'total_parts': total_parts, 'completed_parts': completed_parts, 'progress_percentage': progress_percentage, 'recent_completions': recent_completions, 'is_participant': Participant.objects.filter(khatma=khatma, user=request.user).exists(), 'is_creator': khatma.creator == request.user}
         return render(request, 'khatma/khatma_dashboard.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_dashboard: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -775,12 +768,13 @@ def khatma_dashboard(request, khatma_id):
 @login_required
 def khatma_reading_plan(request):
     try:
-        'View for creating and managing Khatma reading plans'
+        
         user_khatmas = Khatma.objects.filter(Q(creator=request.user) | Q(participant__user=request.user)).distinct().order_by('-created_at')
         assigned_parts = KhatmaPart.objects.filter(assigned_to=request.user, is_completed=False).select_related('khatma').order_by('khatma__target_completion_date', 'part_number')
         reading_history = QuranReading.objects.filter(participant=request.user).order_by('-completion_date')[:10]
         context = {'user_khatmas': user_khatmas, 'assigned_parts': assigned_parts, 'reading_history': reading_history}
         return render(request, 'khatma/reading_plan.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_reading_plan: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -788,7 +782,7 @@ def khatma_reading_plan(request):
 @login_required
 def khatma_part_reading(request, khatma_id, part_id):
     try:
-        'View for reading a specific part in a Khatma'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         part = get_object_or_404(KhatmaPart, khatma=khatma, part_number=part_id)
         if not (khatma.creator == request.user or part.assigned_to == request.user or Participant.objects.filter(khatma=khatma, user=request.user).exists()):
@@ -805,15 +799,12 @@ def khatma_part_reading(request, khatma_id, part_id):
                 reading.completion_date = timezone.now()
                 reading.save()
                 messages.success(request, f'تم إكمال الجزء {part_id} بنجاح')
-                try:
-                    from notifications.models import Notification
-                    if khatma.creator != request.user:
-                        Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.email} أكمل الجزء {part_id} في الختمة: {khatma.title}', related_khatma=khatma)
-                except (ImportError, AttributeError):
-                    pass
+                if khatma.creator != request.user:
+                    Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.email} أكمل الجزء {part_id} في الختمة: {khatma.title}', related_khatma=khatma)
                 return redirect('khatma:khatma_detail', khatma_id=khatma_id)
         context = {'khatma': khatma, 'part': part, 'quran_part': quran_part, 'reading': reading}
         return render(request, 'khatma/part_reading.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_part_reading: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -821,7 +812,7 @@ def khatma_part_reading(request, khatma_id, part_id):
 @login_required
 def khatma_chat(request, khatma_id):
     try:
-        'View for Khatma chat'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if not (khatma.creator == request.user or Participant.objects.filter(khatma=khatma, user=request.user).exists()):
             messages.error(request, 'ليس لديك صلاحية للوصول إلى محادثة هذه الختمة')
@@ -834,17 +825,14 @@ def khatma_chat(request, khatma_id):
                 message.khatma = khatma
                 message.user = request.user
                 message.save()
-                try:
-                    from notifications.models import Notification
-                    for participant in Participant.objects.filter(khatma=khatma).exclude(user=request.user):
-                        Notification.objects.create(user=participant.user, notification_type='khatma_chat', message=f'رسالة جديدة من {request.user.email} في محادثة الختمة: {khatma.title}', related_khatma=khatma)
-                except (ImportError, AttributeError):
-                    pass
+                for participant in Participant.objects.filter(khatma=khatma).exclude(user=request.user):
+                    Notification.objects.create(user=participant.user, notification_type='khatma_chat', message=f'رسالة جديدة من {request.user.email} في محادثة الختمة: {khatma.title}', related_khatma=khatma)
                 return redirect('khatma:khatma_chat', khatma_id=khatma_id)
         else:
             form = KhatmaChatForm()
         context = {'khatma': khatma, 'chat_messages': chat_messages, 'form': form}
         return render(request, 'khatma/khatma_chat.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_chat: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -852,7 +840,7 @@ def khatma_chat(request, khatma_id):
 @login_required
 def create_khatma_post(request, khatma_id):
     try:
-        'View for creating a post about a Khatma'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if not (khatma.creator == request.user or Participant.objects.filter(khatma=khatma, user=request.user).exists()):
             messages.error(request, 'ليس لديك صلاحية لإنشاء منشور لهذه الختمة')
@@ -870,6 +858,7 @@ def create_khatma_post(request, khatma_id):
             form = KhatmaInteractionForm()
         context = {'khatma': khatma, 'form': form}
         return render(request, 'khatma/create_khatma_post.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_khatma_post: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})

@@ -5,6 +5,8 @@ from django.utils import timezone
 '\n'
 from chat.models import GroupChat
 '\n'
+from notifications.models import Notification
+
 from .models import ReadingGroup, GroupMembership, JoinRequest
 
 @receiver(post_save, sender=ReadingGroup)
@@ -21,30 +23,18 @@ def handle_join_request_approval(sender, instance, **kwargs):
         if not GroupMembership.objects.filter(user=instance.user, group=instance.group).exists():
             GroupMembership.objects.create(user=instance.user, group=instance.group, role='member')
             GroupChat.objects.create(group=instance.group, user=instance.user, message=f'انضم {instance.user.username} إلى المجموعة', message_type='system')
-            try:
-                from notifications.models import Notification
-                Notification.objects.create(user=instance.user, notification_type='group_join_approved', message=f'تمت الموافقة على طلب انضمامك إلى مجموعة "{instance.group.name}"', related_group=instance.group)
-            except ImportError:
-                pass
+            Notification.objects.create(user=instance.user, notification_type='group_join_approved', message=f'تمت الموافقة على طلب انضمامك إلى مجموعة "{instance.group.name}"', related_group=instance.group)
 
 @receiver(post_save, sender=GroupMembership)
 def handle_new_membership(sender, instance, created, **kwargs):
     """Handle new group memberships"""
     if created:
-        try:
-            from notifications.models import Notification
-            if instance.user != instance.group.creator:
-                Notification.objects.create(user=instance.group.creator, notification_type='new_group_member', message=f'انضم {instance.user.username} إلى مجموعة "{instance.group.name}"', related_group=instance.group)
-        except ImportError:
-            pass
+        if instance.user != instance.group.creator:
+            Notification.objects.create(user=instance.group.creator, notification_type='new_group_member', message=f'انضم {instance.user.username} إلى مجموعة "{instance.group.name}"', related_group=instance.group)
 
 @receiver(pre_delete, sender=GroupMembership)
 def handle_membership_removal(sender, instance, **kwargs):
     """Handle group membership removal"""
     GroupChat.objects.create(group=instance.group, user=instance.user, message=f'غادر {instance.user.username} المجموعة', message_type='system')
-    try:
-        from notifications.models import Notification
-        if instance.user != instance.group.creator:
-            Notification.objects.create(user=instance.group.creator, notification_type='group_member_left', message=f'غادر {instance.user.username} مجموعة "{instance.group.name}"', related_group=instance.group)
-    except ImportError:
-        pass
+    if instance.user != instance.group.creator:
+        Notification.objects.create(user=instance.group.creator, notification_type='group_member_left', message=f'غادر {instance.user.username} مجموعة "{instance.group.name}"', related_group=instance.group)

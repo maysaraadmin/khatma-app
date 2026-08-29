@@ -28,15 +28,17 @@ def generate_secure_secret_key():
     # Ensure the secret key is at least 50 characters long
     return ''.join(secrets.choice(chars) for _ in range(50))
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# In production, DJANGO_SECRET_KEY must be set in environment variables
-if 'DJANGO_SECRET_KEY' not in os.environ:
-    raise ValueError('DJANGO_SECRET_KEY environment variable must be set in production')
-SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
-
 # SECURITY WARNING: don't run with debug turned on in production!
 # In production, explicitly set DJANGO_DEBUG=False in environment variables
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# In production, DJANGO_SECRET_KEY must be set in environment variables
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ValueError('DJANGO_SECRET_KEY environment variable must be set in production')
+    SECRET_KEY = 'django-insecure-dev-only-change-me'
 
 # Security settings for production
 if not DEBUG:

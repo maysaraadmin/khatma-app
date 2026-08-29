@@ -25,7 +25,7 @@
     <div class="row">
         <div class="col-12">
             <div class="profile-header text-center">
-                <h1 class="display-4">{{ user.username }} - ملف المستخدم</h1>
+                <h1 class="display-4">{{ user.email }} - ملف المستخدم</h1>
                 <p class="lead">{{ user_profile.get_account_type_display }}</p>
                 <a href="{% url 'core:settings' %}" class="btn btn-light mt-3">
                     <i class="fas fa-edit"></i> تعديل الملف الشخصي
@@ -39,7 +39,7 @@
             <div class="profile-section">
                 <h3>المعلومات الشخصية</h3>
                 <hr>
-                <p><strong>اسم المستخدم:</strong> {{ user.username }}</p>
+                <p><strong>اسم المستخدم:</strong> {{ user.email }}</p>
                 <p><strong>البريد الإلكتروني:</strong> {{ user.email|default:'-' }}</p>
                 <p><strong>نوع الحساب:</strong> {{ user_profile.get_account_type_display }}</p>
                 <p><strong>الموقع:</strong> {{ user_profile.location|default:'-' }}</p>

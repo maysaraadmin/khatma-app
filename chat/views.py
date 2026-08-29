@@ -1,21 +1,19 @@
 import logging
-'"""This module contains Module functionality."""'
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
-'\n'
 from khatma.models import Khatma, Participant
 from groups.models import ReadingGroup, GroupMembership
 from notifications.models import Notification
-'\n'
 from .models import KhatmaChat, GroupChat
+from django.core.exceptions import Http404, PermissionDenied
 
 @login_required
 def khatma_chat(request, khatma_id):
     try:
-        'View for khatma chat functionality'
+        
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if not Participant.objects.filter(user=request.user, khatma=khatma).exists():
             messages.error(request, _('You must be a participant in the khatma to chat'))
@@ -38,6 +36,7 @@ def khatma_chat(request, khatma_id):
         participants_count = Participant.objects.filter(khatma=khatma).count()
         context = {'khatma': khatma, 'chat_messages': chat_messages, 'participants_count': participants_count}
         return render(request, 'chat/khatma_chat.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_chat: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -45,7 +44,7 @@ def khatma_chat(request, khatma_id):
 @login_required
 def group_chat(request, group_id):
     try:
-        'View for group chat functionality'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         if not GroupMembership.objects.filter(user=request.user, group=group).exists():
             messages.error(request, _('You must be a member of the group to participate in chat'))
@@ -71,6 +70,7 @@ def group_chat(request, group_id):
         pinned_messages = GroupChat.objects.filter(group=group, is_pinned=True).order_by('-created_at')
         context = {'group': group, 'chat_messages': chat_messages, 'members_count': members_count, 'pinned_messages': pinned_messages, 'user_role': user_role, 'is_admin': user_role == 'admin', 'is_moderator': user_role in ['admin', 'moderator']}
         return render(request, 'chat/group_chat.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_chat: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -89,6 +89,7 @@ def pin_khatma_message(request, khatma_id, message_id):
         action = _('pinned') if message.is_pinned else _('unpinned')
         messages.success(request, _(f'Message {action} successfully'))
         return redirect('chat:khatma_chat', khatma_id=khatma.id)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in pin_khatma_message: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -108,6 +109,7 @@ def pin_group_message(request, group_id, message_id):
         action = _('pinned') if message.is_pinned else _('unpinned')
         messages.success(request, _(f'Message {action} successfully'))
         return redirect('chat:group_chat', group_id=group.id)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in pin_group_message: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -124,6 +126,7 @@ def delete_khatma_message(request, khatma_id, message_id):
         message.delete()
         messages.success(request, _('Message deleted successfully'))
         return redirect('chat:khatma_chat', khatma_id=khatma.id)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_khatma_message: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -141,6 +144,7 @@ def delete_group_message(request, group_id, message_id):
         message.delete()
         messages.success(request, _('Message deleted successfully'))
         return redirect('chat:group_chat', group_id=group.id)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_group_message: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})

@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 '\n'
 from .models import Khatma, KhatmaPart, QuranReading, Deceased
+from notifications.models import Notification
 
 @receiver(post_save, sender=Khatma)
 def create_khatma_parts(sender, instance, created, **kwargs):
@@ -23,11 +24,7 @@ def update_khatma_completion(sender, instance, **kwargs):
         khatma.is_completed = True
         khatma.completed_at = timezone.now()
         khatma.save()
-        try:
-            from notifications.models import Notification
-            Notification.objects.create(user=khatma.creator, notification_type='khatma_completed', message=f'تم إكمال الختمة: {khatma.title}', related_khatma=khatma)
-        except ImportError:
-            pass
+        Notification.objects.create(user=khatma.creator, notification_type='khatma_completed', message=f'تم إكمال الختمة: {khatma.title}', related_khatma=khatma)
 
 @receiver(pre_save, sender=KhatmaPart)
 def update_part_completion_date(sender, instance, **kwargs):
@@ -77,9 +74,5 @@ def create_memorial_khatma(deceased):
     today = timezone.now().date()
     years_since_death = today.year - deceased.death_date.year
     khatma = Khatma.objects.create(title=f'ختمة تذكارية: {deceased.name} - الذكرى {years_since_death}', creator=deceased.added_by, description=f'ختمة تذكارية في ذكرى وفاة {deceased.name}', khatma_type='memorial', deceased=deceased, is_public=True, visibility='public', start_date=today, target_completion_date=today + datetime.timedelta(days=30))
-    try:
-        from notifications.models import Notification
-        Notification.objects.create(user=deceased.added_by, notification_type='memorial_khatma', message=f'تم إنشاء ختمة تذكارية للمتوفى: {deceased.name}', related_khatma=khatma)
-    except ImportError:
-        pass
+    Notification.objects.create(user=deceased.added_by, notification_type='memorial_khatma', message=f'تم إنشاء ختمة تذكارية للمتوفى: {deceased.name}', related_khatma=khatma)
     return khatma

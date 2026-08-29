@@ -58,7 +58,7 @@
 {% block content %}
 <div class="container">
     <div class="error-container">
-        <div class="error-code">{{ status_code|default:"خطأ" }}</div>
+        <div class="error-code">{{ status_code|default_if_none:500|default:"خطأ" }}</div>
 
         {% if status_code == 404 %}
             <div class="mb-4">
@@ -78,8 +78,8 @@
             </div>
         {% endif %}
 
-        <h1 class="error-title">{{ error_title }}</h1>
-        <p class="error-message">{{ error_message }}</p>
+        <h1 class="error-title">{{ error_title|default:error|default:"خطأ" }}</h1>
+        <p class="error-message">{{ error_message|default:error|default:"حدث خطأ غير متوقع" }}</p>
 
         <div class="error-actions">
             {% if show_home_link|default:True %}

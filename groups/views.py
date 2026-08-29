@@ -1,5 +1,4 @@
 import logging
-'"""This module contains Module functionality."""'
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,16 +6,17 @@ from django.utils import timezone
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-'\n'
 from chat.models import GroupChat
 from khatma.models import Khatma
-'\n'
+from notifications.models import Notification
+
 from .models import ReadingGroup, GroupMembership, JoinRequest, GroupAnnouncement, GroupEvent
 from .forms import ReadingGroupForm, JoinRequestForm, GroupChatForm, GroupAnnouncementForm, GroupEventForm, GroupMemberRoleForm, GroupFilterForm, GroupKhatmaForm
+from django.core.exceptions import Http404, PermissionDenied
 
 def group_list(request):
     try:
-        'View for listing public reading groups'
+        
         form = GroupFilterForm(request.GET)
         groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
         if form.is_valid():
@@ -39,6 +39,7 @@ def group_list(request):
         page_obj = paginator.get_page(page_number)
         context = {'page_obj': page_obj, 'form': form}
         return render(request, 'groups/group_list.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_list: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -52,6 +53,7 @@ def my_groups(request):
         pending_requests = JoinRequest.objects.filter(user=request.user, status='pending').select_related('group').order_by('-created_at')
         context = {'created_groups': created_groups, 'joined_groups': joined_groups, 'pending_requests': pending_requests}
         return render(request, 'groups/my_groups.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in my_groups: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -59,7 +61,7 @@ def my_groups(request):
 @login_required
 def create_group(request):
     try:
-        'View for creating a new reading group'
+        
         if request.method == 'POST':
             form = ReadingGroupForm(request.POST, request.FILES)
             if form.is_valid():
@@ -72,13 +74,14 @@ def create_group(request):
             form = ReadingGroupForm()
         context = {'form': form}
         return render(request, 'groups/create_group.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_group: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
 
 def group_detail(request, group_id):
     try:
-        'View for displaying group details'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         is_member = request.user.is_authenticated and group.members.filter(id=request.user.id).exists()
         if not group.is_public and (not is_member):
@@ -122,6 +125,7 @@ def group_detail(request, group_id):
             has_pending_request = JoinRequest.objects.filter(user=request.user, group=group, status='pending').exists()
         context = {'group': group, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator'], 'announcements': announcements, 'upcoming_events': upcoming_events, 'active_khatmas': active_khatmas, 'admins': admins, 'moderators': moderators, 'has_pending_request': has_pending_request, 'members_count': group.members.count()}
         return render(request, 'groups/group_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.exception('Error in group_detail')
         return render(request, 'core/error.html', context={'error': 'حدث خطأ أثناء محاولة عرض تفاصيل المجموعة. يرجى المحاولة مرة أخرى.'})
@@ -129,7 +133,7 @@ def group_detail(request, group_id):
 @login_required
 def edit_group(request, group_id):
     try:
-        'View for editing a group'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         if group.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لتعديل هذه المجموعة')
@@ -144,6 +148,7 @@ def edit_group(request, group_id):
             form = ReadingGroupForm(instance=group)
         context = {'form': form, 'group': group}
         return render(request, 'groups/edit_group.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in edit_group: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -151,7 +156,7 @@ def edit_group(request, group_id):
 @login_required
 def delete_group(request, group_id):
     try:
-        'View for deleting a group'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         if group.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لحذف هذه المجموعة')
@@ -162,6 +167,7 @@ def delete_group(request, group_id):
             return redirect('groups:my_groups')
         context = {'group': group}
         return render(request, 'groups/delete_group.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_group: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -169,7 +175,7 @@ def delete_group(request, group_id):
 @login_required
 def join_group(request, group_id):
     try:
-        'View for joining a group'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         if GroupMembership.objects.filter(user=request.user, group=group).exists():
             messages.info(request, 'أنت بالفعل عضو في هذه المجموعة')
@@ -198,16 +204,13 @@ def join_group(request, group_id):
                     messages.success(request, 'تم الانضمام إلى المجموعة بنجاح')
                 else:
                     messages.success(request, 'تم إرسال طلب الانضمام بنجاح. سيتم إعلامك عند معالجة الطلب.')
-                    try:
-                        from notifications.models import Notification
-                        Notification.objects.create(user=group.creator, notification_type='join_request', message=f'{request.user.email} طلب الانضمام إلى مجموعة "{group.name}"', related_group=group)
-                    except ImportError:
-                        pass
+                    Notification.objects.create(user=group.creator, notification_type='join_request', message=f'{request.user.email} طلب الانضمام إلى مجموعة "{group.name}"', related_group=group)
                 return redirect('groups:group_detail', group_id=group.id)
         else:
             form = JoinRequestForm()
         context = {'form': form, 'group': group}
         return render(request, 'groups/join_group.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in join_group: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -215,7 +218,7 @@ def join_group(request, group_id):
 @login_required
 def leave_group(request, group_id):
     try:
-        'View for leaving a group'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         membership = GroupMembership.objects.filter(user=request.user, group=group).first()
         if not membership:
@@ -230,6 +233,7 @@ def leave_group(request, group_id):
             return redirect('groups:my_groups')
         context = {'group': group}
         return render(request, 'groups/leave_group.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in leave_group: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -237,7 +241,7 @@ def leave_group(request, group_id):
 @login_required
 def group_members(request, group_id):
     try:
-        'View for listing group members'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         is_member = group.members.filter(id=request.user.id).exists()
         if not group.is_public and (not is_member):
@@ -250,6 +254,7 @@ def group_members(request, group_id):
         members = GroupMembership.objects.filter(group=group).select_related('user').order_by('role', 'user__email')
         context = {'group': group, 'members': members, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
         return render(request, 'groups/group_members.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_members: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -278,11 +283,7 @@ def change_member_role(request, group_id, user_id):
             new_role = form.cleaned_data['role']
             target_membership.role = new_role
             target_membership.save()
-            try:
-                from notifications.models import Notification
-                Notification.objects.create(user=target_user, notification_type='role_changed', message=f'تم تغيير دورك في مجموعة "{group.name}" إلى {target_membership.get_role_display()}', related_group=group)
-            except ImportError:
-                pass
+            Notification.objects.create(user=target_user, notification_type='role_changed', message=f'تم تغيير دورك في مجموعة "{group.name}" إلى {target_membership.get_role_display()}', related_group=group)
             messages.success(request, f'تم تغيير دور {target_user.email} إلى {target_membership.get_role_display()} بنجاح')
             return redirect('groups:group_members', group_id=group.id)
     else:
@@ -313,12 +314,8 @@ def remove_member(request, group_id, user_id):
         return redirect('groups:group_members', group_id=group.id)
     if request.method == 'POST':
         target_membership.delete()
-        try:
-            from notifications.models import Notification
-            Notification.objects.create(user=target_user, notification_type='removed_from_group', message=f'تمت إزالتك من مجموعة "{group.name}"', related_group=group)
-        except ImportError:
-            pass
-            messages.success(request, f'تم إزالة {target_user.email} من المجموعة بنجاح')
+        Notification.objects.create(user=target_user, notification_type='removed_from_group', message=f'تمت إزالتك من مجموعة "{group.name}"', related_group=group)
+        messages.success(request, f'تم إزالة {target_user.email} من المجموعة بنجاح')
         return redirect('groups:group_members', group_id=group.id)
     context = {'group': group, 'target_user': target_user}
     return render(request, 'groups/remove_member.html', context)
@@ -345,15 +342,14 @@ def group_chat(request, group_id):
             return redirect('groups:group_chat', group_id=group.id)
     else:
         form = GroupChatForm()
-    messages_list = GroupChat.objects.filter(group=group).select_related('user').order_by('-created_at')[:100]
-    messages_list = reversed(list(messages_list))
+    messages_list = GroupChat.objects.filter(group=group).select_related('user').order_by('created_at')[:100]
     context = {'group': group, 'chat_messages': messages_list, 'form': form, 'member_role': membership.role}
     return render(request, 'groups/group_chat.html', context)
 
 @login_required
 def group_announcements(request, group_id):
     try:
-        'View for group announcements'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         is_member = group.members.filter(id=request.user.id).exists()
         if not group.is_public and (not is_member):
@@ -369,6 +365,7 @@ def group_announcements(request, group_id):
         page_obj = paginator.get_page(page_number)
         context = {'group': group, 'page_obj': page_obj, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
         return render(request, 'groups/group_announcements.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_announcements: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -447,7 +444,7 @@ def delete_announcement(request, group_id, announcement_id):
 @login_required
 def group_events(request, group_id):
     try:
-        'View for group events'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         is_member = group.members.filter(id=request.user.id).exists()
         if not group.is_public and (not is_member):
@@ -464,6 +461,7 @@ def group_events(request, group_id):
         past_events_page = paginator.get_page(page_number)
         context = {'group': group, 'upcoming_events': upcoming_events, 'past_events_page': past_events_page, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
         return render(request, 'groups/group_events.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_events: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -488,13 +486,9 @@ def create_event(request, group_id):
             event.creator = request.user
             event.save()
             GroupChat.objects.create(group=group, user=request.user, message=f"تم إنشاء حدث جديد: {event.title} ({event.start_time.strftime('%Y-%m-%d %H:%M')})", message_type='system')
-            try:
-                from notifications.models import Notification
-                for member in group.members.all():
-                    if member != request.user:
-                        Notification.objects.create(user=member, notification_type='new_event', message=f'تم إنشاء حدث جديد في مجموعة "{group.name}": {event.title}', related_group=group)
-            except ImportError:
-                pass
+            for member in group.members.all():
+                if member != request.user:
+                    Notification.objects.create(user=member, notification_type='new_event', message=f'تم إنشاء حدث جديد في مجموعة "{group.name}": {event.title}', related_group=group)
             messages.success(request, 'تم إنشاء الحدث بنجاح')
             return redirect('groups:group_events', group_id=group.id)
     else:
@@ -535,6 +529,7 @@ def event_detail(request, group_id, event_id):
         }
 
         return render(request, 'groups/event_detail.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in event_detail: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -627,11 +622,7 @@ def process_join_request(request, group_id, request_id, action):
         join_request.processed_at = timezone.now()
         join_request.processed_by = request.user
         join_request.save()
-        try:
-            from notifications.models import Notification
-            Notification.objects.create(user=join_request.user, notification_type='join_request_rejected', message=f'تم رفض طلب انضمامك إلى مجموعة "{group.name}"', related_group=group)
-        except ImportError:
-            pass
+        Notification.objects.create(user=join_request.user, notification_type='join_request_rejected', message=f'تم رفض طلب انضمامك إلى مجموعة "{group.name}"', related_group=group)
         messages.success(request, f'تم رفض طلب انضمام {join_request.user.email} بنجاح')
     else:
         messages.error(request, 'إجراء غير صالح')
@@ -640,7 +631,7 @@ def process_join_request(request, group_id, request_id, action):
 @login_required
 def attend_event(request, group_id, event_id):
     try:
-        'View for attending a group event'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         event = get_object_or_404(GroupEvent, id=event_id, group=group)
         if not GroupMembership.objects.filter(user=request.user, group=group).exists():
@@ -656,6 +647,7 @@ def attend_event(request, group_id, event_id):
             return redirect('groups:group_events', group_id=group.id)
         context = {'group': group, 'event': event, 'is_attending': request.user in event.attendees.all()}
         return render(request, 'groups/attend_event.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in attend_event: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -663,7 +655,7 @@ def attend_event(request, group_id, event_id):
 @login_required
 def group_dashboard(request, group_id):
     try:
-        'View for group dashboard with statistics and activity'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         if not GroupMembership.objects.filter(user=request.user, group=group).exists():
             messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى لوحة المعلومات')
@@ -678,6 +670,7 @@ def group_dashboard(request, group_id):
         active_khatmas = Khatma.objects.filter(group=group, is_completed=False).order_by('-created_at')
         context = {'group': group, 'member_count': member_count, 'khatma_count': khatma_count, 'completed_khatma_count': completed_khatma_count, 'event_count': event_count, 'announcements': announcements, 'upcoming_events': upcoming_events, 'recent_chats': recent_chats, 'active_khatmas': active_khatmas}
         return render(request, 'groups/group_dashboard.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_dashboard: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -685,7 +678,7 @@ def group_dashboard(request, group_id):
 @login_required
 def group_khatmas(request, group_id):
     try:
-        'View for listing group khatmas'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         if not GroupMembership.objects.filter(user=request.user, group=group).exists():
             messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى الختمات')
@@ -694,6 +687,7 @@ def group_khatmas(request, group_id):
         completed_khatmas = Khatma.objects.filter(group=group, is_completed=True).order_by('-completed_at')
         context = {'group': group, 'active_khatmas': active_khatmas, 'completed_khatmas': completed_khatmas}
         return render(request, 'groups/group_khatmas.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_khatmas: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -701,7 +695,7 @@ def group_khatmas(request, group_id):
 @login_required
 def create_group_khatma(request, group_id):
     try:
-        'View for creating a khatma within a group'
+        
         group = get_object_or_404(ReadingGroup, id=group_id)
         membership = get_object_or_404(GroupMembership, user=request.user, group=group)
         if membership.role not in ['admin', 'moderator']:
@@ -734,19 +728,15 @@ def create_group_khatma(request, group_id):
                     khatma=khatma
                 )
 
-                try:
-                    from notifications.models import Notification
-                    for member in group.members.all():
-                        if member != request.user:
-                            Notification.objects.create(
-                                user=member,
-                                notification_type='new_group_khatma',
-                                message=f'تم إنشاء ختمة جديدة في مجموعة "{group.name}": {khatma.title}',
-                                related_khatma=khatma,
-                                related_group=group
-                            )
-                except (ImportError, AttributeError):
-                    pass
+                for member in group.members.all():
+                    if member != request.user:
+                        Notification.objects.create(
+                            user=member,
+                            notification_type='new_group_khatma',
+                            message=f'تم إنشاء ختمة جديدة في مجموعة "{group.name}": {khatma.title}',
+                            related_khatma=khatma,
+                            related_group=group
+                        )
 
                 messages.success(request, 'تم إنشاء الختمة بنجاح')
                 return redirect('khatma:khatma_detail', khatma_id=khatma.id)
@@ -758,6 +748,7 @@ def create_group_khatma(request, group_id):
             'today': timezone.now()
         }
         return render(request, 'groups/create_group_khatma.html', context)
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_group_khatma: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
@@ -777,15 +768,12 @@ def send_group_chat(request, group_id):
             if not message_text:
                 return JsonResponse({'status': 'error', 'message': 'الرسالة لا يمكن أن تكون فارغة'})
             chat_message = GroupChat.objects.create(group=group, user=request.user, message=message_text, message_type=message_type)
-            try:
-                from notifications.models import Notification
-                for member in group.members.all():
-                    if member != request.user:
-                        Notification.objects.create(user=member, notification_type='group_chat', message=f'رسالة جديدة من {request.user.email} في محادثة مجموعة "{group.name}"', related_group=group)
-            except (ImportError, AttributeError):
-                pass
+            for member in group.members.all():
+                if member != request.user:
+                    Notification.objects.create(user=member, notification_type='group_chat', message=f'رسالة جديدة من {request.user.email} في محادثة مجموعة "{group.name}"', related_group=group)
             return JsonResponse({'status': 'success', 'message': 'تم إرسال الرسالة بنجاح', 'chat_message': {'id': chat_message.id, 'user': chat_message.user.email, 'message': chat_message.message, 'message_type': chat_message.message_type, 'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')}})
         return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})
+    except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in send_group_chat: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
