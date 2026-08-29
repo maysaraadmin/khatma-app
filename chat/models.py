@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
@@ -18,13 +17,11 @@ class KhatmaChat(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         ordering = ['created_at']
         verbose_name = _('Khatma Chat Message')
         verbose_name_plural = _('Khatma Chat Messages')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'{self.user.email}: {self.message[:50]}'
 
 class GroupChat(models.Model):
@@ -40,11 +37,9 @@ class GroupChat(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         ordering = ['created_at']
         verbose_name = _('Group Chat Message')
         verbose_name_plural = _('Group Chat Messages')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'{self.user.username}: {self.message[:50]}'

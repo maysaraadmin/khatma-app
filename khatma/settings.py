@@ -12,21 +12,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
-# Generate a secure secret key if not in environment
 import secrets
 import string
-
-def generate_secret_key(length=50):
-    chars = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(secrets.choice(chars) for _ in range(length))
-
-# Generate a secure secret key if not in environment
-def generate_secure_secret_key():
-    import secrets
-    import string
-    chars = string.ascii_letters + string.digits + string.punctuation
-    # Ensure the secret key is at least 50 characters long
-    return ''.join(secrets.choice(chars) for _ in range(50))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # In production, explicitly set DJANGO_DEBUG=False in environment variables
@@ -126,7 +113,7 @@ if 'DJANGO_ALLOWED_HOSTS' in os.environ:
     ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 
 # Static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # URL configuration
 ROOT_URLCONF = 'khatma_project.urls'
@@ -165,29 +152,21 @@ if 'TEMPLATES' in globals() and TEMPLATES:
         ]
 
 # Database Configuration
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'khatma'),
-        'USER': os.environ.get('DB_USER', 'khatma_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 600,  # 10 minutes connection lifetime
-        'OPTIONS': {
-            'connect_timeout': 10,  # 10 seconds connection timeout
-            'sslmode': 'require' if not DEBUG else 'prefer'
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=not DEBUG
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
-}
-
-# Use dj-database-url if DATABASE_URL is set (for Heroku, etc.)
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(
-        conn_max_age=600,
-        conn_health_checks=True,
-        ssl_require=not DEBUG
-    )
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -238,6 +217,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication settings
+AUTH_USER_MODEL = 'users.CustomUser'
 LOGIN_REDIRECT_URL = 'core:index'
 LOGOUT_REDIRECT_URL = 'account_login'
 LOGIN_URL = 'account_login'
@@ -249,13 +229,11 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Django-allauth settings
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_LOGIN_METHODS = ['email']
 
 # Authentication settings
-ACCOUNT_LOGOUT_ON_GET = True  # Allow logout without confirmation
+ACCOUNT_LOGOUT_ON_GET = False
 
 # Modern Allauth configuration
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']

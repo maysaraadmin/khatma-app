@@ -1,7 +1,6 @@
-'''"""This module contains Module functionality."""'''
 from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 from users.models import Profile
@@ -9,6 +8,8 @@ from khatma.models import Khatma, PartAssignment, Participant
 from groups.models import ReadingGroup, GroupMembership
 from quran.models import QuranPart
 from .models import NewsletterSubscription
+
+User = get_user_model()
 
 class ExtendedUserCreationForm(UserCreationForm):
     """Extended user creation form with additional fields"""
@@ -18,12 +19,10 @@ class ExtendedUserCreationForm(UserCreationForm):
     account_type = forms.ChoiceField(choices=[('individual', 'فردي'), ('family', 'عائلي'), ('organization', 'مؤسسة خيرية')], initial='individual', required=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password1', 'password2']
+        fields = ['email', 'first_name', 'last_name', 'password1', 'password2']
 
     def save(self, commit=True):
-        '''"""Function to save."""'''
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
@@ -37,9 +36,8 @@ class UserProfileForm(forms.ModelForm):
     """Form for updating user profile settings"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name']
+        fields = ['email', 'first_name', 'last_name']
 
 class UserProfileEditForm(forms.ModelForm):
     """Form for editing user profile details"""

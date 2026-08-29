@@ -20,23 +20,7 @@ from django.http import HttpRequest
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-
-def get_client_ip(request: HttpRequest) -> str:
-    """
-    Get the client's IP address from the request.
-    
-    Args:
-        request: The HTTP request object
-        
-    Returns:
-        str: The client's IP address or 'unknown' if not found
-    """
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR', 'unknown')
-    return ip
+from core.utils.ip import get_client_ip
 
 
 logger = logging.getLogger(__name__)
@@ -832,20 +816,4 @@ class UserAchievement(models.Model):
             return False
 
 
-# Signal handlers
-def create_user_profile(sender, instance, created, **kwargs):
-    """
-    Signal handler to create a profile when a new user is created.
-    """
-    if created:
-        try:
-            Profile.objects.get_or_create(user=instance)
-        except Exception as e:
-            logger.error(f'Error creating profile for user {instance.id}: {str(e)}')
 
-
-# Connect signals
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-post_save.connect(create_user_profile, sender=settings.AUTH_USER_MODEL)

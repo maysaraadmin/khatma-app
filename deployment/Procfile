@@ -1,1 +1,1 @@
-web: gunicorn khatma.wsgi_staging --log-file -
+web: gunicorn khatma.wsgi:application --log-file -

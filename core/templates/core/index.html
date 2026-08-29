@@ -19,7 +19,7 @@
                     <a href="{% url 'core:create_khatma' %}" class="btn btn-lg px-4 py-2" style="background-color: var(--accent-color); color: white;">
                         <i class="fas fa-plus-circle ms-2"></i> إنشاء ختمة جديدة
                     </a>
-                    <a href="{% url 'core:group_list' %}" class="btn btn-lg px-4 py-2" style="background-color: rgba(255,255,255,0.2); color: white;">
+                    <a href="{% url 'groups:group_list' %}" class="btn btn-lg px-4 py-2" style="background-color: rgba(255,255,255,0.2); color: white;">
                         <i class="fas fa-users ms-2"></i> مجموعات القراءة
                     </a>
                 </div>
@@ -67,7 +67,7 @@
             </a>
         </div>
         <div class="col-md-3 col-6 mb-4">
-            <a href="{% url 'core:group_list' %}" class="action-card d-block text-decoration-none">
+            <a href="{% url 'groups:group_list' %}" class="action-card d-block text-decoration-none">
                 <div class="action-icon">
                     <i class="bi bi-people"></i>
                 </div>
@@ -178,7 +178,7 @@
                             <div class="khatma-empty">
                                 <i class="bi bi-people"></i>
                                 <p>أنت لا تشارك في أي ختمات حالياً.</p>
-                                <a href="{% url 'core:group_list' %}" class="btn btn-primary">
+                                <a href="{% url 'groups:group_list' %}" class="btn btn-primary">
                                     <i class="bi bi-people"></i> تصفح مجموعات القراءة
                                 </a>
                             </div>
@@ -294,7 +294,7 @@
                             <i class="bi bi-people-fill"></i>
                             مجموعاتي
                         </div>
-                        <a href="{% url 'core:group_list' %}" class="btn btn-sm" style="background-color: rgba(255,255,255,0.2); color: white;">
+                        <a href="{% url 'groups:group_list' %}" class="btn btn-sm" style="background-color: rgba(255,255,255,0.2); color: white;">
                             عرض الكل
                         </a>
                     </div>

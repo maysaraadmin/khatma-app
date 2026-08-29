@@ -196,16 +196,13 @@ def update_reading_settings(user, font_size=None, font_family=None, night_mode=N
             settings.font_size = font_size
 
         if font_family is not None:
-            settings.font_family = font_family
+            settings.font_type = font_family
 
         if night_mode is not None:
             settings.night_mode = night_mode
 
         if show_translation is not None:
             settings.show_translation = show_translation
-
-        if translation_language is not None:
-            settings.translation_language = translation_language
 
         # Save settings
         settings.save()

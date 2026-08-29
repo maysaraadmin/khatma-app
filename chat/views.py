@@ -8,7 +8,8 @@ from khatma.models import Khatma, Participant
 from groups.models import ReadingGroup, GroupMembership
 from notifications.models import Notification
 from .models import KhatmaChat, GroupChat
-from django.core.exceptions import Http404, PermissionDenied
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 @login_required
 def khatma_chat(request, khatma_id):

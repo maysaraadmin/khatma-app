@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -19,13 +18,11 @@ class Notification(models.Model):
     action_url = models.CharField(max_length=255, blank=True, null=True, verbose_name='رابط الإجراء')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         ordering = ['-created_at']
         verbose_name = 'إشعار'
         verbose_name_plural = 'إشعارات'
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f"{self.user.email} - {self.get_notification_type_display()} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
     def mark_as_read(self):
@@ -56,12 +53,10 @@ class NotificationSetting(models.Model):
     quiet_hours_end = models.TimeField(default='07:00', verbose_name='نهاية ساعات الهدوء')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         verbose_name = 'إعداد الإشعارات'
         verbose_name_plural = 'إعدادات الإشعارات'
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'إعدادات إشعارات {self.user.username}'
 
     def should_notify(self, notification_type, channel='in_app'):

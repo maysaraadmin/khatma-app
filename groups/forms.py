@@ -1,19 +1,19 @@
-'''"""This module contains Module functionality."""'''
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.contrib.auth.models import User
-'\n'
+from django.contrib.auth import get_user_model
+
 from chat.models import GroupChat
 from khatma.models import Khatma
-'\n'
+
 from .models import ReadingGroup, JoinRequest, GroupAnnouncement, GroupEvent, GroupMembership
+
+User = get_user_model()
 
 class ReadingGroupForm(forms.ModelForm):
     """Form for creating and editing reading groups"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = ReadingGroup
         fields = ['name', 'description', 'image', 'is_public', 'allow_join_requests', 'max_members', 'enable_chat', 'enable_khatma_creation']
         widgets = {'description': forms.Textarea(attrs={'rows': 4})}
@@ -22,7 +22,6 @@ class JoinRequestForm(forms.ModelForm):
     """Form for requesting to join a group"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = JoinRequest
         fields = ['message']
         widgets = {'message': forms.Textarea(attrs={'rows': 3, 'placeholder': 'اكتب رسالة للمشرفين (اختياري)'})}
@@ -31,7 +30,6 @@ class GroupChatForm(forms.ModelForm):
     """Form for sending chat messages"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = GroupChat
         fields = ['message', 'image', 'audio']
         widgets = {'message': forms.Textarea(attrs={'rows': 2, 'placeholder': 'اكتب رسالتك هنا...'})}
@@ -40,7 +38,6 @@ class GroupAnnouncementForm(forms.ModelForm):
     """Form for creating group announcements"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = GroupAnnouncement
         fields = ['title', 'content', 'is_pinned']
         widgets = {'content': forms.Textarea(attrs={'rows': 4})}
@@ -49,13 +46,11 @@ class GroupEventForm(forms.ModelForm):
     """Form for creating group events"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = GroupEvent
         fields = ['title', 'description', 'event_type', 'start_time', 'end_time', 'location', 'is_online', 'meeting_link']
         widgets = {'description': forms.Textarea(attrs={'rows': 4}), 'start_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}), 'end_time': forms.DateTimeInput(attrs={'type': 'datetime-local'})}
 
     def clean(self):
-        '''"""Function to clean."""'''
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
@@ -72,13 +67,11 @@ class GroupMembershipForm(forms.ModelForm):
     user = forms.ModelChoiceField(queryset=User.objects.all(), label='المستخدم', widget=forms.Select(attrs={'class': 'form-control'}))
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = GroupMembership
         fields = ['user', 'role']
         widgets = {'role': forms.Select(attrs={'class': 'form-control'})}
 
     def __init__(self, *args, **kwargs):
-        '''"""Function to   init  ."""'''
         super().__init__(*args, **kwargs)
         if 'initial' in kwargs and 'group' in kwargs['initial']:
             group = kwargs['initial']['group']
@@ -106,12 +99,10 @@ class GroupKhatmaForm(forms.ModelForm):
     target_completion_date = forms.DateField(label='تاريخ الانتهاء المتوقع', widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = Khatma
         fields = ['title', 'description', 'group', 'auto_distribute_parts', 'start_date', 'target_completion_date']
 
     def clean(self):
-        '''"""Function to clean."""'''
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
         target_completion_date = cleaned_data.get('target_completion_date')

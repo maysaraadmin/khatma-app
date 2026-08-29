@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -22,7 +21,6 @@ class ReadingGroup(models.Model):
     enable_khatma_creation = models.BooleanField(default=True, verbose_name='السماح بإنشاء ختمات')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return self.name
 
     def get_active_khatmas_count(self):
@@ -53,11 +51,9 @@ class GroupMembership(models.Model):
     is_active = models.BooleanField(default=True, verbose_name='نشط')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = ('user', 'group')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'{self.user.username} - {self.group.name} ({self.get_role_display()})'
 
 class JoinRequest(models.Model):
@@ -72,11 +68,9 @@ class JoinRequest(models.Model):
     processed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='processed_join_requests', verbose_name='تمت المعالجة بواسطة')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = ('user', 'group')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'{self.user.username} - {self.group.name} ({self.get_status_display()})'
 
 class GroupAnnouncement(models.Model):
@@ -89,11 +83,9 @@ class GroupAnnouncement(models.Model):
     is_pinned = models.BooleanField(default=False, verbose_name='مثبت')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         ordering = ['-is_pinned', '-created_at']
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'{self.title} - {self.group.name}'
 
 class GroupEvent(models.Model):
@@ -114,9 +106,7 @@ class GroupEvent(models.Model):
     attendees = models.ManyToManyField(User, related_name='attended_events', blank=True, verbose_name='الحضور')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         ordering = ['-start_time']
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f"{self.title} - {self.group.name} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"

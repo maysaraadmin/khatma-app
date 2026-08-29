@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -131,13 +130,11 @@ class KhatmaEditForm(forms.ModelForm):
     """Form for editing an existing Khatma"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = Khatma
         fields = ['title', 'description', 'khatma_type', 'frequency', 'is_public', 'visibility', 'allow_comments', 'target_completion_date', 'send_reminders', 'reminder_frequency', 'memorial_prayer', 'social_media_hashtags']
         widgets = {'target_completion_date': forms.DateInput(attrs={'type': 'date'}), 'description': forms.Textarea(attrs={'rows': 4}), 'memorial_prayer': forms.Textarea(attrs={'rows': 3})}
 
     def __init__(self, *args, **kwargs):
-        '''"""Function to   init  ."""'''
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if self.user and self.instance.khatma_type == 'memorial':
@@ -224,13 +221,11 @@ class QuranReadingForm(forms.ModelForm):
     """Form for tracking Quran reading progress"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = QuranReading
         fields = ['status', 'recitation_method', 'notes', 'dua']
         widgets = {'notes': forms.Textarea(attrs={'rows': 3}), 'dua': forms.Textarea(attrs={'rows': 3})}
 
     def __init__(self, *args, **kwargs):
-        '''"""Function to   init  ."""'''
         self.user = kwargs.pop('user', None)
         self.khatma = kwargs.pop('khatma', None)
         self.part_number = kwargs.pop('part_number', None)
@@ -240,12 +235,10 @@ class KhatmaPartForm(forms.ModelForm):
     """Form for managing Khatma parts"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = KhatmaPart
         fields = ['is_completed']
 
     def __init__(self, *args, **kwargs):
-        '''"""Function to   init  ."""'''
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['completion_notes'] = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 2}), label='ملاحظات الإكمال')
@@ -267,7 +260,6 @@ class KhatmaChatForm(forms.ModelForm):
     """Form for sending messages in Khatma chat"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = KhatmaChat
         fields = ['message']
         widgets = {'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'اكتب رسالتك هنا...'})}
@@ -276,7 +268,6 @@ class KhatmaInteractionForm(forms.ModelForm):
     """Form for social interactions in Khatmas"""
 
     class Meta:
-        '''"""Class representing Meta."""'''
         model = KhatmaInteraction
         fields = ['interaction_type']
         widgets = {'interaction_type': forms.Select(attrs={'class': 'form-control'})}

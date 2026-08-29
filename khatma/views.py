@@ -28,7 +28,8 @@ from .forms import (
     QuranReadingForm, KhatmaPartForm, KhatmaShareForm, KhatmaFilterForm, 
     KhatmaChatForm, KhatmaInteractionForm
 )
-from django.core.exceptions import Http404, PermissionDenied
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 @login_required
 def create_khatma(request):
@@ -51,15 +52,6 @@ def create_khatma(request):
 
                         # Save the khatma to the database
                         khatma.save()
-
-                        # Prepare all parts to create (bulk operation)
-                        parts_to_create = [
-                            KhatmaPart(khatma=khatma, part_number=i)
-                            for i in range(1, 31)
-                        ]
-                        # Bulk create all parts at once (much more efficient)
-                        if parts_to_create:
-                            KhatmaPart.objects.bulk_create(parts_to_create)
 
                         # Add the creator as a participant
                         Participant.objects.get_or_create(user=request.user, khatma=khatma)

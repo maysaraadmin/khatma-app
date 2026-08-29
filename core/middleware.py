@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 import traceback
 import logging
 import sys
@@ -19,11 +18,9 @@ class ErrorHandlerMiddleware:
     """
 
     def __init__(self, get_response):
-        '''"""Function to   init  ."""'''
         self.get_response = get_response
 
     def __call__(self, request):
-        '''"""Function to   call  ."""'''
         return self.get_response(request)
 
     def process_exception(self, request, exception):

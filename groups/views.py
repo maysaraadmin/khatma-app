@@ -12,7 +12,8 @@ from notifications.models import Notification
 
 from .models import ReadingGroup, GroupMembership, JoinRequest, GroupAnnouncement, GroupEvent
 from .forms import ReadingGroupForm, JoinRequestForm, GroupChatForm, GroupAnnouncementForm, GroupEventForm, GroupMemberRoleForm, GroupFilterForm, GroupKhatmaForm
-from django.core.exceptions import Http404, PermissionDenied
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 def group_list(request):
     try:

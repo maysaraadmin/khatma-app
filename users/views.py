@@ -8,7 +8,8 @@ from django.core.paginator import Paginator
 from khatma.models import Khatma, Participant
 from .models import Profile, UserAchievement
 from .forms import UserProfileForm, UserProfileEditForm, ExtendedUserCreationForm
-from django.core.exceptions import Http404, PermissionDenied
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 def register(request):
     try:

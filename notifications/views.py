@@ -6,7 +6,8 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from .models import Notification, NotificationSetting
 from .forms import NotificationSettingsForm
-from django.core.exceptions import Http404, PermissionDenied
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 @login_required
 def notification_list(request):

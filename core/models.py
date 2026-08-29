@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -16,13 +15,11 @@ class Post(models.Model):
     view_count = models.IntegerField(default=0, verbose_name='عدد المشاهدات')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         verbose_name = 'منشور'
         verbose_name_plural = 'المنشورات'
         ordering = ['-created_at']
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'Post by {self.user.username} - {self.post_type}'
 
 class PostReaction(models.Model):
@@ -35,11 +32,9 @@ class PostReaction(models.Model):
     message = models.TextField(blank=True, null=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = ('user', 'post')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f"{self.user.username}'s {self.get_reaction_type_display()} reaction"
 
 
@@ -52,10 +47,8 @@ class NewsletterSubscription(models.Model):
     last_sent_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ آخر إرسال')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         verbose_name = 'اشتراك النشرة البريدية'
         verbose_name_plural = 'اشتراكات النشرة البريدية'
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return self.email

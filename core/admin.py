@@ -1,41 +1,46 @@
-'''"""This module contains Module functionality."""'''
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
-'\n'
+
 from users.models import Profile
 from notifications.models import Notification
-'\n'
+
 from .models import Post, PostReaction
+
+User = get_user_model()
 admin.site.site_header = 'إدارة تطبيق ختمة'
 admin.site.site_title = 'لوحة تحكم ختمة'
 admin.site.index_title = 'مرحباً بك في لوحة تحكم تطبيق ختمة'
 
+
 class ProfileInline(admin.StackedInline):
-    '''"""Class representing ProfileInline."""'''
     model = Profile
     can_delete = False
     verbose_name_plural = 'الملف الشخصي'
     fk_name = 'user'
 
+
 class CustomUserAdmin(UserAdmin):
-    '''"""Class representing CustomUserAdmin."""'''
     inlines = (ProfileInline,)
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'get_account_type')
+    ordering = ('email',)
+    list_display = ('email', 'first_name', 'last_name', 'is_staff', 'get_account_type')
     list_filter = UserAdmin.list_filter + ('profile__account_type',)
-    search_fields = ('username', 'email', 'first_name', 'last_name', 'profile__account_type')
+    search_fields = ('email', 'first_name', 'last_name', 'profile__account_type')
 
     def get_account_type(self, obj):
-        '''"""Function to get account type."""'''
         return obj.profile.get_account_type_display() if hasattr(obj, 'profile') else '-'
     get_account_type.short_description = 'نوع الحساب'
 
     def get_inline_instances(self, request, obj=None):
-        '''"""Function to get inline instances."""'''
         if not obj:
             return []
         return super().get_inline_instances(request, obj)
-admin.site.unregister(User)
+
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+
 admin.site.register(User, CustomUserAdmin)
 
 @admin.register(Profile)
@@ -91,7 +96,7 @@ class NotificationAdmin(admin.ModelAdmin):
     '''"""Class representing NotificationAdmin."""'''
     list_display = ('user', 'message', 'is_read', 'created_at')
     list_filter = ('is_read', 'created_at')
-    search_fields = ('user__username', 'message')
+    search_fields = ('user__email', 'message')
     date_hierarchy = 'created_at'
     actions = ['mark_as_read', 'mark_as_unread']
 
@@ -119,6 +124,6 @@ class PostReactionAdmin(admin.ModelAdmin):
     '''"""Class representing PostReactionAdmin."""'''
     list_display = ('user', 'post', 'reaction_type', 'created_at')
     list_filter = ('reaction_type', 'created_at')
-    search_fields = ('user__username', 'message')
+    search_fields = ('user__email', 'message')
     readonly_fields = ('created_at',)
     date_hierarchy = 'created_at'

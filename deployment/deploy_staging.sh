@@ -20,6 +20,6 @@ python manage.py migrate --settings=khatma.settings_staging
 python manage.py collectstatic --noinput --settings=khatma.settings_staging
 
 # Restart the application
-touch khatma/wsgi_staging.py
+touch khatma/wsgi.py
 
 echo "Deployment to staging environment completed successfully!"

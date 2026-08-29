@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from notifications.models import Notification
 
 def unread_notifications(request):

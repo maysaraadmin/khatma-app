@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -66,7 +65,6 @@ class Deceased(models.Model):
         unique_together = ['name', 'death_date', 'added_by']
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return self.name
 
     def age_at_death(self):
@@ -133,7 +131,6 @@ class Khatma(models.Model):
     created_at = models.DateTimeField(default=timezone.now, verbose_name='تاريخ الإنشاء', db_index=True)
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         if self.is_group_khatma and self.group:
             return f'{self.title} - {self.group.name} (ختمة جماعية)'
         return f'{self.title} - {self.get_khatma_type_display()}'
@@ -166,7 +163,6 @@ class Participant(models.Model):
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = ('user', 'khatma')
 
 class KhatmaPart(models.Model):
@@ -185,7 +181,6 @@ class KhatmaPart(models.Model):
         ]
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'الجزء {self.part_number} - {self.khatma.title}'
 
 class PartAssignment(models.Model):
@@ -199,7 +194,6 @@ class PartAssignment(models.Model):
     notes = models.TextField(blank=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = ('khatma', 'part')
 
 class QuranReading(models.Model):
@@ -223,13 +217,11 @@ class QuranReading(models.Model):
     dedicated_to = models.ForeignKey(Deceased, on_delete=models.SET_NULL, null=True, blank=True, related_name='dedicated_readings', verbose_name='إهداء إلى')
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = ('khatma', 'part_number', 'participant')
         verbose_name = 'قراءة قرآن'
         verbose_name_plural = 'قراءات القرآن'
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'Quran Reading: {self.participant.email} - Part {self.part_number} - {self.status}'
 
 class PublicKhatma(models.Model):
@@ -248,13 +240,11 @@ class PublicKhatma(models.Model):
     allow_interactions = models.BooleanField(default=True)
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         if self.is_memorial and self.deceased_person:
             return f'ختمة تذكارية: {self.deceased_person.name}'
         return self.title
 
     def get_absolute_url(self):
-        '''"""Function to get absolute url."""'''
         return reverse('khatma:khatma_detail', kwargs={'pk': self.pk})
 
 class KhatmaComment(models.Model):
@@ -266,11 +256,9 @@ class KhatmaComment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         ordering = ['-created_at']
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'Comment by {self.user.email} on {self.public_khatma}'
 
 class KhatmaInteraction(models.Model):
@@ -282,11 +270,9 @@ class KhatmaInteraction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = ('public_khatma', 'user', 'interaction_type')
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         return f'{self.get_interaction_type_display()} by {self.user.email}'
 
 class KhatmaPostReaction(models.Model):
@@ -299,10 +285,8 @@ class KhatmaPostReaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
         unique_together = (('user', 'khatma_chat', 'reaction_type'), ('user', 'khatma_comment', 'reaction_type'))
 
     def __str__(self):
-        '''"""Function to   str  ."""'''
         target = self.khatma_chat or self.khatma_comment
         return f'{self.get_reaction_type_display()} by {self.user.email} on {target}'

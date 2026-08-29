@@ -28,7 +28,8 @@ from .forms import NewsletterSubscriptionForm
 
 # Import services
 from core.services import get_dashboard_data, get_community_data, search_global
-from django.core.exceptions import Http404, PermissionDenied
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 logger = logging.getLogger(__name__)
 

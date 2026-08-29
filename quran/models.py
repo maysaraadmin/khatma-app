@@ -76,6 +76,20 @@ class QuranReciter(models.Model):
         """Return a string representation of the QuranReciter."""
         return self.name_arabic
 
+class ReciterSurah(models.Model):
+    """Represents a Surah recited by a specific reciter."""
+    reciter = models.ForeignKey(QuranReciter, on_delete=models.CASCADE, related_name='reciter_surahs')
+    surah = models.ForeignKey(Surah, on_delete=models.CASCADE, related_name='reciter_surahs')
+
+    class Meta:
+        unique_together = ('reciter', 'surah')
+        verbose_name = 'قارئ سورة'
+        verbose_name_plural = 'قراء السور'
+
+    def __str__(self):
+        return f'{self.reciter.name_arabic} - {self.surah.name_arabic}'
+
+
 class QuranRecitation(models.Model):
     """Model for Quran recitations (audio)."""
     reciter = models.ForeignKey(QuranReciter, on_delete=models.CASCADE, related_name='recitations', verbose_name='القارئ')

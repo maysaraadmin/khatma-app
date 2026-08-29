@@ -20,6 +20,6 @@ python manage.py migrate --settings=khatma.settings_production
 python manage.py collectstatic --noinput --settings=khatma.settings_production
 
 # Restart the application
-touch khatma/wsgi_production.py
+touch khatma/wsgi.py
 
 echo "Deployment to production environment completed successfully!"
