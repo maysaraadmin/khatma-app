@@ -50,19 +50,20 @@ def mark_notification_read(request, notification_id):
         notification = get_object_or_404(Notification, id=notification_id, user=request.user)
         notification.is_read = True
         notification.save()
-        if request.is_ajax():
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
         return redirect('notifications:notification_list')
     except Exception as e:
         logging.error('Error in mark_notification_read: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
 
+
 @login_required
 def mark_all_read(request):
     try:
         'View for marking all notifications as read'
         Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
-        if request.is_ajax():
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
         messages.success(request, 'تم تحديد جميع الإشعارات كمقروءة')
         return redirect('notifications:notification_list')
@@ -70,13 +71,14 @@ def mark_all_read(request):
         logging.error('Error in mark_all_read: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
 
+
 @login_required
 def delete_notification(request, notification_id):
     try:
         'View for deleting a notification'
         notification = get_object_or_404(Notification, id=notification_id, user=request.user)
         notification.delete()
-        if request.is_ajax():
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
         messages.success(request, 'تم حذف الإشعار بنجاح')
         return redirect('notifications:notification_list')

@@ -5,18 +5,19 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count, Q
+from django.db import transaction, IntegrityError, DatabaseError
 from django.http import JsonResponse, Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
-from django.db import transaction
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 # Import models
 from chat.models import KhatmaChat
 from quran.models import QuranPart
+from groups.models import GroupMembership
 from .models import (
     Khatma, Deceased, Participant, PartAssignment, KhatmaPart, 
     QuranReading, PublicKhatma, KhatmaComment, KhatmaInteraction
@@ -37,7 +38,7 @@ def create_khatma(request):
                 try:
                     # Use transaction.atomic to ensure all database operations are atomic
                     with transaction.atomic():
-                        # Create the khatma object but don't save it to the database yet
+                        # Create the khatma object
                         khatma = form.save(commit=False)
                         # Set the creator to the current user
                         khatma.creator = request.user
@@ -49,13 +50,16 @@ def create_khatma(request):
                         # Save the khatma to the database
                         khatma.save()
 
-                        # Create the 30 parts for the khatma, but first check if they already exist
-                        existing_parts = set(KhatmaPart.objects.filter(khatma=khatma).values_list('part_number', flat=True))
-                        for i in range(1, 31):
-                            if i not in existing_parts:
-                                KhatmaPart.objects.create(khatma=khatma, part_number=i)
+                        # Prepare all parts to create (bulk operation)
+                        parts_to_create = [
+                            KhatmaPart(khatma=khatma, part_number=i)
+                            for i in range(1, 31)
+                        ]
+                        # Bulk create all parts at once (much more efficient)
+                        if parts_to_create:
+                            KhatmaPart.objects.bulk_create(parts_to_create)
 
-                        # Add the creator as a participant if not already a participant
+                        # Add the creator as a participant
                         Participant.objects.get_or_create(user=request.user, khatma=khatma)
 
                         # Create a notification
@@ -68,15 +72,16 @@ def create_khatma(request):
                                 related_khatma=khatma
                             )
                         except ImportError:
-                            # If the notifications app is not available, just skip this step
                             pass
 
                     messages.success(request, 'تم إنشاء الختمة بنجاح')
                     return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+                except IntegrityError as e:
+                    logging.error(f"Integrity error saving khatma: {str(e)}")
+                    messages.error(request, 'خطأ: البيانات المدخلة تتضارب مع البيانات الموجودة')
                 except Exception as inner_e:
-                    # Log the specific error that occurred during khatma creation
                     logging.error(f"Error saving khatma: {str(inner_e)}")
-                    messages.error(request, f"حدث خطأ أثناء إنشاء الختمة: {str(inner_e)}")
+                    messages.error(request, f"حدث خطأ أثناء إنشاء الختمة")
             else:
                 # Form is not valid, display errors
                 for field, errors in form.errors.items():
@@ -95,7 +100,6 @@ def create_khatma(request):
         }
         return render(request, 'khatma/create_khatma.html', context)
     except Exception as e:
-        # Log the error and display a user-friendly error page
         logging.error(f"Error in create_khatma view: {str(e)}")
         return render(request, 'core/error.html', context={
             'error_title': 'خطأ في إنشاء الختمة',
@@ -105,12 +109,17 @@ def create_khatma(request):
 
 @login_required
 def edit_khatma(request, khatma_id):
+    """Edit a khatma."""
+    from core.decorators import handle_view_errors, khatma_creator_required
+    
     try:
-        'View for editing an existing Khatma'
         khatma = get_object_or_404(Khatma, id=khatma_id)
+        
+        # Check permission
         if khatma.creator != request.user:
             messages.error(request, 'ليس لديك صلاحية لتعديل هذه الختمة')
             return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+        
         if request.method == 'POST':
             form = KhatmaEditForm(request.POST, request.FILES, instance=khatma, user=request.user)
             if form.is_valid():
@@ -136,20 +145,15 @@ def khatma_detail(request, khatma_id):
     """View for displaying Khatma details"""
     try:
         # Get the khatma object or return 404 if not found
-        khatma = get_object_or_404(Khatma, id=khatma_id)
+        khatma = get_object_or_404(
+            Khatma.objects.select_related('creator', 'group', 'deceased'),
+            id=khatma_id
+        )
         
         # Check khatma privacy
-        if not khatma.is_public and not request.user.is_authenticated:
-            return redirect(f'{settings.LOGIN_URL}?next={request.path}')
-            
-        if not khatma.is_public and khatma.creator != request.user:
-            # Check if user is a participant
-            is_participant = Participant.objects.filter(
-                user=request.user, 
-                khatma=khatma
-            ).exists()
-            if not is_participant:
-                raise Http404("This khatma is private.")
+        from core.permissions import KhatmaPermissionMixin
+        if not KhatmaPermissionMixin.can_view_khatma(request.user, khatma):
+            raise Http404("This khatma is not accessible to you.")
 
         # Check if the user is a participant
         is_participant = False
@@ -159,8 +163,10 @@ def khatma_detail(request, khatma_id):
                 khatma=khatma
             ).exists()
 
-        # Get all parts for this khatma
-        parts = KhatmaPart.objects.filter(khatma=khatma).order_by('part_number')
+        # Get all parts for this khatma with optimization
+        parts = KhatmaPart.objects.filter(khatma=khatma).select_related(
+            'assigned_to'
+        ).order_by('part_number')
 
         # Calculate progress
         total_parts = parts.count()
@@ -184,7 +190,7 @@ def khatma_detail(request, khatma_id):
                     Notification.objects.create(
                         user=khatma.creator,
                         notification_type='khatma_progress',
-                        message=f'{request.user.username} انضم إلى الختمة: {khatma.title}',
+                        message=f'{request.user.email} انضم إلى الختمة: {khatma.title}',
                         related_khatma=khatma
                     )
                 except ImportError:
@@ -227,7 +233,7 @@ def khatma_list(request):
             elif status == 'in_progress':
                 khatmas = khatmas.filter(is_completed=False)
             if search:
-                khatmas = khatmas.filter(Q(title__icontains=search) | Q(description__icontains=search) | Q(creator__username__icontains=search))
+                khatmas = khatmas.filter(Q(title__icontains=search) | Q(description__icontains=search) | Q(creator__email__icontains=search))
         paginator = Paginator(khatmas, 12)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
@@ -265,11 +271,11 @@ def delete_khatma(request, khatma_id):
         context = {'khatma': khatma}
         return render(request, 'khatma/delete_khatma.html', context)
     except Exception as e:
-        logging.error(f"Error in delete_khatma view: {str(e)}")
+        logging.exception("Error in delete_khatma view")
         return render(request, 'core/error.html', context={
             'error_title': 'خطأ في حذف الختمة',
             'error_message': 'حدث خطأ أثناء محاولة حذف الختمة. يرجى المحاولة مرة أخرى.',
-            'error_details': str(e)
+            'error_details': 'فشل حذف الختمة بسبب خطأ غير متوقع.'
         })
 
 @login_required
@@ -391,7 +397,7 @@ def assign_part(request, khatma_id, part_id):
                 except ImportError:
                     pass
 
-                messages.success(request, f'تم تعيين الجزء {part.part_number} للمشارك {participant.username} بنجاح')
+                messages.success(request, f'تم تعيين الجزء {part.part_number} للمشارك {participant.email} بنجاح')
                 return redirect('khatma:khatma_detail', khatma_id=khatma.id)
         else:
             # Display the form
@@ -432,7 +438,7 @@ def complete_part(request, khatma_id, part_id):
         reading.save()
     try:
         from notifications.models import Notification
-        Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.username} أكمل الجزء {part.part_number} في الختمة: {khatma.title}', related_khatma=khatma)
+        Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.email} أكمل الجزء {part.part_number} في الختمة: {khatma.title}', related_khatma=khatma)
     except ImportError:
         pass
     messages.success(request, f'تم إكمال الجزء {part.part_number} بنجاح')
@@ -562,7 +568,7 @@ def join_khatma(request, khatma_id):
     Participant.objects.create(user=request.user, khatma=khatma)
     try:
         from notifications.models import Notification
-        Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.username} انضم إلى الختمة: {khatma.title}', related_khatma=khatma)
+        Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.email} انضم إلى الختمة: {khatma.title}', related_khatma=khatma)
     except ImportError:
         pass
     messages.success(request, 'تم الانضمام إلى الختمة بنجاح')
@@ -582,7 +588,7 @@ def leave_khatma(request, khatma_id):
             participant.delete()
             try:
                 from notifications.models import Notification
-                Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.username} غادر الختمة: {khatma.title}', related_khatma=khatma)
+                Notification.objects.create(user=khatma.creator, notification_type='khatma_progress', message=f'{request.user.email} غادر الختمة: {khatma.title}', related_khatma=khatma)
             except ImportError:
                 pass
             messages.success(request, 'تم مغادرة الختمة بنجاح')
@@ -633,7 +639,7 @@ def remove_participant(request, khatma_id, user_id):
                 Notification.objects.create(user=participant_user, notification_type='khatma_progress', message=f'تمت إزالتك من الختمة: {khatma.title}', related_khatma=khatma)
             except ImportError:
                 pass
-            messages.success(request, f'تم إزالة المشارك {participant_user.username} بنجاح')
+            messages.success(request, f'تم إزالة المشارك {participant_user.email} بنجاح')
             return redirect('khatma:khatma_participants', khatma_id=khatma.id)
         context = {'khatma': khatma, 'participant_user': participant_user}
         return render(request, 'khatma/remove_participant.html', context)
@@ -659,7 +665,7 @@ def share_khatma(request, khatma_id):
                     emails = [email.strip() for email in email_addresses.split(',') if email.strip()]
                     sharing_url = request.build_absolute_uri(reverse('khatma:shared_khatma', args=[khatma.sharing_link]))
                     subject = f'دعوة للمشاركة في ختمة: {khatma.title}'
-                    email_message = f'\n                مرحباً،\n\n                تمت دعوتك للمشاركة في ختمة "{khatma.title}" من قبل {request.user.username}.\n\n                {message}\n\n                للانضمام إلى الختمة، يرجى زيارة الرابط التالي:\n                {sharing_url}\n\n                مع تحيات،\n                فريق تطبيق الختمة\n                '
+                    email_message = f'\n                مرحباً،\n\n                تمت دعوتك للمشاركة في ختمة "{khatma.title}" من قبل {request.user.email}.\n\n                {message}\n\n                للانضمام إلى الختمة، يرجى زيارة الرابط التالي:\n                {sharing_url}\n\n                مع تحيات،\n                فريق تطبيق الختمة\n                '
                     try:
                         send_mail(subject, email_message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
                         messages.success(request, f'تم إرسال دعوات المشاركة إلى {len(emails)} بريد إلكتروني')
@@ -706,18 +712,18 @@ def khatma_progress_api(request, khatma_id):
         recent_completions = KhatmaPart.objects.filter(khatma=khatma, is_completed=True).order_by('-completed_at')[:5]
         recent_completions_data = []
         for part in recent_completions:
-            recent_completions_data.append({'part_number': part.part_number, 'completed_by': part.assigned_to.username if part.assigned_to else khatma.creator.username, 'completed_at': part.completed_at.strftime('%Y-%m-%d %H:%M') if part.completed_at else None})
+            recent_completions_data.append({'part_number': part.part_number, 'completed_by': part.assigned_to.email if part.assigned_to else khatma.creator.email, 'completed_at': part.completed_at.strftime('%Y-%m-%d %H:%M') if part.completed_at else None})
         data = {'total_parts': total_parts, 'completed_parts': completed_parts, 'progress_percentage': progress_percentage, 'recent_completions': recent_completions_data, 'is_completed': khatma.is_completed}
         return JsonResponse(data)
     except Exception as e:
         logging.error('Error in khatma_progress_api: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
 def part_status_api(request, khatma_id, part_id):
     try:
         'API view for updating part status'
-        if request.method == 'POST' and request.is_ajax():
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             khatma = get_object_or_404(Khatma, id=khatma_id)
             part = get_object_or_404(KhatmaPart, khatma=khatma, part_number=part_id)
             if part.assigned_to != request.user and khatma.creator != request.user:
@@ -744,7 +750,7 @@ def part_status_api(request, khatma_id, part_id):
         return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})
     except Exception as e:
         logging.error('Error in part_status_api: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
 def khatma_dashboard(request, khatma_id):
@@ -802,7 +808,7 @@ def khatma_part_reading(request, khatma_id, part_id):
                 try:
                     from notifications.models import Notification
                     if khatma.creator != request.user:
-                        Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.username} أكمل الجزء {part_id} في الختمة: {khatma.title}', related_khatma=khatma)
+                        Notification.objects.create(user=khatma.creator, notification_type='part_completed', message=f'{request.user.email} أكمل الجزء {part_id} في الختمة: {khatma.title}', related_khatma=khatma)
                 except (ImportError, AttributeError):
                     pass
                 return redirect('khatma:khatma_detail', khatma_id=khatma_id)
@@ -831,7 +837,7 @@ def khatma_chat(request, khatma_id):
                 try:
                     from notifications.models import Notification
                     for participant in Participant.objects.filter(khatma=khatma).exclude(user=request.user):
-                        Notification.objects.create(user=participant.user, notification_type='khatma_chat', message=f'رسالة جديدة من {request.user.username} في محادثة الختمة: {khatma.title}', related_khatma=khatma)
+                        Notification.objects.create(user=participant.user, notification_type='khatma_chat', message=f'رسالة جديدة من {request.user.email} في محادثة الختمة: {khatma.title}', related_khatma=khatma)
                 except (ImportError, AttributeError):
                     pass
                 return redirect('khatma:khatma_chat', khatma_id=khatma_id)
@@ -842,8 +848,6 @@ def khatma_chat(request, khatma_id):
     except Exception as e:
         logging.error('Error in khatma_chat: ' + str(e))
         return render(request, 'core/error.html', context={'error': e})
-
-@login_required
 
 @login_required
 def create_khatma_post(request, khatma_id):

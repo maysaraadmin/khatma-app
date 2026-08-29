@@ -85,22 +85,46 @@ def group_detail(request, group_id):
             messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
             return redirect('groups:group_list')
         member_role = None
-        if is_member:
-            membership = GroupMembership.objects.get(user=request.user, group=group)
-            member_role = membership.role
-        announcements = GroupAnnouncement.objects.filter(group=group).order_by('-is_pinned', '-created_at')[:5]
-        upcoming_events = GroupEvent.objects.filter(group=group, start_time__gte=timezone.now()).order_by('start_time')[:3]
-        active_khatmas = group.khatmas.filter(is_completed=False).order_by('-created_at')[:5]
-        admins = GroupMembership.objects.filter(group=group, role='admin').select_related('user')
-        moderators = GroupMembership.objects.filter(group=group, role='moderator').select_related('user')
+        membership = None
+        if request.user.is_authenticated:
+            membership = GroupMembership.objects.filter(user=request.user, group=group).select_related('user').first()
+            is_member = membership is not None
+            if membership:
+                member_role = membership.role
+
+        # Optimize queries with select_related
+        announcements = GroupAnnouncement.objects.filter(
+            group=group
+        ).select_related('creator').order_by('-is_pinned', '-created_at')[:5]
+        
+        upcoming_events = GroupEvent.objects.filter(
+            group=group, 
+            start_time__gte=timezone.now()
+        ).select_related('creator').order_by('start_time')[:3]
+        
+        active_khatmas = group.khatmas.filter(
+            is_completed=False
+        ).select_related('creator').order_by('-created_at')[:5]
+        
+        # Use select_related for memberships
+        admins = GroupMembership.objects.filter(
+            group=group, 
+            role='admin'
+        ).select_related('user')
+        
+        moderators = GroupMembership.objects.filter(
+            group=group, 
+            role='moderator'
+        ).select_related('user')
+        
         has_pending_request = False
         if request.user.is_authenticated and (not is_member):
             has_pending_request = JoinRequest.objects.filter(user=request.user, group=group, status='pending').exists()
         context = {'group': group, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator'], 'announcements': announcements, 'upcoming_events': upcoming_events, 'active_khatmas': active_khatmas, 'admins': admins, 'moderators': moderators, 'has_pending_request': has_pending_request, 'members_count': group.members.count()}
         return render(request, 'groups/group_detail.html', context)
     except Exception as e:
-        logging.error('Error in group_detail: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        logging.exception('Error in group_detail')
+        return render(request, 'core/error.html', context={'error': 'حدث خطأ أثناء محاولة عرض تفاصيل المجموعة. يرجى المحاولة مرة أخرى.'})
 
 @login_required
 def edit_group(request, group_id):
@@ -176,7 +200,7 @@ def join_group(request, group_id):
                     messages.success(request, 'تم إرسال طلب الانضمام بنجاح. سيتم إعلامك عند معالجة الطلب.')
                     try:
                         from notifications.models import Notification
-                        Notification.objects.create(user=group.creator, notification_type='join_request', message=f'{request.user.username} طلب الانضمام إلى مجموعة "{group.name}"', related_group=group)
+                        Notification.objects.create(user=group.creator, notification_type='join_request', message=f'{request.user.email} طلب الانضمام إلى مجموعة "{group.name}"', related_group=group)
                     except ImportError:
                         pass
                 return redirect('groups:group_detail', group_id=group.id)
@@ -193,7 +217,10 @@ def leave_group(request, group_id):
     try:
         'View for leaving a group'
         group = get_object_or_404(ReadingGroup, id=group_id)
-        membership = get_object_or_404(GroupMembership, user=request.user, group=group)
+        membership = GroupMembership.objects.filter(user=request.user, group=group).first()
+        if not membership:
+            messages.error(request, 'أنت لست عضوًا في هذه المجموعة')
+            return redirect('groups:group_detail', group_id=group.id)
         if group.creator == request.user:
             messages.error(request, 'لا يمكن لمنشئ المجموعة مغادرتها. يمكنك حذف المجموعة بدلاً من ذلك.')
             return redirect('groups:group_detail', group_id=group.id)
@@ -220,7 +247,7 @@ def group_members(request, group_id):
         if is_member:
             membership = GroupMembership.objects.get(user=request.user, group=group)
             member_role = membership.role
-        members = GroupMembership.objects.filter(group=group).select_related('user').order_by('role', 'user__username')
+        members = GroupMembership.objects.filter(group=group).select_related('user').order_by('role', 'user__email')
         context = {'group': group, 'members': members, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
         return render(request, 'groups/group_members.html', context)
     except Exception as e:
@@ -256,7 +283,7 @@ def change_member_role(request, group_id, user_id):
                 Notification.objects.create(user=target_user, notification_type='role_changed', message=f'تم تغيير دورك في مجموعة "{group.name}" إلى {target_membership.get_role_display()}', related_group=group)
             except ImportError:
                 pass
-            messages.success(request, f'تم تغيير دور {target_user.username} إلى {target_membership.get_role_display()} بنجاح')
+            messages.success(request, f'تم تغيير دور {target_user.email} إلى {target_membership.get_role_display()} بنجاح')
             return redirect('groups:group_members', group_id=group.id)
     else:
         form = GroupMemberRoleForm(initial={'role': target_membership.role})
@@ -291,7 +318,7 @@ def remove_member(request, group_id, user_id):
             Notification.objects.create(user=target_user, notification_type='removed_from_group', message=f'تمت إزالتك من مجموعة "{group.name}"', related_group=group)
         except ImportError:
             pass
-        messages.success(request, f'تم إزالة {target_user.username} من المجموعة بنجاح')
+            messages.success(request, f'تم إزالة {target_user.email} من المجموعة بنجاح')
         return redirect('groups:group_members', group_id=group.id)
     context = {'group': group, 'target_user': target_user}
     return render(request, 'groups/remove_member.html', context)
@@ -594,7 +621,7 @@ def process_join_request(request, group_id, request_id, action):
         join_request.processed_at = timezone.now()
         join_request.processed_by = request.user
         join_request.save()
-        messages.success(request, f'تم قبول طلب انضمام {join_request.user.username} بنجاح')
+        messages.success(request, f'تم قبول طلب انضمام {join_request.user.email} بنجاح')
     elif action == 'reject':
         join_request.status = 'rejected'
         join_request.processed_at = timezone.now()
@@ -605,7 +632,7 @@ def process_join_request(request, group_id, request_id, action):
             Notification.objects.create(user=join_request.user, notification_type='join_request_rejected', message=f'تم رفض طلب انضمامك إلى مجموعة "{group.name}"', related_group=group)
         except ImportError:
             pass
-        messages.success(request, f'تم رفض طلب انضمام {join_request.user.username} بنجاح')
+        messages.success(request, f'تم رفض طلب انضمام {join_request.user.email} بنجاح')
     else:
         messages.error(request, 'إجراء غير صالح')
     return redirect('groups:manage_join_requests', group_id=group.id)
@@ -754,10 +781,10 @@ def send_group_chat(request, group_id):
                 from notifications.models import Notification
                 for member in group.members.all():
                     if member != request.user:
-                        Notification.objects.create(user=member, notification_type='group_chat', message=f'رسالة جديدة من {request.user.username} في محادثة مجموعة "{group.name}"', related_group=group)
+                        Notification.objects.create(user=member, notification_type='group_chat', message=f'رسالة جديدة من {request.user.email} في محادثة مجموعة "{group.name}"', related_group=group)
             except (ImportError, AttributeError):
                 pass
-            return JsonResponse({'status': 'success', 'message': 'تم إرسال الرسالة بنجاح', 'chat_message': {'id': chat_message.id, 'user': chat_message.user.username, 'message': chat_message.message, 'message_type': chat_message.message_type, 'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')}})
+            return JsonResponse({'status': 'success', 'message': 'تم إرسال الرسالة بنجاح', 'chat_message': {'id': chat_message.id, 'user': chat_message.user.email, 'message': chat_message.message, 'message_type': chat_message.message_type, 'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')}})
         return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})
     except Exception as e:
         logging.error('Error in send_group_chat: ' + str(e))

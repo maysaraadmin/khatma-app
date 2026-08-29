@@ -106,7 +106,7 @@ class CustomUser(AbstractUser):
         verbose_name=_('Verification Token')
     )
     verification_token_expires = models.DateTimeField(
-        default=timezone.now() + timedelta(days=1),
+        default=get_default_token_expiry,
         verbose_name=_('Verification Token Expires')
     )
     password_reset_token = models.UUIDField(
@@ -167,7 +167,8 @@ class CustomUser(AbstractUser):
         verbose_name=_('Data Processing Consent')
     )
     last_activity = models.DateTimeField(
-        auto_now=True,
+        null=True,
+        blank=True,
         verbose_name=_('Last Activity')
     )
     date_joined = models.DateTimeField(
@@ -179,6 +180,7 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = []
     
     objects = CustomUserManager()
+    
     
     def __str__(self):
         """Return the email address as the string representation."""
@@ -244,6 +246,11 @@ class CustomUser(AbstractUser):
             'failed_login_attempts',
             'locked_until'
         ])
+
+
+def get_default_token_expiry():
+    """Return default verification token expiry time."""
+    return timezone.now() + timedelta(days=1)
 
 
 class Profile(models.Model):
@@ -374,11 +381,15 @@ class Profile(models.Model):
     )
     
     # Preferences
+    LANGUAGE_CHOICES = [
+        ('ar', _('Arabic')),
+        ('en', _('English')),
+    ]
     preferred_language = models.CharField(
         _('preferred language'),
         max_length=10,
-        choices=settings.LANGUAGES,
-        default=settings.LANGUAGE_CODE,
+        choices=LANGUAGE_CHOICES,
+        default='ar',
         help_text=_("User's preferred language")
     )
     
@@ -820,7 +831,7 @@ def create_user_profile(sender, instance, created, **kwargs):
     """
     if created:
         try:
-            Profile.objects.create(user=instance)
+            Profile.objects.get_or_create(user=instance)
         except Exception as e:
             logger.error(f'Error creating profile for user {instance.id}: {str(e)}')
 
@@ -829,13 +840,11 @@ def save_user_profile(sender, instance, **kwargs):
     """
     Signal handler to save the profile when the user is saved.
     """
-    try:
-        instance.profile.save()
-    except Profile.DoesNotExist:
-        # If profile doesn't exist, create it
-        Profile.objects.create(user=instance)
-    except Exception as e:
-        logger.error(f'Error saving profile for user {instance.id}: {str(e)}')
+    if hasattr(instance, 'profile'):
+        try:
+            instance.profile.save(update_fields=['updated_at'])
+        except Exception:
+            pass
 
 
 # Connect signals

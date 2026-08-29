@@ -2,30 +2,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import logout
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db.models import Q, Count
+
+User = get_user_model()
 from django.http import JsonResponse
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views import View
 from django.http import HttpResponseRedirect
+from allauth.socialaccount.views import SignupView
 import logging
 import traceback
 import os
 
 # Import models
 from khatma.models import Khatma, QuranReading
-from users.models import Profile
-
-# Import for social authentication
-from allauth.socialaccount.views import SignupView
-
-# Import models from other apps
 from users.models import Profile, UserAchievement
-from khatma.models import Deceased, PartAssignment, Participant, QuranReading
-from khatma.models import Khatma, Deceased, PartAssignment, Participant, QuranReading
 from quran.models import QuranPart, Surah, Ayah
 from groups.models import ReadingGroup, GroupMembership
 from notifications.models import Notification
@@ -146,7 +140,7 @@ def index(request):
 
         # If user is authenticated, show dashboard
         if request.user.is_authenticated:
-            logger.info(f"User {request.user.username} is authenticated")
+            logger.info(f"User {request.user.email} is authenticated")
             try:
                 dashboard_data = get_dashboard_data(request.user)
                 logger.info("Dashboard data retrieved successfully")
@@ -298,7 +292,7 @@ def community_leaderboard(request):
     """
     try:
         # Create a list of top readers with completed parts
-        users = User.objects.all()
+        users = User.objects.select_related('profile').all()
         top_readers_list = []
 
         for user in users:
@@ -316,7 +310,7 @@ def community_leaderboard(request):
 
             if completed_parts_count > 0:
                 top_readers_list.append({
-                    'username': user.username,
+                    'username': user.email,
                     'date_joined': user.date_joined,
                     'completed_parts': completed_parts_count,
                     'profile': profile
@@ -342,7 +336,7 @@ def community_leaderboard(request):
 
             if created_khatmas_count > 0:
                 top_creators_list.append({
-                    'username': user.username,
+                    'username': user.email,
                     'date_joined': user.date_joined,
                     'created_khatmas': created_khatmas_count,
                     'profile': profile
@@ -442,7 +436,6 @@ def profile(request):
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        print(f"ERROR in profile view: {str(e)}\n{error_details}")
         logger.error(f"Error in profile view: {str(e)}\n{error_details}")
 
         # Return a more detailed error page
@@ -473,7 +466,6 @@ def settings(request):
         if request.method == 'POST':
             # Update user settings
             profile.preferred_language = request.POST.get('preferred_language', 'ar')
-            profile.notification_preferences = request.POST.get('notification_preferences', 'all')
             profile.save()
 
             messages.success(request, 'تم تحديث الإعدادات بنجاح.')
@@ -798,36 +790,4 @@ def achievements(request):
         })
     except Exception as e:
         logger.error(f"Error in achievements view: {str(e)}")
-        return render(request, 'core/error.html', {'error': str(e)})
-
-
-def group_list(request):
-    """
-    Group list view.
-    """
-    try:
-        # Get all public groups
-        public_groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
-
-        # If user is authenticated, also get their private groups
-        user_groups = []
-        if request.user.is_authenticated:
-            # Get groups where the user is a member through GroupMembership
-            user_memberships = GroupMembership.objects.filter(
-                user=request.user,
-                is_active=True
-            ).values_list('group_id', flat=True)
-
-            user_groups = ReadingGroup.objects.filter(
-                id__in=user_memberships
-            ).exclude(
-                is_public=True
-            ).order_by('-created_at')
-
-        return render(request, 'core/group_list.html', {
-            'public_groups': public_groups,
-            'user_groups': user_groups
-        })
-    except Exception as e:
-        logger.error(f"Error in group_list view: {str(e)}")
         return render(request, 'core/error.html', {'error': str(e)})

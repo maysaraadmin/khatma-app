@@ -5,16 +5,16 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.urls import reverse
+from core.validators import validate_image
 
 User = get_user_model()
 
 def validate_image_file_extension(value):
-    import os
-    from django.core.exceptions import ValidationError
-    ext = os.path.splitext(value.name)[1]  # Get the file extension
-    valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
-    if not ext.lower() in valid_extensions:
-        raise ValidationError('Unsupported file extension. Allowed extensions are: ' + ', '.join(valid_extensions))
+    """
+    Validate image file (kept for backward compatibility).
+    Uses the core validation module.
+    """
+    validate_image(value, max_size_mb=2)
 
 class Deceased(models.Model):
     """Enhanced Deceased model with more details"""
@@ -121,7 +121,7 @@ class Khatma(models.Model):
     allow_comments = models.BooleanField(default=True, verbose_name='السماح بالتعليقات')
     social_media_hashtags = models.CharField(max_length=255, blank=True, null=True, verbose_name='وسوم التواصل الاجتماعي')
     social_media_image = models.ImageField(upload_to='social_media_images/', null=True, blank=True, verbose_name='صورة للمشاركة')
-    is_completed = models.BooleanField(default=False, verbose_name='مكتملة')
+    is_completed = models.BooleanField(default=False, verbose_name='مكتملة', db_index=True)
     target_completion_date = models.DateField(null=True, blank=True, verbose_name='تاريخ الإكمال المستهدف')
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الإكمال')
     start_date = models.DateField(null=True, blank=True, verbose_name='تاريخ البدء')
@@ -131,7 +131,7 @@ class Khatma(models.Model):
     max_participants = models.IntegerField(default=0, verbose_name='الحد الأقصى للمشاركين (0 = غير محدود)')
     send_reminders = models.BooleanField(default=True, verbose_name='إرسال تذكيرات')
     reminder_frequency = models.CharField(max_length=20, choices=[('daily', 'يومياً'), ('weekly', 'أسبوعياً'), ('never', 'لا ترسل')], default='weekly', verbose_name='تكرار التذكيرات')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='تاريخ الإنشاء')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='تاريخ الإنشاء', db_index=True)
 
     def __str__(self):
         '''"""Function to   str  ."""'''
@@ -139,11 +139,25 @@ class Khatma(models.Model):
             return f'{self.title} - {self.group.name} (ختمة جماعية)'
         return f'{self.title} - {self.get_khatma_type_display()}'
 
-    def get_progress_percentage(self):
-        '''"""Function to get progress percentage."""'''
+    def get_progress_percentage(self) -> float:
+        """Calculate reading progress as percentage (0-100)."""
         total_parts = self.parts.count()
+        if total_parts == 0:
+            return 0.0
         completed_parts = self.parts.filter(is_completed=True).count()
-        return completed_parts / total_parts * 100 if total_parts > 0 else 0
+        return (completed_parts / total_parts) * 100
+    
+    class Meta:
+        """Meta options for Khatma model."""
+        verbose_name = 'ختمة'
+        verbose_name_plural = 'ختمات'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['creator', '-created_at'], name='khatma_creator_date_idx'),
+            models.Index(fields=['is_public', 'is_completed'], name='khatma_public_completed_idx'),
+            models.Index(fields=['khatma_type', 'created_at'], name='khatma_type_date_idx'),
+            models.Index(fields=['group', '-created_at'], name='khatma_group_date_idx'),
+        ]
 
 class Participant(models.Model):
     """Khatma participants"""
@@ -158,15 +172,18 @@ class Participant(models.Model):
 
 class KhatmaPart(models.Model):
     """Tracks individual parts of a Khatma"""
-    khatma = models.ForeignKey(Khatma, related_name='parts', on_delete=models.CASCADE)
-    part_number = models.IntegerField()
-    is_completed = models.BooleanField(default=False)
-    assigned_to = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_parts')
+    khatma = models.ForeignKey(Khatma, related_name='parts', on_delete=models.CASCADE, db_index=True)
+    part_number = models.IntegerField(db_index=True)
+    is_completed = models.BooleanField(default=False, db_index=True)
+    assigned_to = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_parts', db_index=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        '''"""Class representing Meta."""'''
+        """Meta options for KhatmaPart model."""
         unique_together = ('khatma', 'part_number')
+        indexes = [
+            models.Index(fields=['khatma', 'is_completed'], name='khatma_part_completed_idx'),
+        ]
 
     def __str__(self):
         '''"""Function to   str  ."""'''
@@ -214,7 +231,7 @@ class QuranReading(models.Model):
 
     def __str__(self):
         '''"""Function to   str  ."""'''
-        return f'Quran Reading: {self.participant.username} - Part {self.part_number} - {self.status}'
+        return f'Quran Reading: {self.participant.email} - Part {self.part_number} - {self.status}'
 
 class PublicKhatma(models.Model):
     """Model for public khatmas that can be shared in the community"""
@@ -239,7 +256,7 @@ class PublicKhatma(models.Model):
 
     def get_absolute_url(self):
         '''"""Function to get absolute url."""'''
-        return reverse('khatma_detail', kwargs={'pk': self.pk})
+        return reverse('khatma:khatma_detail', kwargs={'pk': self.pk})
 
 class KhatmaComment(models.Model):
     """Model for comments on public khatmas"""
@@ -255,7 +272,7 @@ class KhatmaComment(models.Model):
 
     def __str__(self):
         '''"""Function to   str  ."""'''
-        return f'Comment by {self.user.username} on {self.public_khatma}'
+        return f'Comment by {self.user.email} on {self.public_khatma}'
 
 class KhatmaInteraction(models.Model):
     """Model for interactions with public khatmas (likes, prayers, etc.)"""
@@ -271,10 +288,10 @@ class KhatmaInteraction(models.Model):
 
     def __str__(self):
         '''"""Function to   str  ."""'''
-        return f'{self.get_interaction_type_display()} by {self.user.username}'
+        return f'{self.get_interaction_type_display()} by {self.user.email}'
 
-class PostReaction(models.Model):
-    """Model for reactions to posts (likes, prayers, etc.)"""
+class KhatmaPostReaction(models.Model):
+    """Model for reactions to khatma chat messages and comments (likes, prayers, etc.)"""
     REACTION_TYPES = [('like', 'إعجاب'), ('prayer', 'دعاء'), ('support', 'دعم'), ('thanks', 'شكر')]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='khatma_post_reactions')
     khatma_chat = models.ForeignKey('chat.KhatmaChat', on_delete=models.CASCADE, related_name='reactions', null=True, blank=True)
@@ -289,4 +306,4 @@ class PostReaction(models.Model):
     def __str__(self):
         '''"""Function to   str  ."""'''
         target = self.khatma_chat or self.khatma_comment
-        return f'{self.get_reaction_type_display()} by {self.user.username} on {target}'
+        return f'{self.get_reaction_type_display()} by {self.user.email} on {target}'

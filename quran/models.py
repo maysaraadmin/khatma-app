@@ -1,6 +1,8 @@
 """Models for the Quran application."""
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class QuranPart(models.Model):
     """Represents a Juz' (part) of the Quran."""
@@ -151,4 +153,4 @@ class QuranReadingSettings(models.Model):
 
     def __str__(self):
         """Return a string representation of the QuranReadingSettings."""
-        return f'Quran Settings for {self.user.username}'
+        return f'Quran Settings for {self.user.email}'

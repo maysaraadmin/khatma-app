@@ -3,7 +3,9 @@
 import logging
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # Import models from other apps
 from users.models import Profile, UserAchievement
@@ -102,7 +104,7 @@ def get_dashboard_data(user):
             'notifications': notifications
         }
     except Exception as e:
-        logger.error(f"Error getting dashboard data for user {user.username}: {str(e)}")
+        logger.error(f"Error getting dashboard data for user {user.email}: {str(e)}")
         return {
             'user_khatmas': [],
             'user_groups': [],

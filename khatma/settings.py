@@ -48,7 +48,6 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_REFERRER_POLICY = 'same-origin'
 
 # Configure allowed hosts
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
@@ -119,23 +118,6 @@ DEBUG_TOOLBAR_CONFIG = {
     'RENDER_PANELS': False,
     'SHOW_TEMPLATE_CONTEXT': False,
     'SHOW_COLLAPSED': False,
-}
-
-# Show SQL queries in console
-LOGGING = {
-    'version': 1,
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django.db.backends': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-        },
-    },
 }
 
 if 'DJANGO_ALLOWED_HOSTS' in os.environ:
@@ -226,24 +208,10 @@ TIME_ZONE = 'Asia/Riyadh'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-
-# Security middleware settings
-SECURE_HSTS_SECONDS = 31536000  # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-
-# Security settings
-SECURE_SSL_REDIRECT = not DEBUG  # Redirect all non-HTTPS to HTTPS in production
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# Session settings
-SESSION_COOKIE_SECURE = not DEBUG  # Only send session cookie over HTTPS
-SESSION_COOKIE_HTTPONLY = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-
-# CSRF settings
-CSRF_COOKIE_SECURE = not DEBUG  # Only send CSRF cookie over HTTPS
-CSRF_COOKIE_HTTPONLY = True
+LANGUAGES = [
+    ('ar', 'Arabic'),
+    ('en', 'English'),
+]
 
 # Security headers
 X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
@@ -297,14 +265,6 @@ ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 7
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Khatma] '
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https' if not DEBUG else 'http'
-
-# Other Allauth settings
-ACCOUNT_SESSION_REMEMBER = True
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
-ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 7
-ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Khatma] '
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 # Authentication and signup configuration
 ACCOUNT_FORMS = {

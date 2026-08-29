@@ -1,7 +1,10 @@
 '''"""This module contains Module functionality."""'''
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.utils import timezone
+from core.validators import validate_image
+
+User = get_user_model()
 
 class ReadingGroup(models.Model):
     """Model for Quran reading groups"""
@@ -9,10 +12,10 @@ class ReadingGroup(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name='وصف المجموعة')
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_groups', verbose_name='منشئ المجموعة')
     members = models.ManyToManyField(User, through='GroupMembership', related_name='joined_groups', verbose_name='أعضاء المجموعة')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء')
-    is_active = models.BooleanField(default=True, verbose_name='نشطة')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء', db_index=True)
+    is_active = models.BooleanField(default=True, verbose_name='نشطة', db_index=True)
     image = models.ImageField(upload_to='group_images/', null=True, blank=True, verbose_name='صورة المجموعة')
-    is_public = models.BooleanField(default=True, verbose_name='مجموعة عامة')
+    is_public = models.BooleanField(default=True, verbose_name='مجموعة عامة', db_index=True)
     allow_join_requests = models.BooleanField(default=True, verbose_name='السماح بطلبات الانضمام')
     max_members = models.IntegerField(default=0, verbose_name='الحد الأقصى للأعضاء (0 = غير محدود)')
     enable_chat = models.BooleanField(default=True, verbose_name='تفعيل المحادثة')
@@ -29,18 +32,16 @@ class ReadingGroup(models.Model):
     def get_completed_khatmas_count(self):
         """Get count of completed khatmas in this group"""
         return self.khatmas.filter(is_completed=True).count()
-
-    def get_members_count(self):
-        """Get count of members in this group"""
-        return self.members.count()
-
-    def get_active_members_count(self):
-        """Get count of active members in this group"""
-        return self.members.count()
-
-    def get_active_khatmas_count(self):
-        """Get count of active khatmas in this group"""
-        return self.khatmas.filter(is_completed=False).count()
+    
+    class Meta:
+        """Meta options for ReadingGroup model."""
+        verbose_name = 'مجموعة قراءة'
+        verbose_name_plural = 'مجموعات قراءة'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['creator', '-created_at'], name='group_creator_date_idx'),
+            models.Index(fields=['is_public', 'is_active'], name='group_public_active_idx'),
+        ]
 
 class GroupMembership(models.Model):
     """Model for group membership"""
@@ -110,6 +111,7 @@ class GroupEvent(models.Model):
     meeting_link = models.URLField(blank=True, null=True, verbose_name='رابط الاجتماع')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء')
     related_khatma = models.ForeignKey('khatma.Khatma', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='الختمة المرتبطة')
+    attendees = models.ManyToManyField(User, related_name='attended_events', blank=True, verbose_name='الحضور')
 
     class Meta:
         '''"""Class representing Meta."""'''

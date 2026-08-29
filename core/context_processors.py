@@ -7,10 +7,6 @@ def unread_notifications(request):
         try:
             from notifications.models import Notification
             unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
-        except ImportError:
-            try:
-                from core.models import Notification
-                unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
-            except (ImportError, AttributeError):
-                pass
+        except (ImportError, AttributeError):
+            pass
     return {'unread_count': unread_count}

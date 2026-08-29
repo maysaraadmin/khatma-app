@@ -19,7 +19,7 @@ def khatma_chat(request, khatma_id):
         khatma = get_object_or_404(Khatma, id=khatma_id)
         if not Participant.objects.filter(user=request.user, khatma=khatma).exists():
             messages.error(request, _('You must be a participant in the khatma to chat'))
-            return redirect('khatma:detail', khatma_id=khatma.id)
+            return redirect('khatma:khatma_detail', khatma_id=khatma.id)
         if request.method == 'POST':
             message_type = request.POST.get('message_type', 'text')
             message_text = request.POST.get('message', '').strip()
@@ -31,7 +31,7 @@ def khatma_chat(request, khatma_id):
             KhatmaChat.objects.create(khatma=khatma, user=request.user, message=message_text, message_type=message_type, image=image, audio=audio)
             other_participants = Participant.objects.filter(khatma=khatma).exclude(user=request.user)
             for participant in other_participants:
-                Notification.objects.create(user=participant.user, notification_type='comment', message=f'{request.user.username} sent a new message in khatma {khatma.title}', related_khatma=khatma, related_user=request.user)
+                Notification.objects.create(user=participant.user, notification_type='khatma_chat', message=f'{request.user.email} sent a new message in khatma {khatma.title}', related_khatma=khatma, related_user=request.user)
             messages.success(request, _('Message sent successfully'))
             return redirect('chat:khatma_chat', khatma_id=khatma.id)
         chat_messages = KhatmaChat.objects.filter(khatma=khatma).order_by('created_at')
@@ -63,7 +63,7 @@ def group_chat(request, group_id):
             GroupChat.objects.create(group=group, user=request.user, message=message_text, message_type=message_type, image=image, audio=audio)
             other_members = GroupMembership.objects.filter(group=group).exclude(user=request.user)
             for membership in other_members:
-                Notification.objects.create(user=membership.user, notification_type='group_chat', message=f'{request.user.username} sent a new message in group {group.name}', related_user=request.user)
+                Notification.objects.create(user=membership.user, notification_type='group_chat', message=f'{request.user.email} sent a new message in group {group.name}', related_user=request.user)
             messages.success(request, _('Message sent successfully'))
             return redirect('chat:group_chat', group_id=group.id)
         chat_messages = GroupChat.objects.filter(group=group).order_by('created_at')

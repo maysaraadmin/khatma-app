@@ -1,11 +1,13 @@
 '''"""This module contains Module functionality."""'''
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from allauth.account.forms import SignupForm
 from django.utils.translation import gettext_lazy as _
 
 from .models import Profile
+
+User = get_user_model()
 
 class ExtendedUserCreationForm(UserCreationForm):
     """Extended user creation form with email field and account type"""
@@ -13,12 +15,8 @@ class ExtendedUserCreationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=False, label='الاسم الأول')
     last_name = forms.CharField(max_length=30, required=False, label='الاسم الأخير')
     account_type = forms.ChoiceField(
-        choices=[
-            ('individual', 'فردي'),
-            ('family', 'عائلي'),
-            ('charity', 'مؤسسة خيرية')
-        ],
-        initial='individual',
+        choices=Profile.ACCOUNT_TYPES,
+        initial='standard',
         required=True,
         label='نوع الحساب'
     )
@@ -26,7 +24,7 @@ class ExtendedUserCreationForm(UserCreationForm):
     class Meta:
         '''"""Class representing Meta."""'''
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        fields = ('email', 'first_name', 'last_name', 'password1', 'password2')
 
     def save(self, commit=True):
         '''"""Function to save."""'''

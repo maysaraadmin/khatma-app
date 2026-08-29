@@ -1,7 +1,9 @@
 '''"""This module contains Module functionality."""'''
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.utils import timezone
+
+User = get_user_model()
 
 class Notification(models.Model):
     """Model for user notifications"""
@@ -24,7 +26,7 @@ class Notification(models.Model):
 
     def __str__(self):
         '''"""Function to   str  ."""'''
-        return f"{self.user.username} - {self.get_notification_type_display()} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.user.email} - {self.get_notification_type_display()} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
     def mark_as_read(self):
         """Mark notification as read"""

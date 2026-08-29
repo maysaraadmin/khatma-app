@@ -1,7 +1,9 @@
 '''"""This module contains Module functionality."""'''
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+
+User = get_user_model()
 
 class KhatmaChat(models.Model):
     """Model for chat messages in a Khatma"""
@@ -23,7 +25,7 @@ class KhatmaChat(models.Model):
 
     def __str__(self):
         '''"""Function to   str  ."""'''
-        return f'{self.user.username}: {self.message[:50]}'
+        return f'{self.user.email}: {self.message[:50]}'
 
 class GroupChat(models.Model):
     """Model for chat messages in a Reading Group"""
