@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 import os
 import json
 '\n'

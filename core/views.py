@@ -120,7 +120,7 @@ class CustomSocialSignupView(SignupView):
         Process the form submission and create a profile with the selected account type.
         """
         response = super().form_valid(form)
-        account_type = self.request.POST.get('account_type', 'individual')
+        account_type = self.request.POST.get('account_type', 'standard')
         profile, created = Profile.objects.get_or_create(user=self.user, defaults={'account_type': account_type})
         if not created:
             profile.account_type = account_type
@@ -298,27 +298,21 @@ def community_leaderboard(request):
     """
     Community leaderboard page view.
     """
-    try:
-        top_readers = User.objects.annotate(
-            completed_parts=Count(
-                'assigned_parts',
-                filter=Q(assigned_parts__is_completed=True)
-            )
-        ).filter(completed_parts__gt=0).select_related('profile').order_by('-completed_parts')[:10]
+    top_readers = User.objects.annotate(
+        completed_parts=Count(
+            'assigned_parts',
+            filter=Q(assigned_parts__is_completed=True)
+        )
+    ).filter(completed_parts__gt=0).select_related('profile').order_by('-completed_parts')[:10]
 
-        top_creators = User.objects.annotate(
-            created_khatmas_count=Count('created_khatmas')
-        ).filter(created_khatmas_count__gt=0).select_related('profile').order_by('-created_khatmas_count')[:10]
+    top_creators = User.objects.annotate(
+        created_khatmas_count=Count('created_khatmas')
+    ).filter(created_khatmas_count__gt=0).select_related('profile').order_by('-created_khatmas_count')[:10]
 
-        return render(request, 'core/community_leaderboard.html', {
-            'top_readers': top_readers,
-            'top_creators': top_creators
-        })
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logger.error(f"Error in community_leaderboard view: {str(e)}")
-        raise
-
+    return render(request, 'core/community_leaderboard.html', {
+        'top_readers': top_readers,
+        'top_creators': top_creators
+    })
 
 @login_required
 def khatma_dashboard(request):
@@ -491,7 +485,7 @@ def quran_part(request, part_number):
         quran_part = get_object_or_404(QuranPart, part_number=part_number)
 
         # Get all ayahs in this part
-        ayahs = Ayah.objects.filter(quran_part=quran_part).order_by('surah__surah_number', 'ayah_number_in_surah')
+        ayahs = Ayah.objects.filter(quran_part=quran_part).select_related('surah').order_by('surah__surah_number', 'ayah_number_in_surah')
 
         # Group ayahs by surah
         surahs = {}
@@ -577,11 +571,13 @@ def achievements(request):
         ]
 
         # Mark which achievements the user has earned
+        user_achievements_map = {ua.achievement_type: ua for ua in user_achievements}
         for achievement in all_achievements:
             achievement_type = next((k for k, v in dict(UserAchievement.ACHIEVEMENT_TYPES).items() if v == achievement['name']), None)
-            achievement['achieved'] = user_achievements.filter(achievement_type=achievement_type).exists()
+            user_achievement = user_achievements_map.get(achievement_type)
+            achievement['achieved'] = user_achievement is not None
             if achievement['achieved']:
-                achievement['date_earned'] = user_achievements.get(achievement_type=achievement_type).unlocked_at
+                achievement['date_earned'] = user_achievement.unlocked_at
 
         # Get user profile for total points and level
         profile, created = Profile.objects.get_or_create(user=request.user)

@@ -224,7 +224,8 @@ class PartAssignmentFormTest(BaseTestCase):
         self.valid_data = {
             'notes': 'Test notes',
             'dua': 'Test dua',
-            'is_completed': True
+            'is_completed': True,
+            'participant': self.participant.id
         }
 
     def test_part_assignment_form_valid(self):
@@ -348,7 +349,6 @@ class UserProfileFormTest(BaseTestCase):
         form = UserProfileForm(data=self.valid_data, instance=self.user)
         self.assertTrue(form.is_valid())
         user = form.save()
-        self.assertEqual(user.username, 'testuser_profile_updated')
         self.assertEqual(user.email, 'testprofileupdated@example.com')
         self.assertEqual(user.first_name, 'Test_Updated')
         self.assertEqual(user.last_name, 'User_Updated')

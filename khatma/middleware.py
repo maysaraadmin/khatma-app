@@ -89,15 +89,16 @@ class RateLimitMiddleware:
         
         # Check if rate limit has been exceeded
         if request_data['count'] > self.rate_limit_requests:
+            retry_after = int(self.rate_limit_window - (current_time - request_data['first_request']))
             logger.warning(f'Rate limit exceeded for IP: {ip} - {request_data["count"]} requests')
             return JsonResponse(
                 {
                     'error': 'Too many requests', 
                     'message': 'You have exceeded the maximum number of requests. Please try again later.',
-                    'retry_after': int(self.rate_limit_window - (current_time - request_data['first_request']))
+                    'retry_after': retry_after
                 }, 
                 status=429,  # Too Many Requests
-                headers={'Retry-After': str(self.rate_limit_window)}
+                headers={'Retry-After': str(retry_after)}
             )
         
         # Add rate limit headers to response
@@ -169,17 +170,12 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         self.content_security_policy = getattr(
             settings,
             'CONTENT_SECURITY_POLICY',
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "
+            "default-src 'self'; script-src 'self' 'unsafe-inline' https:; "
             "style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; "
             "font-src 'self' https: data:; connect-src 'self' https:; "
             "frame-ancestors 'self'; form-action 'self';"
         )
         self.referrer_policy = getattr(settings, 'REFERRER_POLICY', 'same-origin')
-        self.feature_policy = getattr(
-            settings,
-            'FEATURE_POLICY',
-            "geolocation 'none'; microphone 'none'; camera 'none';"
-        )
         self.permissions_policy = getattr(
             settings,
             'PERMISSIONS_POLICY',
@@ -187,19 +183,17 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         )
 
     def process_response(self, request, response):
-        # Security headers
+        # Security headers. X-Frame-Options is handled by Django's
+        # XFrameOptionsMiddleware via the X_FRAME_OPTIONS setting.
         response['X-Content-Type-Options'] = 'nosniff'
-        response['X-Frame-Options'] = 'SAMEORIGIN'
-        response['X-XSS-Protection'] = '1; mode=block'
         response['Referrer-Policy'] = self.referrer_policy
         response['Permissions-Policy'] = self.permissions_policy
-        
+
         # Only add HSTS and CSP in production
         if not settings.DEBUG:
             response['Strict-Transport-Security'] = f'max-age={self.strict_transport_security}; includeSubDomains; preload'
             response['Content-Security-Policy'] = self.content_security_policy
-            response['Feature-Policy'] = self.feature_policy
-        
+
         return response
 
 class PerformanceMonitoringMiddleware:

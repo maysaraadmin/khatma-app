@@ -8,59 +8,54 @@ from django.contrib import messages
 from django.db.models import Q, Prefetch
 from django.utils import timezone
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
+from django.core.exceptions import PermissionDenied
 from core.validators import validate_search_query
 
 from .models import QuranPart, Surah, Ayah, QuranReciter, QuranRecitation, QuranBookmark, QuranReadingSettings
 from .forms import QuranBookmarkForm, QuranReadingSettingsForm, QuranSearchForm, ReciterFilterForm
-from django.http import Http404
-from django.core.exceptions import PermissionDenied
 logger = logging.getLogger(__name__)
 SURAH_NAMES = {'001': 'الفاتحة', '002': 'البقرة', '003': 'آل عمران', '004': 'النساء', '005': 'المائدة', '006': 'الأنعام', '007': 'الأعراف', '008': 'الأنفال', '009': 'التوبة', '010': 'يونس', '011': 'هود', '012': 'يوسف', '013': 'الرعد', '014': 'إبراهيم', '015': 'الحجر', '016': 'النحل', '017': 'الإسراء', '018': 'الكهف', '019': 'مريم', '020': 'طه', '021': 'الأنبياء', '022': 'الحج', '023': 'المؤمنون', '024': 'النور', '025': 'الفرقان', '026': 'الشعراء', '027': 'النمل', '028': 'القصص', '029': 'العنكبوت', '030': 'الروم', '031': 'لقمان', '032': 'السجدة', '033': 'الأحزاب', '034': 'سبأ', '035': 'فاطر', '036': 'يس', '037': 'الصافات', '038': 'ص', '039': 'الزمر', '040': 'غافر', '041': 'فصلت', '042': 'الشورى', '043': 'الزخرف', '044': 'الدخان', '045': 'الجاثية', '046': 'الأحقاف', '047': 'محمد', '048': 'الفتح', '049': 'الحجرات', '050': 'ق', '051': 'الذاريات', '052': 'الطور', '053': 'النجم', '054': 'القمر', '055': 'الرحمن', '056': 'الواقعة', '057': 'الحديد', '058': 'المجادلة', '059': 'الحشر', '060': 'الممتحنة', '061': 'الصف', '062': 'الجمعة', '063': 'المنافقون', '064': 'التغابن', '065': 'الطلاق', '066': 'التحريم', '067': 'الملك', '068': 'القلم', '069': 'الحاقة', '070': 'المعارج', '071': 'نوح', '072': 'الجن', '073': 'المزمل', '074': 'المدثر', '075': 'القيامة', '076': 'الإنسان', '077': 'المرسلات', '078': 'النبأ', '079': 'النازعات', '080': 'عبس', '081': 'التكوير', '082': 'الانفطار', '083': 'المطففين', '084': 'الانشقاق', '085': 'البروج', '086': 'الطارق', '087': 'الأعلى', '088': 'الغاشية', '089': 'الفجر', '090': 'البلد', '091': 'الشمس', '092': 'الليل', '093': 'الضحى', '094': 'الشرح', '095': 'التين', '096': 'العلق', '097': 'القدر', '098': 'البينة', '099': 'الزلزلة', '100': 'العاديات', '101': 'القارعة', '102': 'التكاثر', '103': 'العصر', '104': 'الهمزة', '105': 'الفيل', '106': 'قريش', '107': 'الماعون', '108': 'الكوثر', '109': 'الكافرون', '110': 'النصر', '111': 'المسد', '112': 'الإخلاص', '113': 'الفلق', '114': 'الناس'}
 
 def surah_list(request):
-    try:
-        
-        show_verses = request.GET.get('show_verses', 'false').lower() == 'true'
+    
+    show_verses = request.GET.get('show_verses', 'false').lower() == 'true'
 
-        # Get all surahs with their ayahs prefetched for efficiency
-        surahs = Surah.objects.all().order_by('surah_number').prefetch_related('ayahs')
+    # Get all surahs
+    surahs = Surah.objects.all().order_by('surah_number')
+    if show_verses:
+        surahs = surahs.prefetch_related('ayahs')
 
-        # Apply filters if provided
-        revelation_type = request.GET.get('revelation_type')
-        if revelation_type and revelation_type != 'all':
-            surahs = surahs.filter(revelation_type=revelation_type)
+    # Apply filters if provided
+    revelation_type = request.GET.get('revelation_type')
+    if revelation_type and revelation_type != 'all':
+        surahs = surahs.filter(revelation_type=revelation_type)
 
-        # Get meccan and medinan surahs for filter options
-        meccan_surahs = Surah.objects.filter(revelation_type='meccan')
-        medinan_surahs = Surah.objects.filter(revelation_type='medinan')
+    # Get meccan and medinan surahs for filter options
+    meccan_surahs = Surah.objects.filter(revelation_type='meccan')
+    medinan_surahs = Surah.objects.filter(revelation_type='medinan')
 
-        # Paginate the results for both views
-        # Use different page sizes based on the view
-        page_size = 15 if show_verses else 30  # Fewer surahs per page when showing verses
+    # Paginate the results for both views
+    # Use different page sizes based on the view
+    page_size = 15 if show_verses else 30  # Fewer surahs per page when showing verses
 
-        paginator = Paginator(surahs, page_size)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
+    paginator = Paginator(surahs, page_size)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
-        context = {
-            'surahs': page_obj,  # Paginated surahs
-            'meccan_surahs': meccan_surahs,
-            'medinan_surahs': medinan_surahs,
-            'show_verses': show_verses,
-            'is_paginated': True,
-            'page_obj': page_obj
-        }
+    context = {
+        'surahs': page_obj,  # Paginated surahs
+        'meccan_surahs': meccan_surahs,
+        'medinan_surahs': medinan_surahs,
+        'show_verses': show_verses,
+        'is_paginated': True,
+        'page_obj': page_obj
+    }
 
-        # Choose the appropriate template based on whether to show verses
-        template = 'quran/surah_list_with_verses.html' if show_verses else 'quran/surah_list.html'
+    # Choose the appropriate template based on whether to show verses
+    template = 'quran/surah_list_with_verses.html' if show_verses else 'quran/surah_list.html'
 
-        return render(request, template, context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in surah_list: ' + str(e))
-        raise
-
+    return render(request, template, context)
 def surah_detail(request, surah_number):
     """View for displaying a specific Surah"""
     try:
@@ -69,7 +64,7 @@ def surah_detail(request, surah_number):
 
         # Get all ayahs for the surah (prefetch for efficiency)
         ayahs = Ayah.objects.filter(surah=surah).select_related(
-            'quran_part'
+            'quran_part', 'surah'
         ).order_by('ayah_number_in_surah')
 
         # Get reciters who have recited this surah
@@ -114,260 +109,200 @@ def surah_detail(request, surah_number):
         })
 
 def juz_list(request):
-    try:
-        "View for listing all Juz' (parts)"
-        parts = QuranPart.objects.all().order_by('part_number')
-        context = {'parts': parts}
-        return render(request, 'quran/juz_list.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in juz_list: ' + str(e))
-        raise
-
+    "View for listing all Juz' (parts)"
+    parts = QuranPart.objects.all().order_by('part_number')
+    context = {'parts': parts}
+    return render(request, 'quran/juz_list.html', context)
 def juz_detail(request, part_number):
     """View for displaying a specific Juz' (part)"""
-    try:
-        # Use the service to get the data
-        from .services import get_part_detail
+    # Use the service to get the data
+    from .services import get_part_detail
 
-        # Get part details
-        context = get_part_detail(part_number, request.user)
+    # Get part details
+    context = get_part_detail(part_number, request.user)
 
-        if context is None:
-            raise Http404(f'Part {part_number} not found')
+    if context is None:
+        raise Http404(f'Part {part_number} not found')
 
-        return render(request, 'quran/juz_detail.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error(f"Error in juz_detail: {str(e)}")
-        raise
-
+    return render(request, 'quran/juz_detail.html', context)
 def reciter_list(request):
-    try:
-        
-        form = ReciterFilterForm(request.GET)
-        reciters = QuranReciter.objects.all().order_by('name_arabic')
-        if form.is_valid():
-            name = form.cleaned_data.get('name')
-            style = form.cleaned_data.get('style')
-            if name:
-                reciters = reciters.filter(Q(name__icontains=name) | Q(name_arabic__icontains=name))
-            if style:
-                reciters = reciters.filter(style=style)
-        paginator = Paginator(reciters, 12)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        context = {'page_obj': page_obj, 'form': form}
-        return render(request, 'quran/reciter_list.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in reciter_list: ' + str(e))
-        raise
-
+    
+    form = ReciterFilterForm(request.GET)
+    reciters = QuranReciter.objects.all().order_by('name_arabic')
+    if form.is_valid():
+        name = form.cleaned_data.get('name')
+        style = form.cleaned_data.get('style')
+        if name:
+            reciters = reciters.filter(Q(name__icontains=name) | Q(name_arabic__icontains=name))
+        if style:
+            reciters = reciters.filter(style=style)
+    paginator = Paginator(reciters, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj, 'form': form}
+    return render(request, 'quran/reciter_list.html', context)
 def reciter_detail(request, reciter_id):
     """View for displaying a specific reciter's details and recitations"""
-    try:
-        # Use the service to get the data
-        from .services import get_reciter_detail
+    # Use the service to get the data
+    from .services import get_reciter_detail
 
-        # Get reciter details
-        context = get_reciter_detail(reciter_id)
+    # Get reciter details
+    context = get_reciter_detail(reciter_id)
 
-        if context is None:
-            raise Http404(f'Reciter with ID {reciter_id} not found')
+    if context is None:
+        raise Http404(f'Reciter with ID {reciter_id} not found')
 
-        # Process recitations by surah
-        recitations = QuranRecitation.objects.filter(reciter=context['reciter']).order_by('surah__surah_number')
-        recitations_by_surah = {}
-        for recitation in recitations:
-            if recitation.surah not in recitations_by_surah:
-                recitations_by_surah[recitation.surah] = []
-            recitations_by_surah[recitation.surah].append(recitation)
+    # Process recitations by surah
+    recitations = QuranRecitation.objects.filter(reciter=context['reciter']).order_by('surah__surah_number')
+    recitations_by_surah = {}
+    for recitation in recitations:
+        if recitation.surah not in recitations_by_surah:
+            recitations_by_surah[recitation.surah] = []
+        recitations_by_surah[recitation.surah].append(recitation)
 
-        context['recitations_by_surah'] = recitations_by_surah
+    context['recitations_by_surah'] = recitations_by_surah
 
-        return render(request, 'quran/reciter_detail.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error(f"Error in reciter_detail: {str(e)}")
-        raise
-
+    return render(request, 'quran/reciter_detail.html', context)
 def search_quran(request):
     """View for searching the Quran"""
-    try:
-        form = QuranSearchForm(request.GET)
+    form = QuranSearchForm(request.GET)
 
-        if form.is_valid() and 'search_text' in request.GET:
-            # Use the service to search the Quran
-            from .services import search_quran as search_quran_service
+    if form.is_valid() and 'search_text' in request.GET:
+        # Use the service to search the Quran
+        from .services import search_quran as search_quran_service
 
-            # Get search parameters from form
-            search_text = form.cleaned_data['search_text']
-            search_type = form.cleaned_data['search_type']
-            surah = form.cleaned_data['surah']
-            juz = form.cleaned_data['juz']
-            page_number = request.GET.get('page', 1)
+        # Get search parameters from form
+        search_text = form.cleaned_data['search_text']
+        search_type = form.cleaned_data['search_type']
+        surah = form.cleaned_data['surah']
+        juz = form.cleaned_data['juz']
+        page_number = request.GET.get('page', 1)
 
-            # Call the service
-            search_results = search_quran_service(
-                search_text=search_text,
-                search_type=search_type,
-                surah=surah,
-                juz=juz,
-                page=page_number
-            )
+        # Call the service
+        search_results = search_quran_service(
+            search_text=search_text,
+            search_type=search_type,
+            surah=surah,
+            juz=juz,
+            page=page_number
+        )
 
-            # Create context
-            context = {
-                'form': form,
-                'results': search_results['results'],
-                'search_performed': search_results['search_performed']
-            }
-        else:
-            # No search performed yet
-            context = {
-                'form': form,
-                'results': [],
-                'search_performed': False
-            }
+        # Create context
+        context = {
+            'form': form,
+            'results': search_results['results'],
+            'search_performed': search_results['search_performed']
+        }
+    else:
+        # No search performed yet
+        context = {
+            'form': form,
+            'results': [],
+            'search_performed': False
+        }
 
-        return render(request, 'quran/search.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error(f"Error in search_quran: {str(e)}")
-        raise
-
+    return render(request, 'quran/search.html', context)
 @login_required
 def bookmark_ayah(request, surah_number, ayah_number):
     """View for bookmarking an ayah"""
-    try:
-        # Get the surah and ayah
-        surah = get_object_or_404(Surah, surah_number=surah_number)
-        ayah = get_object_or_404(Ayah, surah=surah, ayah_number_in_surah=ayah_number)
+    # Get the surah and ayah
+    surah = get_object_or_404(Surah, surah_number=surah_number)
+    ayah = get_object_or_404(Ayah, surah=surah, ayah_number_in_surah=ayah_number)
 
-        # Check if bookmark already exists
-        existing_bookmark = QuranBookmark.objects.filter(user=request.user, ayah=ayah).first()
+    # Check if bookmark already exists
+    existing_bookmark = QuranBookmark.objects.filter(user=request.user, ayah=ayah).first()
 
-        if request.method == 'POST':
-            form = QuranBookmarkForm(request.POST, instance=existing_bookmark)
-            if form.is_valid():
-                bookmark = form.save(commit=False)
-                bookmark.user = request.user
-                bookmark.ayah = ayah
-                bookmark.save()
-                messages.success(request, 'تم حفظ الإشارة المرجعية بنجاح')
-                return redirect('quran:surah_detail', surah_number=surah_number)
-        else:
-            # Initialize form with default values
-            initial_data = {'title': f'{surah.name_arabic} - الآية {ayah_number}'}
-            form = QuranBookmarkForm(instance=existing_bookmark, initial=initial_data)
+    if request.method == 'POST':
+        form = QuranBookmarkForm(request.POST, instance=existing_bookmark)
+        if form.is_valid():
+            bookmark = form.save(commit=False)
+            bookmark.user = request.user
+            bookmark.ayah = ayah
+            bookmark.save()
+            messages.success(request, 'تم حفظ الإشارة المرجعية بنجاح')
+            return redirect('quran:surah_detail', surah_number=surah_number)
+    else:
+        # Initialize form with default values
+        initial_data = {'title': f'{surah.name_arabic} - الآية {ayah_number}'}
+        form = QuranBookmarkForm(instance=existing_bookmark, initial=initial_data)
 
-            # Add Bootstrap classes to form fields
-            form.fields['title'].widget.attrs.update({'class': 'form-control'})
-            form.fields['notes'].widget.attrs.update({'class': 'form-control', 'rows': 3})
-            form.fields['color'].widget.attrs.update({'class': 'form-control'})
+        # Add Bootstrap classes to form fields
+        form.fields['title'].widget.attrs.update({'class': 'form-control'})
+        form.fields['notes'].widget.attrs.update({'class': 'form-control', 'rows': 3})
+        form.fields['color'].widget.attrs.update({'class': 'form-control'})
 
-        context = {
-            'form': form,
-            'surah': surah,
-            'ayah': ayah,
-            'is_edit': existing_bookmark is not None
-        }
-        return render(request, 'quran/bookmark_form.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error(f"Error in bookmark_ayah: {str(e)}")
-        raise
-
+    context = {
+        'form': form,
+        'surah': surah,
+        'ayah': ayah,
+        'is_edit': existing_bookmark is not None
+    }
+    return render(request, 'quran/bookmark_form.html', context)
 @login_required
 def bookmarks_list(request):
-    try:
-        "View for listing user's bookmarks"
-        bookmarks = QuranBookmark.objects.filter(user=request.user).order_by('-created_at')
-        paginator = Paginator(bookmarks, 10)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        context = {'page_obj': page_obj}
-        return render(request, 'quran/bookmarks_list.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in bookmarks_list: ' + str(e))
-        raise
-
+    "View for listing user's bookmarks"
+    bookmarks = QuranBookmark.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(bookmarks, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj}
+    return render(request, 'quran/bookmarks_list.html', context)
 @login_required
 def delete_bookmark(request, bookmark_id):
-    try:
-        
-        bookmark = get_object_or_404(QuranBookmark, id=bookmark_id, user=request.user)
-        if request.method == 'POST':
-            bookmark.delete()
-            messages.success(request, 'تم حذف الإشارة المرجعية بنجاح')
-            return redirect('quran:bookmarks_list')
-        context = {'bookmark': bookmark}
-        return render(request, 'quran/delete_bookmark.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in delete_bookmark: ' + str(e))
-        raise
-
+    
+    bookmark = get_object_or_404(QuranBookmark, id=bookmark_id, user=request.user)
+    if request.method == 'POST':
+        bookmark.delete()
+        messages.success(request, 'تم حذف الإشارة المرجعية بنجاح')
+        return redirect('quran:bookmarks_list')
+    context = {'bookmark': bookmark}
+    return render(request, 'quran/delete_bookmark.html', context)
 @login_required
 def reading_settings(request):
     """View for managing user's Quran reading settings"""
-    try:
-        # Get the user's reading settings
-        settings, _ = QuranReadingSettings.objects.get_or_create(user=request.user)
+    # Get the user's reading settings
+    settings, _ = QuranReadingSettings.objects.get_or_create(user=request.user)
 
-        if request.method == 'POST':
-            form = QuranReadingSettingsForm(request.POST, instance=settings)
-            if form.is_valid():
-                # Use the service to update the settings
-                from .services import update_reading_settings
+    if request.method == 'POST':
+        form = QuranReadingSettingsForm(request.POST, instance=settings)
+        if form.is_valid():
+            # Use the service to update the settings
+            from .services import update_reading_settings
 
-                # Extract form data
-                update_reading_settings(
-                    user=request.user,
-                    font_size=form.cleaned_data.get('font_size'),
-                    font_family=form.cleaned_data.get('font_family'),
-                    night_mode=form.cleaned_data.get('night_mode'),
-                    show_translation=form.cleaned_data.get('show_translation'),
-                    translation_language=form.cleaned_data.get('translation_language')
-                )
+            # Extract form data
+            update_reading_settings(
+                user=request.user,
+                font_size=form.cleaned_data.get('font_size'),
+                font_family=form.cleaned_data.get('font_family'),
+                night_mode=form.cleaned_data.get('night_mode'),
+                show_translation=form.cleaned_data.get('show_translation'),
+                translation_language=form.cleaned_data.get('translation_language')
+            )
 
-                messages.success(request, 'تم حفظ إعدادات القراءة بنجاح')
-                return redirect('quran:reading_settings')
-        else:
-            form = QuranReadingSettingsForm(instance=settings)
+            messages.success(request, 'تم حفظ إعدادات القراءة بنجاح')
+            return redirect('quran:reading_settings')
+    else:
+        form = QuranReadingSettingsForm(instance=settings)
 
-        context = {'form': form, 'settings': settings}
-        return render(request, 'quran/reading_settings.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error(f"Error in reading_settings: {str(e)}")
-        raise
-
+    context = {'form': form, 'settings': settings}
+    return render(request, 'quran/reading_settings.html', context)
 @login_required
 def update_last_read(request):
-    try:
-        'AJAX view for updating last read position'
-        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            surah_id = request.POST.get('surah_id')
-            ayah_number = request.POST.get('ayah_number')
-            try:
-                surah = Surah.objects.get(id=surah_id)
-                ayah = Ayah.objects.get(surah=surah, ayah_number_in_surah=ayah_number)
-                settings, _ = QuranReadingSettings.objects.get_or_create(user=request.user)
-                settings.last_read_ayah = ayah
-                settings.last_read_time = timezone.now()
-                settings.save()
-                return JsonResponse({'status': 'success'})
-            except (Surah.DoesNotExist, Ayah.DoesNotExist):
-                return JsonResponse({'status': 'error', 'message': 'Invalid surah or ayah'})
-        return JsonResponse({'status': 'error', 'message': 'Invalid request'})
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in update_last_read: ' + str(e))
-        raise
-
+    'AJAX view for updating last read position'
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        surah_id = request.POST.get('surah_id')
+        ayah_number = request.POST.get('ayah_number')
+        try:
+            surah = Surah.objects.get(id=surah_id)
+            ayah = Ayah.objects.get(surah=surah, ayah_number_in_surah=ayah_number)
+            settings, _ = QuranReadingSettings.objects.get_or_create(user=request.user)
+            settings.last_read_ayah = ayah
+            settings.last_read_time = timezone.now()
+            settings.save()
+            return JsonResponse({'status': 'success'})
+        except (Surah.DoesNotExist, Ayah.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Invalid surah or ayah'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
 def continue_reading(request):
     """View for continuing from last read position"""
     if not request.user.is_authenticated:
@@ -387,34 +322,22 @@ def continue_reading(request):
 
 def quran_home(request):
     """Main Quran view showing reciters and surahs"""
-    try:
-        # Use the service to get the data
-        from .services import get_quran_home_data
-        context = get_quran_home_data(request.user)
-        return render(request, 'quran/quran_home.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error(f"Error in quran_home: {str(e)}")
-        raise
-
+    # Use the service to get the data
+    from .services import get_quran_home_data
+    context = get_quran_home_data(request.user)
+    return render(request, 'quran/quran_home.html', context)
 def list_reciters(request):
-    try:
-        
-        db_reciters = QuranReciter.objects.all().order_by('name_arabic')
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        reciters_path = os.path.join(current_dir, 'reciters')
-        fs_reciters = []
-        if os.path.exists(reciters_path):
-            for item in os.listdir(reciters_path):
-                if os.path.isdir(os.path.join(reciters_path, item)):
-                    fs_reciters.append(item)
-        context = {'db_reciters': db_reciters, 'fs_reciters': fs_reciters}
-        return render(request, 'quran/reciters.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in list_reciters: ' + str(e))
-        raise
-
+    
+    db_reciters = QuranReciter.objects.all().order_by('name_arabic')
+    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    reciters_path = os.path.join(current_dir, 'reciters')
+    fs_reciters = []
+    if os.path.exists(reciters_path):
+        for item in os.listdir(reciters_path):
+            if os.path.isdir(os.path.join(reciters_path, item)):
+                fs_reciters.append(item)
+    context = {'db_reciters': db_reciters, 'fs_reciters': fs_reciters}
+    return render(request, 'quran/reciters.html', context)
 def reciter_surahs(request, reciter_name):
     """View for displaying surahs available for a specific reciter"""
     logger.info(f'Attempting to access reciter: {reciter_name}')
@@ -494,30 +417,19 @@ def reciter_surahs(request, reciter_name):
 
 def quran_part_view(request, part_number):
     """View for displaying a specific Quran part for reading"""
-    try:
-        # Use the service to get the data
-        from .services import get_part_detail
+    # Use the service to get the data
+    from .services import get_part_detail
 
-        # Get part details
-        context = get_part_detail(part_number, request.user)
+    # Get part details
+    context = get_part_detail(part_number, request.user)
 
-        if context is None:
-            raise Http404(f'Part {part_number} not found')
+    if context is None:
+        raise Http404(f'Part {part_number} not found')
 
-        return render(request, 'quran/part_view.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error(f"Error in quran_part_view: {str(e)}")
-        raise
-
+    return render(request, 'quran/part_view.html', context)
 def khatma_quran_chapters(request):
-    try:
-        
-        surahs = Surah.objects.all().order_by('surah_number')
-        parts = QuranPart.objects.all().order_by('part_number')
-        context = {'surahs': surahs, 'parts': parts}
-        return render(request, 'quran/khatma_chapters.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in khatma_quran_chapters: ' + str(e))
-        raise
+    
+    surahs = Surah.objects.all().order_by('surah_number')
+    parts = QuranPart.objects.all().order_by('part_number')
+    context = {'surahs': surahs, 'parts': parts}
+    return render(request, 'quran/khatma_chapters.html', context)

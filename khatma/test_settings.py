@@ -1,4 +1,7 @@
 """Test settings for the Khatma project."""
+import os
+os.environ.setdefault('DJANGO_DEBUG', 'True')
+os.environ.setdefault('DJANGO_SECRET_KEY', 'test-secret-key-for-testing-only')
 from .settings import *  # noqa: F401, F403
 
 # Use the custom test runner
@@ -9,6 +12,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:',
+    }
+}
+
+# Use local memory cache for tests
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'test-cache',
     }
 }
 

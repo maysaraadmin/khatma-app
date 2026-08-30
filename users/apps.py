@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.apps import AppConfig
 
 class UsersConfig(AppConfig):

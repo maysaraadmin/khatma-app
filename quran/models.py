@@ -6,7 +6,7 @@ User = get_user_model()
 
 class QuranPart(models.Model):
     """Represents a Juz' (part) of the Quran."""
-    part_number = models.IntegerField(unique=True, primary_key=True, verbose_name='رقم الجزء')
+    part_number = models.IntegerField(primary_key=True, verbose_name='رقم الجزء')
 
     def __str__(self):
         """Return a string representation of the QuranPart."""
@@ -31,10 +31,6 @@ class Surah(models.Model):
         """Return a string representation of the Surah."""
         return f'{self.surah_number}. {self.name_arabic}'
 
-    def get_revelation_type_display(self):
-        """Return the display value for revelation_type."""
-        return dict([('meccan', 'مكية'), ('medinan', 'مدنية')]).get(self.revelation_type, self.revelation_type)
-
     def get_revelation_order_display(self):
         """Return the revelation order as string."""
         return str(self.revelation_order) if self.revelation_order > 0 else '-'
@@ -58,6 +54,10 @@ class Ayah(models.Model):
         verbose_name = 'آية'
         verbose_name_plural = 'آيات'
         ordering = ['surah', 'ayah_number_in_surah']
+        indexes = [
+            models.Index(fields=['quran_part']),
+            models.Index(fields=['page']),
+        ]
 
 class QuranReciter(models.Model):
     """Model for Quran reciters."""

@@ -1,4 +1,4 @@
-""
+"""
 Management command for performing maintenance tasks.
 """
 import logging

@@ -1,4 +1,4 @@
-""
+"""
 Production settings for Khatma project.
 
 This file contains production-specific settings that override the base settings.

@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 
 from groups.models import ReadingGroup, GroupMembership
+from notifications.models import Notification
 
 User = get_user_model()
 

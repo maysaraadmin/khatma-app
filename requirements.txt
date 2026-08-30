@@ -22,3 +22,4 @@ swapper==1.4.0
 tzdata==2025.2
 urllib3==2.4.0
 whitenoise==6.6.0
+django-redis==5.4.0

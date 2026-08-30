@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.contrib import admin
 
 from .models import UserAchievement

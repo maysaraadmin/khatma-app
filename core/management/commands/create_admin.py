@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 

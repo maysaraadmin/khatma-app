@@ -172,13 +172,9 @@ class CustomUser(AbstractUser):
     
     @property
     def username(self):
-        """Return email as username for backward compatibility."""
+        """Return email as username for backward compatibility (read-only)."""
         return self.email
-    
-    def get_username(self):
-        """Return email as username for Django auth compatibility."""
-        return self.email
-    
+
     def __str__(self):
         """Return the email address as the string representation."""
         return self.email
@@ -732,16 +728,12 @@ class UserAchievement(models.Model):
     
     def save(self, *args: Any, **kwargs: Any) -> None:
         """
-        Save the achievement with validation.
-        
+        Save the achievement.
+
         Args:
             *args: Variable length argument list
             **kwargs: Arbitrary keyword arguments
-            
-        Raises:
-            ValidationError: If validation fails
         """
-        self.full_clean()
         super().save(*args, **kwargs)
     
     @classmethod

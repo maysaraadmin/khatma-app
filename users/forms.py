@@ -34,7 +34,7 @@ class ExtendedUserCreationForm(UserCreationForm):
             Profile.objects.create(
                 user=user,
                 preferred_language='ar',
-                account_type=self.cleaned_data.get('account_type', 'individual')
+                account_type=self.cleaned_data.get('account_type', 'standard')
             )
         return user
 
@@ -44,7 +44,7 @@ class CustomSignupForm(SignupForm):
     last_name = forms.CharField(max_length=30, required=False, label=_('Last Name'))
     account_type = forms.ChoiceField(
         choices=Profile.ACCOUNT_TYPES,
-        initial='individual',
+        initial='standard',
         required=True,
         label=_('Account Type')
     )
@@ -58,13 +58,19 @@ class CustomSignupForm(SignupForm):
         user.last_name = self.cleaned_data['last_name']
         user.save()
         
-        # Create user profile
-        Profile.objects.create(
+        # Create or update the user profile (a post_save signal on User may
+        # have already created one, so avoid a duplicate-row IntegrityError).
+        profile, created = Profile.objects.get_or_create(
             user=user,
-            preferred_language='ar',
-            account_type=self.cleaned_data['account_type']
+            defaults={
+                'preferred_language': 'ar',
+                'account_type': self.cleaned_data['account_type'],
+            },
         )
-        
+        if not created:
+            profile.account_type = self.cleaned_data['account_type']
+            profile.save(update_fields=['account_type'])
+
         return user
 
 class UserProfileForm(forms.ModelForm):
@@ -92,6 +98,12 @@ class UserProfileEditForm(forms.ModelForm):
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
             self.fields['email'].initial = self.instance.user.email
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exclude(pk=self.instance.user_id).exists():
+            raise forms.ValidationError(_('This email is already in use.'))
+        return email
 
     def save(self, commit=True):
         profile = super().save(commit=False)

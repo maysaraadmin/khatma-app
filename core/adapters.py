@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.shortcuts import redirect
 from django.urls import reverse
 '\n'
@@ -34,7 +33,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         """
         user = super().save_user(request, sociallogin, form)
         if not hasattr(user, 'profile'):
-            Profile.objects.create(user=user, account_type='individual')
+            Profile.objects.create(user=user, account_type='standard')
         return user
 
     def get_connect_redirect_url(self, request, socialaccount):

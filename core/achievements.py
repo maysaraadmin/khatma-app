@@ -1,5 +1,4 @@
-'''"""This module contains Module functionality."""'''
-from django.contrib.auth.models import User
+from django.db.models import Sum
 '\n'
 from users.models import UserAchievement
 
@@ -8,9 +7,11 @@ def get_user_achievements(user):
     return UserAchievement.objects.filter(user=user).order_by('-date_earned')
 
 def get_total_points(user):
-    """Calculate total achievement points for a user"""
-    achievements = get_user_achievements(user)
-    return sum((achievement.points for achievement in achievements))
+    """Total achievement points earned by the user (aggregated in the database)."""
+    result = UserAchievement.objects.filter(user=user).aggregate(
+        total=Sum('points_earned')
+    )
+    return result['total'] or 0
 
 def get_user_level(user):
     """Calculate user level based on total points"""

@@ -37,18 +37,28 @@ urlpatterns = [
 # Serve local reciter audio files in development
 def serve_reciter_audio(request, reciter_name, filename):
     import os
+    import re
     from django.conf import settings
+    from django.http import Http404
+
+    # Sanitize reciter_name to prevent path traversal
+    if not re.match(r'^[a-zA-Z0-9_.-]+$', reciter_name):
+        raise Http404('Invalid reciter name')
+
+    # Sanitize filename to prevent path traversal
+    if not re.match(r'^[a-zA-Z0-9_.-]+$', filename):
+        raise Http404('Invalid filename')
+
     base_dir = settings.BASE_DIR
     reciter_dir = os.path.join(base_dir, 'reciters', reciter_name)
-    
-    # Check both in reciter dir and in audio subdir
     file_path = os.path.join(reciter_dir, filename)
+
     if not os.path.exists(file_path):
         file_path = os.path.join(reciter_dir, 'audio', filename)
-    
+
     if not os.path.exists(file_path):
         raise Http404(f'Audio file not found: {filename}')
-    
+
     return FileResponse(open(file_path, 'rb'), content_type='audio/mpeg')
 
 urlpatterns += [

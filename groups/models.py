@@ -54,7 +54,7 @@ class GroupMembership(models.Model):
         unique_together = ('user', 'group')
 
     def __str__(self):
-        return f'{self.user.username} - {self.group.name} ({self.get_role_display()})'
+        return f'{self.user.email} - {self.group.name} ({self.get_role_display()})'
 
 class JoinRequest(models.Model):
     """Model for group join requests"""
@@ -71,7 +71,7 @@ class JoinRequest(models.Model):
         unique_together = ('user', 'group')
 
     def __str__(self):
-        return f'{self.user.username} - {self.group.name} ({self.get_status_display()})'
+        return f'{self.user.email} - {self.group.name} ({self.get_status_display()})'
 
 class GroupAnnouncement(models.Model):
     """Model for group announcements"""

@@ -17,7 +17,7 @@ import string
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # In production, explicitly set DJANGO_DEBUG=False in environment variables
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # In production, DJANGO_SECRET_KEY must be set in environment variables
@@ -79,10 +79,13 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'khatma.middleware.SecurityHeadersMiddleware',
+    'khatma.middleware.RateLimitMiddleware',
+    'khatma.middleware.PerformanceMonitoringMiddleware',
+    'core.middleware.PreventLeaderboardRedirectMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.ErrorHandlerMiddleware',
-    'core.middleware.PreventLeaderboardRedirectMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
 
@@ -168,6 +171,30 @@ else:
         }
     }
 
+# Caching configuration
+try:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'TIMEOUT': 300,
+        }
+    }
+except ImportError:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'khatma-cache',
+        }
+    }
+
+# Use cached sessions when available
+if 'REDIS_URL' in os.environ:
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -194,14 +221,15 @@ LANGUAGES = [
     ('en', 'English'),
 ]
 
-# Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'webmaster@localhost'
+# Email settings (console backend by default for local dev; override per environment)
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
 
 # Security headers
-X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
+X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking (applied via XFrameOptionsMiddleware)
 SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME type sniffing
-SECURE_BROWSER_XSS_FILTER = True  # Enable XSS filter in browsers
 SECURE_REFERRER_POLICY = 'same-origin'  # Control Referer header
 
 # Static files (CSS, JavaScript, Images)
@@ -228,6 +256,7 @@ LOGIN_URL = 'account_login'
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
+    'users.backends.EmailBackendWithLockout',
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
@@ -235,14 +264,7 @@ AUTHENTICATION_BACKENDS = [
 # Django-allauth settings
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_LOGIN_METHODS = ['email']
-
-# Authentication settings
-ACCOUNT_LOGOUT_ON_GET = False
-
-# Modern Allauth configuration
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory' if not DEBUG else 'optional'
-ACCOUNT_LOGIN_METHODS = ['email']
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True

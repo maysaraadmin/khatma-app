@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.views import View
@@ -30,7 +29,7 @@ class CustomSocialSignupView(SignupView):
         Process the form submission and create a profile with the selected account type.
         """
         response = super().form_valid(form)
-        account_type = self.request.POST.get('account_type', 'individual')
+        account_type = self.request.POST.get('account_type', 'standard')
         profile, created = Profile.objects.get_or_create(user=self.user, defaults={'account_type': account_type})
         if not created:
             profile.account_type = account_type

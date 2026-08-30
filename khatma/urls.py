@@ -2,6 +2,7 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from chat import views as chat_views
 from . import views
 
 app_name = 'khatma'
@@ -48,7 +49,7 @@ urlpatterns = [
     path('<int:khatma_id>/post/create/', views.create_khatma_post, name='create_khatma_post'),
 
     # Chat
-    path('<int:khatma_id>/chat/', views.khatma_chat, name='khatma_chat'),
+    path('<int:khatma_id>/chat/', chat_views.khatma_chat, name='khatma_chat'),
 
     # API endpoints
     path('api/khatma/<int:khatma_id>/progress/', views.khatma_progress_api, name='khatma_progress_api'),

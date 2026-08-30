@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 import logging
 '\n'
 from django import forms

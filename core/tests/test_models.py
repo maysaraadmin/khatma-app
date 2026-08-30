@@ -4,10 +4,10 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 # Import models from their respective apps
-from users.models import Profile
-from khatma.models import Deceased, Khatma, Participant, PartAssignment
+from users.models import Profile, UserAchievement
+from khatma.models import Deceased, Khatma, Participant, PartAssignment, KhatmaPart
 from quran.models import QuranPart
-from notifications.models import Notification, UserAchievement
+from notifications.models import Notification
 
 User = get_user_model()
 
@@ -31,13 +31,16 @@ class ProfileModelTest(TransactionTestCase):
 
     def test_profile_str_representation(self):
         """Test the string representation of a profile"""
-        self.assertEqual(str(self.profile), "testuser_profile's Profile")
+        self.assertEqual(str(self.profile), "testprofile@example.com's profile")
 
     def test_get_family_members(self):
         """Test the get_family_members method"""
-        family_admin = Profile.objects.create(user=User.objects.create_user(username='familyadmin', password='testpassword'), account_type='family', family_admin=True)
-        family_member1 = Profile.objects.create(user=User.objects.create_user(username='member1', password='testpassword'), account_type='family', family_admin=False, family_group=family_admin)
-        family_member2 = Profile.objects.create(user=User.objects.create_user(username='member2', password='testpassword'), account_type='family', family_admin=False, family_group=family_admin)
+        family_admin_user = User.objects.create_user(email='familyadmin@example.com', password='testpassword')
+        family_admin, _ = Profile.objects.get_or_create(user=family_admin_user, defaults={'account_type': 'family', 'family_admin': True})
+        family_member1_user = User.objects.create_user(email='member1@example.com', password='testpassword')
+        family_member1, _ = Profile.objects.get_or_create(user=family_member1_user, defaults={'account_type': 'family', 'family_admin': False, 'family_group': family_admin})
+        family_member2_user = User.objects.create_user(email='member2@example.com', password='testpassword')
+        family_member2, _ = Profile.objects.get_or_create(user=family_member2_user, defaults={'account_type': 'family', 'family_admin': False, 'family_group': family_admin})
         family_members = family_admin.get_family_members()
         self.assertEqual(family_members.count(), 2)
         self.assertIn(family_member1, family_members)
@@ -122,8 +125,9 @@ class KhatmaModelTest(TransactionTestCase):
     def test_get_progress_percentage(self):
         """Test the get_progress_percentage method"""
         for i in range(1, 31):
-            part = QuranPart.objects.get(part_number=i)
-            part_assignment = PartAssignment.objects.create(khatma=self.khatma, part=part, is_completed=i <= 15)
+            khatma_part = KhatmaPart.objects.get(khatma=self.khatma, part_number=i)
+            khatma_part.is_completed = i <= 15
+            khatma_part.save()
         self.assertEqual(self.khatma.get_progress_percentage(), 50.0)
 
 class ParticipantModelTest(TransactionTestCase):
@@ -171,13 +175,7 @@ class PartAssignmentModelTest(TransactionTestCase):
             creator=self.user,
             khatma_type='regular'
         )
-        self.part = QuranPart.objects.create(
-            part_number=1,
-            name='Al-Fatiha',
-            page_number=1,
-            start_ayah=1,
-            end_ayah=7
-        )
+        self.part = QuranPart.objects.create(part_number=1)
         self.assignment = PartAssignment.objects.create(
             khatma=self.khatma,
             part=self.part,
@@ -235,7 +233,7 @@ class NotificationModelTest(TransactionTestCase):
 
     def test_notification_str_representation(self):
         """Test the string representation of a notification"""
-        expected_str = 'تقدم ختمة - Test notification - testuser_notification'
+        expected_str = f'{self.user.email} - {self.notification.get_notification_type_display()} - {self.notification.created_at.strftime("%Y-%m-%d %H:%M")}'
         self.assertEqual(str(self.notification), expected_str)
 
 class UserAchievementModelTest(TransactionTestCase):
@@ -252,9 +250,10 @@ class UserAchievementModelTest(TransactionTestCase):
         self.achievement = UserAchievement.objects.create(
             user=self.user,
             achievement_type='khatma_completion',
-            title='First Khatma Completed',
-            description='You have completed your first khatma!',
-            points=100
+            tier='gold',
+            points_earned=100,
+            progress=100,
+            is_unlocked=True
         )
 
     def test_achievement_creation(self):
@@ -262,11 +261,11 @@ class UserAchievementModelTest(TransactionTestCase):
         self.assertIsInstance(self.achievement, UserAchievement)
         self.assertEqual(self.achievement.user, self.user)
         self.assertEqual(self.achievement.achievement_type, 'khatma_completion')
-        self.assertEqual(self.achievement.title, 'First Khatma Completed')
-        self.assertEqual(self.achievement.description, 'You have completed your first khatma!')
-        self.assertEqual(self.achievement.points, 100)
+        self.assertEqual(self.achievement.tier, 'gold')
+        self.assertEqual(self.achievement.points_earned, 100)
+        self.assertTrue(self.achievement.is_unlocked)
 
     def test_achievement_str_representation(self):
         """Test the string representation of an achievement"""
-        expected_str = 'testuser_achievement - First Khatma Completed (khatma_completion)'
+        expected_str = f'{self.user.email} - {self.achievement.get_achievement_type_display()} ({self.achievement.get_tier_display()})'
         self.assertEqual(str(self.achievement), expected_str)

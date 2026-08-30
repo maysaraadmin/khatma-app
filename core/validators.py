@@ -40,7 +40,7 @@ def validate_image(
         >>> validate_image(file_obj, max_size_mb=2)
     """
     if allowed_formats is None:
-        allowed_formats = ['JPEG', 'PNG', 'GIF', 'WEBP']
+        allowed_formats = ['JPEG', 'JPG', 'PNG', 'GIF', 'WEBP']
     
     # Check file size
     max_size_bytes = max_size_mb * 1024 * 1024

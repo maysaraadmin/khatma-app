@@ -7,13 +7,13 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 
 # Import models from their respective apps
-from users.models import Profile
+from users.models import Profile, UserAchievement
 from khatma.models import Deceased, Khatma, Participant, PartAssignment
 from quran.models import QuranPart
-from notifications.models import Notification, UserAchievement
+from notifications.models import Notification
 
 # Import views
-from core.views import dashboard, profile, edit_profile, create_khatma, khatma_detail, complete_part, family_dashboard, manage_family
+from core.views import index, profile, create_khatma, khatma_detail, complete_part, family_dashboard, manage_family
 
 class IndexViewTest(TestCase):
     """Tests for the index view"""

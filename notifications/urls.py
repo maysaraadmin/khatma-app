@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.urls import path
 '\n'
 from . import views

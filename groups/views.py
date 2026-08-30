@@ -16,70 +16,52 @@ from django.http import Http404
 from django.core.exceptions import PermissionDenied
 
 def group_list(request):
-    try:
-        
-        form = GroupFilterForm(request.GET)
-        groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
-        if form.is_valid():
-            name = form.cleaned_data.get('name')
-            is_public = form.cleaned_data.get('is_public')
-            allow_join_requests = form.cleaned_data.get('allow_join_requests')
-            if name:
-                groups = groups.filter(name__icontains=name)
-            if is_public == 'true':
-                groups = groups.filter(is_public=True)
-            elif is_public == 'false':
-                groups = groups.filter(is_public=False)
-            if allow_join_requests == 'true':
-                groups = groups.filter(allow_join_requests=True)
-            elif allow_join_requests == 'false':
-                groups = groups.filter(allow_join_requests=False)
-        groups = groups.annotate(member_count=Count('members'))
-        paginator = Paginator(groups, 12)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        context = {'page_obj': page_obj, 'form': form}
-        return render(request, 'groups/group_list.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in group_list: ' + str(e))
-        raise
-
+    
+    form = GroupFilterForm(request.GET)
+    groups = ReadingGroup.objects.filter(is_public=True).order_by('-created_at')
+    if form.is_valid():
+        name = form.cleaned_data.get('name')
+        is_public = form.cleaned_data.get('is_public')
+        allow_join_requests = form.cleaned_data.get('allow_join_requests')
+        if name:
+            groups = groups.filter(name__icontains=name)
+        if is_public == 'true':
+            groups = groups.filter(is_public=True)
+        elif is_public == 'false':
+            groups = groups.filter(is_public=False)
+        if allow_join_requests == 'true':
+            groups = groups.filter(allow_join_requests=True)
+        elif allow_join_requests == 'false':
+            groups = groups.filter(allow_join_requests=False)
+    groups = groups.annotate(member_count=Count('members'))
+    paginator = Paginator(groups, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj, 'form': form}
+    return render(request, 'groups/group_list.html', context)
 @login_required
 def my_groups(request):
-    try:
-        "View for listing user's groups"
-        created_groups = ReadingGroup.objects.filter(creator=request.user).order_by('-created_at')
-        joined_groups = ReadingGroup.objects.filter(members=request.user).exclude(creator=request.user).order_by('-created_at')
-        pending_requests = JoinRequest.objects.filter(user=request.user, status='pending').select_related('group').order_by('-created_at')
-        context = {'created_groups': created_groups, 'joined_groups': joined_groups, 'pending_requests': pending_requests}
-        return render(request, 'groups/my_groups.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in my_groups: ' + str(e))
-        raise
-
+    "View for listing user's groups"
+    created_groups = ReadingGroup.objects.filter(creator=request.user).order_by('-created_at')
+    joined_groups = ReadingGroup.objects.filter(members=request.user).exclude(creator=request.user).order_by('-created_at')
+    pending_requests = JoinRequest.objects.filter(user=request.user, status='pending').select_related('group').order_by('-created_at')
+    context = {'created_groups': created_groups, 'joined_groups': joined_groups, 'pending_requests': pending_requests}
+    return render(request, 'groups/my_groups.html', context)
 @login_required
 def create_group(request):
-    try:
-        
-        if request.method == 'POST':
-            form = ReadingGroupForm(request.POST, request.FILES)
-            if form.is_valid():
+    if request.method == 'POST':
+        form = ReadingGroupForm(request.POST, request.FILES)
+        if form.is_valid():
+            with transaction.atomic():
                 group = form.save(commit=False)
                 group.creator = request.user
                 group.save()
-                messages.success(request, 'تم إنشاء المجموعة بنجاح')
-                return redirect('groups:group_detail', group_id=group.id)
-        else:
-            form = ReadingGroupForm()
-        context = {'form': form}
-        return render(request, 'groups/create_group.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in create_group: ' + str(e))
-        raise
-
+            messages.success(request, 'تم إنشاء المجموعة بنجاح')
+            return redirect('groups:group_detail', group_id=group.id)
+    else:
+        form = ReadingGroupForm()
+    context = {'form': form}
+    return render(request, 'groups/create_group.html', context)
 def group_detail(request, group_id):
     try:
         
@@ -92,7 +74,6 @@ def group_detail(request, group_id):
         membership = None
         if request.user.is_authenticated:
             membership = GroupMembership.objects.filter(user=request.user, group=group).select_related('user').first()
-            is_member = membership is not None
             if membership:
                 member_role = membership.role
 
@@ -133,133 +114,103 @@ def group_detail(request, group_id):
 
 @login_required
 def edit_group(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        if group.creator != request.user:
-            messages.error(request, 'ليس لديك صلاحية لتعديل هذه المجموعة')
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    if group.creator != request.user:
+        messages.error(request, 'ليس لديك صلاحية لتعديل هذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+    if request.method == 'POST':
+        form = ReadingGroupForm(request.POST, request.FILES, instance=group)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث المجموعة بنجاح')
             return redirect('groups:group_detail', group_id=group.id)
-        if request.method == 'POST':
-            form = ReadingGroupForm(request.POST, request.FILES, instance=group)
-            if form.is_valid():
-                form.save()
-                messages.success(request, 'تم تحديث المجموعة بنجاح')
-                return redirect('groups:group_detail', group_id=group.id)
-        else:
-            form = ReadingGroupForm(instance=group)
-        context = {'form': form, 'group': group}
-        return render(request, 'groups/edit_group.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in edit_group: ' + str(e))
-        raise
-
+    else:
+        form = ReadingGroupForm(instance=group)
+    context = {'form': form, 'group': group}
+    return render(request, 'groups/edit_group.html', context)
 @login_required
 def delete_group(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        if group.creator != request.user:
-            messages.error(request, 'ليس لديك صلاحية لحذف هذه المجموعة')
-            return redirect('groups:group_detail', group_id=group.id)
-        if request.method == 'POST':
-            group.delete()
-            messages.success(request, 'تم حذف المجموعة بنجاح')
-            return redirect('groups:my_groups')
-        context = {'group': group}
-        return render(request, 'groups/delete_group.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in delete_group: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    if group.creator != request.user:
+        messages.error(request, 'ليس لديك صلاحية لحذف هذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+    if request.method == 'POST':
+        group.delete()
+        messages.success(request, 'تم حذف المجموعة بنجاح')
+        return redirect('groups:my_groups')
+    context = {'group': group}
+    return render(request, 'groups/delete_group.html', context)
 @login_required
 def join_group(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        if GroupMembership.objects.filter(user=request.user, group=group).exists():
-            messages.info(request, 'أنت بالفعل عضو في هذه المجموعة')
-            return redirect('groups:group_detail', group_id=group.id)
-        if JoinRequest.objects.filter(user=request.user, group=group, status='pending').exists():
-            messages.info(request, 'لديك بالفعل طلب انضمام قيد الانتظار لهذه المجموعة')
-            return redirect('groups:group_detail', group_id=group.id)
-        if not group.is_public or not group.allow_join_requests:
-            messages.error(request, 'هذه المجموعة لا تقبل طلبات الانضمام')
-            return redirect('groups:group_detail', group_id=group.id)
-        if group.max_members > 0 and group.members.count() >= group.max_members:
-            messages.error(request, 'تم الوصول إلى الحد الأقصى للأعضاء في هذه المجموعة')
-            return redirect('groups:group_detail', group_id=group.id)
-        if request.method == 'POST':
-            form = JoinRequestForm(request.POST)
-            if form.is_valid():
-                join_request = form.save(commit=False)
-                join_request.user = request.user
-                join_request.group = group
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    if GroupMembership.objects.filter(user=request.user, group=group).exists():
+        messages.info(request, 'أنت بالفعل عضو في هذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+    if JoinRequest.objects.filter(user=request.user, group=group, status='pending').exists():
+        messages.info(request, 'لديك بالفعل طلب انضمام قيد الانتظار لهذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+    if not group.is_public or not group.allow_join_requests:
+        messages.error(request, 'هذه المجموعة لا تقبل طلبات الانضمام')
+        return redirect('groups:group_detail', group_id=group.id)
+    if group.max_members > 0 and group.members.count() >= group.max_members:
+        messages.error(request, 'تم الوصول إلى الحد الأقصى للأعضاء في هذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+    if request.method == 'POST':
+        form = JoinRequestForm(request.POST)
+        if form.is_valid():
+            join_request = form.save(commit=False)
+            join_request.user = request.user
+            join_request.group = group
+            join_request.save()
+            if group.is_public:
+                join_request.status = 'approved'
+                join_request.processed_at = timezone.now()
+                join_request.processed_by = group.creator
                 join_request.save()
-                if group.is_public:
-                    join_request.status = 'approved'
-                    join_request.processed_at = timezone.now()
-                    join_request.processed_by = group.creator
-                    join_request.save()
-                    messages.success(request, 'تم الانضمام إلى المجموعة بنجاح')
-                else:
-                    messages.success(request, 'تم إرسال طلب الانضمام بنجاح. سيتم إعلامك عند معالجة الطلب.')
-                    Notification.objects.create(user=group.creator, notification_type='join_request', message=f'{request.user.email} طلب الانضمام إلى مجموعة "{group.name}"', related_group=group)
-                return redirect('groups:group_detail', group_id=group.id)
-        else:
-            form = JoinRequestForm()
-        context = {'form': form, 'group': group}
-        return render(request, 'groups/join_group.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in join_group: ' + str(e))
-        raise
-
+                messages.success(request, 'تم الانضمام إلى المجموعة بنجاح')
+            else:
+                messages.success(request, 'تم إرسال طلب الانضمام بنجاح. سيتم إعلامك عند معالجة الطلب.')
+                Notification.objects.create(user=group.creator, notification_type='join_request', message=f'{request.user.email} طلب الانضمام إلى مجموعة "{group.name}"', related_group=group)
+            return redirect('groups:group_detail', group_id=group.id)
+    else:
+        form = JoinRequestForm()
+    context = {'form': form, 'group': group}
+    return render(request, 'groups/join_group.html', context)
 @login_required
 def leave_group(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        membership = GroupMembership.objects.filter(user=request.user, group=group).first()
-        if not membership:
-            messages.error(request, 'أنت لست عضوًا في هذه المجموعة')
-            return redirect('groups:group_detail', group_id=group.id)
-        if group.creator == request.user:
-            messages.error(request, 'لا يمكن لمنشئ المجموعة مغادرتها. يمكنك حذف المجموعة بدلاً من ذلك.')
-            return redirect('groups:group_detail', group_id=group.id)
-        if request.method == 'POST':
-            membership.delete()
-            messages.success(request, 'تم مغادرة المجموعة بنجاح')
-            return redirect('groups:my_groups')
-        context = {'group': group}
-        return render(request, 'groups/leave_group.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in leave_group: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    membership = GroupMembership.objects.filter(user=request.user, group=group).first()
+    if not membership:
+        messages.error(request, 'أنت لست عضوًا في هذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+    if group.creator == request.user:
+        messages.error(request, 'لا يمكن لمنشئ المجموعة مغادرتها. يمكنك حذف المجموعة بدلاً من ذلك.')
+        return redirect('groups:group_detail', group_id=group.id)
+    if request.method == 'POST':
+        membership.delete()
+        messages.success(request, 'تم مغادرة المجموعة بنجاح')
+        return redirect('groups:my_groups')
+    context = {'group': group}
+    return render(request, 'groups/leave_group.html', context)
 @login_required
 def group_members(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        is_member = group.members.filter(id=request.user.id).exists()
-        if not group.is_public and (not is_member):
-            messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
-            return redirect('groups:group_list')
-        member_role = None
-        if is_member:
-            membership = GroupMembership.objects.get(user=request.user, group=group)
-            member_role = membership.role
-        members = GroupMembership.objects.filter(group=group).select_related('user').order_by('role', 'user__email')
-        context = {'group': group, 'members': members, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
-        return render(request, 'groups/group_members.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in group_members: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    is_member = group.members.filter(id=request.user.id).exists()
+    if not group.is_public and (not is_member):
+        messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
+        return redirect('groups:group_list')
+    member_role = None
+    if is_member:
+        membership = GroupMembership.objects.get(user=request.user, group=group)
+        member_role = membership.role
+    members = GroupMembership.objects.filter(group=group).select_related('user').order_by('role', 'user__email')
+    context = {'group': group, 'members': members, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
+    return render(request, 'groups/group_members.html', context)
 @login_required
 def change_member_role(request, group_id, user_id):
     """View for changing a member's role"""
@@ -349,28 +300,22 @@ def group_chat(request, group_id):
 
 @login_required
 def group_announcements(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        is_member = group.members.filter(id=request.user.id).exists()
-        if not group.is_public and (not is_member):
-            messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
-            return redirect('groups:group_list')
-        member_role = None
-        if is_member:
-            membership = GroupMembership.objects.get(user=request.user, group=group)
-            member_role = membership.role
-        announcements = GroupAnnouncement.objects.filter(group=group).order_by('-is_pinned', '-created_at')
-        paginator = Paginator(announcements, 10)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        context = {'group': group, 'page_obj': page_obj, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
-        return render(request, 'groups/group_announcements.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in group_announcements: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    is_member = group.members.filter(id=request.user.id).exists()
+    if not group.is_public and (not is_member):
+        messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
+        return redirect('groups:group_list')
+    member_role = None
+    if is_member:
+        membership = GroupMembership.objects.get(user=request.user, group=group)
+        member_role = membership.role
+    announcements = GroupAnnouncement.objects.filter(group=group).order_by('-is_pinned', '-created_at')
+    paginator = Paginator(announcements, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'group': group, 'page_obj': page_obj, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
+    return render(request, 'groups/group_announcements.html', context)
 @login_required
 def create_announcement(request, group_id):
     """View for creating a group announcement"""
@@ -444,29 +389,23 @@ def delete_announcement(request, group_id, announcement_id):
 
 @login_required
 def group_events(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        is_member = group.members.filter(id=request.user.id).exists()
-        if not group.is_public and (not is_member):
-            messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
-            return redirect('groups:group_list')
-        member_role = None
-        if is_member:
-            membership = GroupMembership.objects.get(user=request.user, group=group)
-            member_role = membership.role
-        upcoming_events = GroupEvent.objects.filter(group=group, start_time__gte=timezone.now()).order_by('start_time')
-        past_events = GroupEvent.objects.filter(group=group, start_time__lt=timezone.now()).order_by('-start_time')
-        paginator = Paginator(past_events, 10)
-        page_number = request.GET.get('page')
-        past_events_page = paginator.get_page(page_number)
-        context = {'group': group, 'upcoming_events': upcoming_events, 'past_events_page': past_events_page, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
-        return render(request, 'groups/group_events.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in group_events: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    is_member = group.members.filter(id=request.user.id).exists()
+    if not group.is_public and (not is_member):
+        messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
+        return redirect('groups:group_list')
+    member_role = None
+    if is_member:
+        membership = GroupMembership.objects.get(user=request.user, group=group)
+        member_role = membership.role
+    upcoming_events = GroupEvent.objects.filter(group=group, start_time__gte=timezone.now()).order_by('start_time')
+    past_events = GroupEvent.objects.filter(group=group, start_time__lt=timezone.now()).order_by('-start_time')
+    paginator = Paginator(past_events, 10)
+    page_number = request.GET.get('page')
+    past_events_page = paginator.get_page(page_number)
+    context = {'group': group, 'upcoming_events': upcoming_events, 'past_events_page': past_events_page, 'is_member': is_member, 'member_role': member_role, 'is_admin': member_role == 'admin', 'is_moderator': member_role in ['admin', 'moderator']}
+    return render(request, 'groups/group_events.html', context)
 @login_required
 def create_event(request, group_id):
     """View for creating a group event"""
@@ -500,41 +439,35 @@ def create_event(request, group_id):
 @login_required
 def event_detail(request, group_id, event_id):
     """View for displaying event details"""
-    try:
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        event = get_object_or_404(GroupEvent, id=event_id, group=group)
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    event = get_object_or_404(GroupEvent, id=event_id, group=group)
 
-        is_member = request.user.is_authenticated and group.members.filter(id=request.user.id).exists()
-        if not group.is_public and (not is_member):
-            messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
-            return redirect('groups:group_list')
+    is_member = request.user.is_authenticated and group.members.filter(id=request.user.id).exists()
+    if not group.is_public and (not is_member):
+        messages.error(request, 'هذه المجموعة خاصة. يجب أن تكون عضواً للوصول إليها.')
+        return redirect('groups:group_list')
 
-        member_role = None
-        if is_member:
-            membership = GroupMembership.objects.get(user=request.user, group=group)
-            member_role = membership.role
+    member_role = None
+    if is_member:
+        membership = GroupMembership.objects.get(user=request.user, group=group)
+        member_role = membership.role
 
-        is_attending = request.user.is_authenticated and event.attendees.filter(id=request.user.id).exists()
-        attendees = event.attendees.all()
+    is_attending = request.user.is_authenticated and event.attendees.filter(id=request.user.id).exists()
+    attendees = event.attendees.all()
 
-        context = {
-            'group': group,
-            'event': event,
-            'is_member': is_member,
-            'member_role': member_role,
-            'is_admin': member_role == 'admin',
-            'is_moderator': member_role in ['admin', 'moderator'],
-            'is_attending': is_attending,
-            'attendees': attendees,
-            'attendees_count': attendees.count(),
-        }
+    context = {
+        'group': group,
+        'event': event,
+        'is_member': is_member,
+        'member_role': member_role,
+        'is_admin': member_role == 'admin',
+        'is_moderator': member_role in ['admin', 'moderator'],
+        'is_attending': is_attending,
+        'attendees': attendees,
+        'attendees_count': attendees.count(),
+    }
 
-        return render(request, 'groups/event_detail.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in event_detail: ' + str(e))
-        raise
-
+    return render(request, 'groups/event_detail.html', context)
 @login_required
 def edit_event(request, group_id, event_id):
     """View for editing a group event"""
@@ -631,150 +564,121 @@ def process_join_request(request, group_id, request_id, action):
 
 @login_required
 def attend_event(request, group_id, event_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        event = get_object_or_404(GroupEvent, id=event_id, group=group)
-        if not GroupMembership.objects.filter(user=request.user, group=group).exists():
-            messages.error(request, 'يجب أن تكون عضواً في المجموعة للمشاركة في الفعاليات')
-            return redirect('groups:group_detail', group_id=group.id)
-        if request.method == 'POST':
-            if request.user in event.attendees.all():
-                event.attendees.remove(request.user)
-                messages.success(request, 'تم إلغاء تسجيل حضورك للفعالية')
-            else:
-                event.attendees.add(request.user)
-                messages.success(request, 'تم تسجيل حضورك للفعالية بنجاح')
-            return redirect('groups:group_events', group_id=group.id)
-        context = {'group': group, 'event': event, 'is_attending': request.user in event.attendees.all()}
-        return render(request, 'groups/attend_event.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in attend_event: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    event = get_object_or_404(GroupEvent, id=event_id, group=group)
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        messages.error(request, 'يجب أن تكون عضواً في المجموعة للمشاركة في الفعاليات')
+        return redirect('groups:group_detail', group_id=group.id)
+    if request.method == 'POST':
+        if request.user in event.attendees.all():
+            event.attendees.remove(request.user)
+            messages.success(request, 'تم إلغاء تسجيل حضورك للفعالية')
+        else:
+            event.attendees.add(request.user)
+            messages.success(request, 'تم تسجيل حضورك للفعالية بنجاح')
+        return redirect('groups:group_events', group_id=group.id)
+    context = {'group': group, 'event': event, 'is_attending': request.user in event.attendees.all()}
+    return render(request, 'groups/attend_event.html', context)
 @login_required
 def group_dashboard(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        if not GroupMembership.objects.filter(user=request.user, group=group).exists():
-            messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى لوحة المعلومات')
-            return redirect('groups:group_detail', group_id=group.id)
-        member_count = group.members.count()
-        khatma_count = Khatma.objects.filter(group=group).count()
-        completed_khatma_count = Khatma.objects.filter(group=group, is_completed=True).count()
-        event_count = GroupEvent.objects.filter(group=group).count()
-        announcements = GroupAnnouncement.objects.filter(group=group).order_by('-created_at')[:5]
-        upcoming_events = GroupEvent.objects.filter(group=group, start_time__gte=timezone.now()).order_by('start_time')[:3]
-        recent_chats = GroupChat.objects.filter(group=group).order_by('-created_at')[:5]
-        active_khatmas = Khatma.objects.filter(group=group, is_completed=False).order_by('-created_at')
-        context = {'group': group, 'member_count': member_count, 'khatma_count': khatma_count, 'completed_khatma_count': completed_khatma_count, 'event_count': event_count, 'announcements': announcements, 'upcoming_events': upcoming_events, 'recent_chats': recent_chats, 'active_khatmas': active_khatmas}
-        return render(request, 'groups/group_dashboard.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in group_dashboard: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى لوحة المعلومات')
+        return redirect('groups:group_detail', group_id=group.id)
+    member_count = group.members.count()
+    khatma_count = Khatma.objects.filter(group=group).count()
+    completed_khatma_count = Khatma.objects.filter(group=group, is_completed=True).count()
+    event_count = GroupEvent.objects.filter(group=group).count()
+    announcements = GroupAnnouncement.objects.filter(group=group).order_by('-created_at')[:5]
+    upcoming_events = GroupEvent.objects.filter(group=group, start_time__gte=timezone.now()).order_by('start_time')[:3]
+    recent_chats = GroupChat.objects.filter(group=group).order_by('-created_at')[:5]
+    active_khatmas = Khatma.objects.filter(group=group, is_completed=False).order_by('-created_at')
+    context = {'group': group, 'member_count': member_count, 'khatma_count': khatma_count, 'completed_khatma_count': completed_khatma_count, 'event_count': event_count, 'announcements': announcements, 'upcoming_events': upcoming_events, 'recent_chats': recent_chats, 'active_khatmas': active_khatmas}
+    return render(request, 'groups/group_dashboard.html', context)
 @login_required
 def group_khatmas(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        if not GroupMembership.objects.filter(user=request.user, group=group).exists():
-            messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى الختمات')
-            return redirect('groups:group_detail', group_id=group.id)
-        active_khatmas = Khatma.objects.filter(group=group, is_completed=False).order_by('-created_at')
-        completed_khatmas = Khatma.objects.filter(group=group, is_completed=True).order_by('-completed_at')
-        context = {'group': group, 'active_khatmas': active_khatmas, 'completed_khatmas': completed_khatmas}
-        return render(request, 'groups/group_khatmas.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in group_khatmas: ' + str(e))
-        raise
-
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        messages.error(request, 'يجب أن تكون عضواً في المجموعة للوصول إلى الختمات')
+        return redirect('groups:group_detail', group_id=group.id)
+    active_khatmas = Khatma.objects.filter(group=group, is_completed=False).order_by('-created_at')
+    completed_khatmas = Khatma.objects.filter(group=group, is_completed=True).order_by('-completed_at')
+    context = {'group': group, 'active_khatmas': active_khatmas, 'completed_khatmas': completed_khatmas}
+    return render(request, 'groups/group_khatmas.html', context)
 @login_required
 def create_group_khatma(request, group_id):
-    try:
-        
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        membership = get_object_or_404(GroupMembership, user=request.user, group=group)
-        if membership.role not in ['admin', 'moderator']:
-            messages.error(request, 'ليس لديك صلاحية لإنشاء ختمة في هذه المجموعة')
-            return redirect('groups:group_detail', group_id=group.id)
-        if request.method == 'POST':
-            form = GroupKhatmaForm(request.POST)
-            if form.is_valid():
-                khatma = form.save(commit=False)
-                khatma.creator = request.user
-                khatma.group = group
-                khatma.is_group_khatma = True
-                khatma.khatma_type = 'group'
-                khatma.save()
+    
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    membership = get_object_or_404(GroupMembership, user=request.user, group=group)
+    if membership.role not in ['admin', 'moderator']:
+        messages.error(request, 'ليس لديك صلاحية لإنشاء ختمة في هذه المجموعة')
+        return redirect('groups:group_detail', group_id=group.id)
+    if request.method == 'POST':
+        form = GroupKhatmaForm(request.POST)
+        if form.is_valid():
+            khatma = form.save(commit=False)
+            khatma.creator = request.user
+            khatma.group = group
+            khatma.is_group_khatma = True
+            khatma.khatma_type = 'group'
+            khatma.save()
 
-                # Create parts for the khatma
-                from khatma.models import KhatmaPart
-                existing_parts = set(KhatmaPart.objects.filter(khatma=khatma).values_list('part_number', flat=True))
-                for i in range(1, 31):  # 30 parts of Quran
-                    if i not in existing_parts:
-                        KhatmaPart.objects.create(
-                            khatma=khatma,
-                            part_number=i
-                        )
+            # Create parts for the khatma
+            from khatma.models import KhatmaPart
+            existing_parts = set(KhatmaPart.objects.filter(khatma=khatma).values_list('part_number', flat=True))
+            for i in range(1, 31):  # 30 parts of Quran
+                if i not in existing_parts:
+                    KhatmaPart.objects.create(
+                        khatma=khatma,
+                        part_number=i
+                    )
 
-                # Add creator as participant
-                from khatma.models import Participant
-                Participant.objects.create(
-                    user=request.user,
-                    khatma=khatma
-                )
+            # Add creator as participant
+            from khatma.models import Participant
+            Participant.objects.create(
+                user=request.user,
+                khatma=khatma
+            )
 
-                for member in group.members.all():
-                    if member != request.user:
-                        Notification.objects.create(
-                            user=member,
-                            notification_type='new_group_khatma',
-                            message=f'تم إنشاء ختمة جديدة في مجموعة "{group.name}": {khatma.title}',
-                            related_khatma=khatma,
-                            related_group=group
-                        )
-
-                messages.success(request, 'تم إنشاء الختمة بنجاح')
-                return redirect('khatma:khatma_detail', khatma_id=khatma.id)
-        else:
-            form = GroupKhatmaForm(initial={'group': group})
-        context = {
-            'form': form,
-            'group': group,
-            'today': timezone.now()
-        }
-        return render(request, 'groups/create_group_khatma.html', context)
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in create_group_khatma: ' + str(e))
-        raise
-
-@login_required
-def send_group_chat(request, group_id):
-    try:
-        'API view for sending a group chat message'
-        group = get_object_or_404(ReadingGroup, id=group_id)
-        if not GroupMembership.objects.filter(user=request.user, group=group).exists():
-            return JsonResponse({'status': 'error', 'message': 'يجب أن تكون عضواً في المجموعة للمشاركة في المحادثة'})
-        if not group.enable_chat:
-            return JsonResponse({'status': 'error', 'message': 'المحادثة غير مفعلة في هذه المجموعة'})
-        if request.method == 'POST':
-            message_text = request.POST.get('message')
-            message_type = request.POST.get('message_type', 'text')
-            if not message_text:
-                return JsonResponse({'status': 'error', 'message': 'الرسالة لا يمكن أن تكون فارغة'})
-            chat_message = GroupChat.objects.create(group=group, user=request.user, message=message_text, message_type=message_type)
             for member in group.members.all():
                 if member != request.user:
-                    Notification.objects.create(user=member, notification_type='group_chat', message=f'رسالة جديدة من {request.user.email} في محادثة مجموعة "{group.name}"', related_group=group)
-            return JsonResponse({'status': 'success', 'message': 'تم إرسال الرسالة بنجاح', 'chat_message': {'id': chat_message.id, 'user': chat_message.user.email, 'message': chat_message.message, 'message_type': chat_message.message_type, 'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')}})
-        return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})
-    except (Http404, PermissionDenied): raise
-    except Exception as e:
-        logging.error('Error in send_group_chat: ' + str(e))
-        raise
+                    Notification.objects.create(
+                        user=member,
+                        notification_type='new_group_khatma',
+                        message=f'تم إنشاء ختمة جديدة في مجموعة "{group.name}": {khatma.title}',
+                        related_khatma=khatma,
+                        related_group=group
+                    )
+
+            messages.success(request, 'تم إنشاء الختمة بنجاح')
+            return redirect('khatma:khatma_detail', khatma_id=khatma.id)
+    else:
+        form = GroupKhatmaForm(initial={'group': group})
+    context = {
+        'form': form,
+        'group': group,
+        'today': timezone.now()
+    }
+    return render(request, 'groups/create_group_khatma.html', context)
+@login_required
+def send_group_chat(request, group_id):
+    'API view for sending a group chat message'
+    group = get_object_or_404(ReadingGroup, id=group_id)
+    if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+        return JsonResponse({'status': 'error', 'message': 'يجب أن تكون عضواً في المجموعة للمشاركة في المحادثة'})
+    if not group.enable_chat:
+        return JsonResponse({'status': 'error', 'message': 'المحادثة غير مفعلة في هذه المجموعة'})
+    if request.method == 'POST':
+        message_text = request.POST.get('message')
+        message_type = request.POST.get('message_type', 'text')
+        if not message_text:
+            return JsonResponse({'status': 'error', 'message': 'الرسالة لا يمكن أن تكون فارغة'})
+        chat_message = GroupChat.objects.create(group=group, user=request.user, message=message_text, message_type=message_type)
+        for member in group.members.all():
+            if member != request.user:
+                Notification.objects.create(user=member, notification_type='group_chat', message=f'رسالة جديدة من {request.user.email} في محادثة مجموعة "{group.name}"', related_group=group)
+        return JsonResponse({'status': 'success', 'message': 'تم إرسال الرسالة بنجاح', 'chat_message': {'id': chat_message.id, 'user': chat_message.user.email, 'message': chat_message.message, 'message_type': chat_message.message_type, 'created_at': chat_message.created_at.strftime('%Y-%m-%d %H:%M')}})
+    return JsonResponse({'status': 'error', 'message': 'طلب غير صالح'})

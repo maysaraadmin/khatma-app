@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 import os
 from io import BytesIO
 '\n'

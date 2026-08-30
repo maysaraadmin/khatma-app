@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.urls import path, include
 from django.shortcuts import redirect
 from django.views.generic.base import RedirectView

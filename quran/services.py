@@ -67,7 +67,7 @@ def get_surah_detail(surah_number, user=None):
         ayahs = Ayah.objects.filter(surah=surah).order_by('ayah_number_in_surah')
 
         # Get reciters who have recited this surah
-        reciters = QuranReciter.objects.filter(recitersurah__surah=surah).distinct()
+        reciters = QuranReciter.objects.filter(reciter_surahs__surah=surah).distinct()
 
         # Get user reading settings if user is authenticated
         reading_settings = None
@@ -109,7 +109,7 @@ def get_part_detail(part_number, user=None):
         part = QuranPart.objects.get(part_number=part_number)
 
         # Get all ayahs for the part
-        ayahs = Ayah.objects.filter(quran_part=part).order_by('surah__surah_number', 'ayah_number_in_surah')
+        ayahs = Ayah.objects.filter(quran_part=part).select_related('surah').order_by('surah__surah_number', 'ayah_number_in_surah')
 
         # Group ayahs by surah
         surahs_in_part = {}
@@ -172,17 +172,16 @@ def get_reciter_detail(reciter_id):
         logger.error(f"Error getting reciter detail for reciter {reciter_id}: {str(e)}")
         return None
 
-def update_reading_settings(user, font_size=None, font_family=None, night_mode=None, show_translation=None, translation_language=None):
+def update_reading_settings(user, font_size=None, font_type=None, night_mode=None, show_translation=None):
     """
     Update user's Quran reading settings.
 
     Args:
         user: The user to update settings for
         font_size: Font size (optional)
-        font_family: Font family (optional)
+        font_type: Font type (optional)
         night_mode: Night mode (optional)
         show_translation: Show translation (optional)
-        translation_language: Translation language (optional)
 
     Returns:
         QuranReadingSettings: The updated settings
@@ -195,8 +194,8 @@ def update_reading_settings(user, font_size=None, font_family=None, night_mode=N
         if font_size is not None:
             settings.font_size = font_size
 
-        if font_family is not None:
-            settings.font_type = font_family
+        if font_type is not None:
+            settings.font_type = font_type
 
         if night_mode is not None:
             settings.night_mode = night_mode
@@ -209,7 +208,7 @@ def update_reading_settings(user, font_size=None, font_family=None, night_mode=N
 
         return settings
     except Exception as e:
-        logger.error(f"Error updating reading settings for user {user.username}: {str(e)}")
+        logger.error(f"Error updating reading settings for user {user.email}: {str(e)}")
         return None
 
 def search_quran(search_text=None, search_type='both', surah=None, juz=None, page=1, per_page=20):

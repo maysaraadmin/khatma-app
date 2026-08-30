@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.core.management.base import BaseCommand
 '\n'
 from core.models import Surah, Ayah

@@ -1,4 +1,3 @@
-'''"""This module contains Module functionality."""'''
 from django.contrib import admin
 '\n'
 from .models import QuranPart, Surah, Ayah, QuranReciter, QuranRecitation, QuranTranslation, QuranBookmark, QuranReadingSettings
