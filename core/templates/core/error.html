@@ -78,8 +78,8 @@
             </div>
         {% endif %}
 
-        <h1 class="error-title">{{ error_title|default:error|default:"خطأ" }}</h1>
-        <p class="error-message">{{ error_message|default:error|default:"حدث خطأ غير متوقع" }}</p>
+        <h1 class="error-title">{{ error_title|default:"خطأ" }}</h1>
+        <p class="error-message">{{ error_message|default:"حدث خطأ غير متوقع" }}</p>
 
         <div class="error-actions">
             {% if show_home_link|default:True %}
