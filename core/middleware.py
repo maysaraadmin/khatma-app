@@ -47,40 +47,44 @@ class ErrorHandlerMiddleware:
         """
         Get error data based on exception type
         """
-        # Handle NoReverseMatch for debug_toolbar
+        def safe_str(value):
+            try:
+                return str(value)
+            except Exception:
+                try:
+                    return value.encode('utf-8', 'replace').decode('utf-8', 'replace')
+                except Exception:
+                    return 'Unable to encode error details'
+
         from django.urls.exceptions import NoReverseMatch
         if isinstance(exception, NoReverseMatch) and 'djdt' in str(exception):
-            # If it's a debug toolbar URL, just return a 404
             return {
                 'error_title': _('Page not found'),
                 'error_message': _('The requested page could not be found.'),
-                'error_details': str(exception) if settings.DEBUG else None,
+                'error_details': safe_str(exception) if settings.DEBUG else None,
                 'status_code': 404
             }
-        """
-        Get error data based on exception type
-        """
         if isinstance(exception, DatabaseError):
             if isinstance(exception, OperationalError) and 'connection' in str(exception).lower():
-                return {'error_title': _('Database Connection Error'), 'error_message': _('Unable to connect to the database. Please try again later.'), 'error_details': str(exception), 'error_type': 'database_connection', 'status_code': 503}
+                return {'error_title': _('Database Connection Error'), 'error_message': _('Unable to connect to the database. Please try again later.'), 'error_details': safe_str(exception), 'error_type': 'database_connection', 'status_code': 503}
             else:
-                return {'error_title': _('Database Error'), 'error_message': _('A database error occurred. Please try again later.'), 'error_details': str(exception), 'error_type': 'database', 'status_code': 500}
+                return {'error_title': _('Database Error'), 'error_message': _('A database error occurred. Please try again later.'), 'error_details': safe_str(exception), 'error_type': 'database', 'status_code': 500}
         elif isinstance(exception, IntegrityError):
             error_message = _('A data integrity error occurred. This might be due to duplicate data or constraint violations.')
             if 'unique constraint' in str(exception).lower():
                 error_message = _('This record already exists. Please use a unique value.')
-            return {'error_title': _('Data Integrity Error'), 'error_message': error_message, 'error_details': str(exception), 'error_type': 'integrity', 'status_code': 400}
+            return {'error_title': _('Data Integrity Error'), 'error_message': error_message, 'error_details': safe_str(exception), 'error_type': 'integrity', 'status_code': 400}
         elif isinstance(exception, ValidationError):
             if hasattr(exception, 'message_dict'):
                 error_details = json.dumps(exception.message_dict, indent=2)
             else:
-                error_details = str(exception)
+                error_details = safe_str(exception)
             return {'error_title': _('Validation Error'), 'error_message': _('The submitted data is invalid. Please check your inputs and try again.'), 'error_details': error_details, 'error_type': 'validation', 'status_code': 400}
         elif isinstance(exception, PermissionDenied):
-            return {'error_title': _('Permission Denied'), 'error_message': _('You do not have permission to access this resource.'), 'error_details': str(exception), 'error_type': 'permission', 'status_code': 403}
+            return {'error_title': _('Permission Denied'), 'error_message': _('You do not have permission to access this resource.'), 'error_details': safe_str(exception), 'error_type': 'permission', 'status_code': 403}
         elif isinstance(exception, ObjectDoesNotExist):
-            return {'error_title': _('Not Found'), 'error_message': _('The requested resource was not found.'), 'error_details': str(exception), 'error_type': 'not_found', 'status_code': 404}
-        return {'error_title': _('Server Error'), 'error_message': _('An unexpected error occurred. Please try again later.'), 'error_details': str(exception), 'error_type': 'server', 'status_code': 500}
+            return {'error_title': _('Not Found'), 'error_message': _('The requested resource was not found.'), 'error_details': safe_str(exception), 'error_type': 'not_found', 'status_code': 404}
+        return {'error_title': _('Server Error'), 'error_message': _('An unexpected error occurred. Please try again later.'), 'error_details': safe_str(exception), 'error_type': 'server', 'status_code': 500}
 
     def _should_show_details(self, request):
         """
