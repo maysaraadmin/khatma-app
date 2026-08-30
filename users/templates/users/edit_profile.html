@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}تعديل الملف الشخصي{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="bi bi-person-gear me-2"></i> تعديل الملف الشخصي</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if profile.profile_picture %}
+                            <div class="text-center mb-4">
+                                <img src="{{ profile.profile_picture.url }}" alt="صورة الملف الشخصي" class="rounded-circle border" style="width: 120px; height: 120px; object-fit: cover;">
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.profile_picture.id_for_label }}" class="form-label fw-bold">{{ form.profile_picture.label }}</label>
+                            {{ form.profile_picture }}
+                            {% if form.profile_picture.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.profile_picture.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.bio.id_for_label }}" class="form-label fw-bold">{{ form.bio.label }}</label>
+                            {{ form.bio }}
+                            {% if form.bio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.bio.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label fw-bold">{{ form.location.label }}</label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.location.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.birth_date.id_for_label }}" class="form-label fw-bold">{{ form.birth_date.label }}</label>
+                            {{ form.birth_date }}
+                            {% if form.birth_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.birth_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.family_name.id_for_label }}" class="form-label fw-bold">{{ form.family_name.label }}</label>
+                            {{ form.family_name }}
+                            {% if form.family_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.family_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.organization_name.id_for_label }}" class="form-label fw-bold">{{ form.organization_name.label }}</label>
+                            {{ form.organization_name }}
+                            {% if form.organization_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.organization_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.organization_website.id_for_label }}" class="form-label fw-bold">{{ form.organization_website.label }}</label>
+                            {{ form.organization_website }}
+                            {% if form.organization_website.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.organization_website.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.organization_logo.id_for_label }}" class="form-label fw-bold">{{ form.organization_logo.label }}</label>
+                            {{ form.organization_logo }}
+                            {% if form.organization_logo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.organization_logo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> حفظ التغييرات
+                            </button>
+                            <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">إلغاء</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
