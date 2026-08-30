@@ -300,11 +300,11 @@ def community_leaderboard(request):
     """
     try:
         top_readers = User.objects.annotate(
-            completed_parts_count=Count(
-                'participant__part_assignments__quran_reading',
-                filter=Q(participant__part_assignments__is_completed=True)
+            completed_parts=Count(
+                'assigned_parts',
+                filter=Q(assigned_parts__is_completed=True)
             )
-        ).filter(completed_parts_count__gt=0).select_related('profile').order_by('-completed_parts_count')[:10]
+        ).filter(completed_parts__gt=0).select_related('profile').order_by('-completed_parts')[:10]
 
         top_creators = User.objects.annotate(
             created_khatmas_count=Count('created_khatmas')
@@ -317,7 +317,7 @@ def community_leaderboard(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logger.error(f"Error in community_leaderboard view: {str(e)}")
-        return render(request, 'core/error.html', {'error': str(e)})
+        raise
 
 
 @login_required
