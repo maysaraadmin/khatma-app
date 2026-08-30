@@ -442,7 +442,7 @@ def reciter_surahs(request, reciter_name):
                 available_reciters.append(item)
     if reciter_name not in available_reciters:
         error_message = f'القارئ {reciter_name} غير موجود'
-        return render(request, 'quran/reciter_surahs.html', {'reciter_name': reciter_name, 'surahs': [], 'error': error_message, 'available_reciters': available_reciters})
+        return render(request, 'core/reciter_surahs.html', {'reciter_name': reciter_name, 'surahs': [], 'error': error_message, 'available_reciters': available_reciters})
     # Get existing MP3 files
     mp3_files = []
     try:
@@ -481,7 +481,7 @@ def reciter_surahs(request, reciter_name):
             # Create a placeholder filename for surahs without MP3 files
             mp3_filename = f"{surah_num}.mp3"
 
-        template_path = f'/media/reciters/{reciter_name}/{mp3_filename}'
+        template_path = f'/reciters/{reciter_name}/{mp3_filename}'
         surahs.append({
             'number': surah_number_str,
             'name': surah_name,
@@ -490,7 +490,7 @@ def reciter_surahs(request, reciter_name):
             'has_audio': surah_num in existing_mp3s
         })
     surahs.sort(key=lambda x: x['number'])
-    return render(request, 'quran/reciter_surahs.html', {'reciter_name': reciter_name, 'surahs': surahs})
+    return render(request, 'core/reciter_surahs.html', {'reciter_name': reciter_name, 'surahs': surahs})
 
 def quran_part_view(request, part_number):
     """View for displaying a specific Quran part for reading"""

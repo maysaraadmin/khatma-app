@@ -7,7 +7,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponse, HttpResponsePermanentRedirect
+from django.http import HttpResponse, FileResponse, Http404
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
 from core.social_views import CustomSocialSignupView
@@ -32,6 +32,27 @@ urlpatterns = [
     path('notifications/', include('notifications.urls')),
     path('chat/', include('chat.urls')),
     path('khatma/', include(('khatma.urls', 'khatma'), namespace='khatma')),  # Include khatma app URLs with namespace
+]
+
+# Serve local reciter audio files in development
+def serve_reciter_audio(request, reciter_name, filename):
+    import os
+    from django.conf import settings
+    base_dir = settings.BASE_DIR
+    reciter_dir = os.path.join(base_dir, 'reciters', reciter_name)
+    
+    # Check both in reciter dir and in audio subdir
+    file_path = os.path.join(reciter_dir, filename)
+    if not os.path.exists(file_path):
+        file_path = os.path.join(reciter_dir, 'audio', filename)
+    
+    if not os.path.exists(file_path):
+        raise Http404(f'Audio file not found: {filename}')
+    
+    return FileResponse(open(file_path, 'rb'), content_type='audio/mpeg')
+
+urlpatterns += [
+    path('reciters/<str:reciter_name>/<str:filename>', serve_reciter_audio, name='serve_reciter_audio'),
 ]
 
 # Serve media and static files in development
