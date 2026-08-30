@@ -121,7 +121,7 @@
                                         <li class="list-group-item d-flex align-items-center">
                                             <div class="me-3">
                                                 {% if attendee.profile.profile_picture %}
-                                                    <img src="{{ attendee.profile.profile_picture.url }}" alt="{{ attendee.username }}" class="rounded-circle" width="40" height="40">
+                                                    <img src="{{ attendee.profile.profile_picture.url }}" alt="{{ attendee.email }}" class="rounded-circle" width="40" height="40">
                                                 {% else %}
                                                     <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                                         <i class="bi bi-person-fill"></i>
@@ -129,7 +129,7 @@
                                                 {% endif %}
                                             </div>
                                             <div>
-                                                <h6 class="mb-0">{{ attendee.username }}</h6>
+                                                <h6 class="mb-0">{{ attendee.email }}</h6>
                                                 {% if attendee == event.creator %}
                                                     <small class="text-muted">منشئ الفعالية</small>
                                                 {% endif %}
@@ -152,7 +152,7 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <p><strong>منشئ الفعالية:</strong> {{ event.creator.username }}</p>
+                            <p><strong>منشئ الفعالية:</strong> {{ event.creator.email }}</p>
                             <p><strong>تاريخ الإنشاء:</strong> {{ event.created_at|date:"Y-m-d" }}</p>
                             {% if event.max_attendees %}
                                 <p>

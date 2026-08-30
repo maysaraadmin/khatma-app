@@ -231,7 +231,7 @@ def khatma_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def my_khatmas(request):
@@ -245,7 +245,7 @@ def my_khatmas(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in my_khatmas: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def delete_khatma(request, khatma_id):
@@ -354,7 +354,7 @@ def part_detail(request, khatma_id, part_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in part_detail: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def assign_part(request, khatma_id, part_id):
@@ -471,7 +471,7 @@ def create_deceased(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_deceased: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def deceased_list(request):
@@ -486,7 +486,7 @@ def deceased_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in deceased_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def deceased_detail(request, deceased_id):
@@ -502,7 +502,7 @@ def deceased_detail(request, deceased_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in deceased_detail: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def edit_deceased(request, deceased_id):
@@ -525,7 +525,7 @@ def edit_deceased(request, deceased_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in edit_deceased: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def delete_deceased(request, deceased_id):
@@ -545,7 +545,7 @@ def delete_deceased(request, deceased_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_deceased: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def join_khatma(request, khatma_id):
@@ -582,7 +582,7 @@ def leave_khatma(request, khatma_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in leave_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def khatma_participants(request, khatma_id):
@@ -628,7 +628,7 @@ def remove_participant(request, khatma_id, user_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in remove_participant: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def share_khatma(request, khatma_id):
@@ -669,7 +669,7 @@ def share_khatma(request, khatma_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in share_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def shared_khatma(request, sharing_link):
     try:
@@ -685,7 +685,7 @@ def shared_khatma(request, sharing_link):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in shared_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def khatma_progress_api(request, khatma_id):
@@ -755,7 +755,7 @@ def khatma_dashboard(request, khatma_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_dashboard: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def khatma_reading_plan(request):
@@ -769,7 +769,7 @@ def khatma_reading_plan(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_reading_plan: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def khatma_part_reading(request, khatma_id, part_id):
@@ -799,7 +799,7 @@ def khatma_part_reading(request, khatma_id, part_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_part_reading: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def khatma_chat(request, khatma_id):
@@ -827,7 +827,7 @@ def khatma_chat(request, khatma_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_chat: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def create_khatma_post(request, khatma_id):
@@ -853,4 +853,4 @@ def create_khatma_post(request, khatma_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_khatma_post: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise

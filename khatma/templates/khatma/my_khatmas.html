@@ -108,7 +108,7 @@
                                     <p class="card-text">{{ khatma.description|truncatechars:100 }}</p>
                                     
                                     <div class="khatma-info mb-3">
-                                        <div><i class="fas fa-user"></i> {{ khatma.creator.username }}</div>
+                                        <div><i class="fas fa-user"></i> {{ khatma.creator.email }}</div>
                                         <div><i class="fas fa-tag"></i> {{ khatma.get_khatma_type_display }}</div>
                                         <div><i class="fas fa-users"></i> {{ khatma.participants.count }} مشارك</div>
                                         <div><i class="fas fa-calendar"></i> {{ khatma.created_at|date:"Y-m-d" }}</div>

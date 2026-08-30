@@ -268,7 +268,7 @@
         <div class="khatma-header-meta">
             <div class="khatma-header-meta-item">
                 <i class="bi bi-person-circle"></i>
-                <span>{{ khatma.creator.username }}</span>
+                <span>{{ khatma.creator.email }}</span>
             </div>
             <div class="khatma-header-meta-item">
                 <i class="bi bi-calendar-event"></i>
@@ -345,7 +345,7 @@
                         <i class="bi bi-person-circle me-2 text-primary"></i>
                         <span class="fw-bold">المنشئ:</span>
                     </div>
-                    <div class="ms-4">{{ khatma.creator.username }}</div>
+                    <div class="ms-4">{{ khatma.creator.email }}</div>
                 </div>
 
                 <div class="mb-3">
@@ -411,7 +411,7 @@
                                     {% if part.assigned_to %}
                                         <div class="participant-info">
                                             <i class="bi bi-person-circle"></i>
-                                            <span>{{ part.assigned_to.username }}</span>
+                                            <span>{{ part.assigned_to.email }}</span>
                                         </div>
                                     {% else %}
                                         <div class="participant-info empty">
@@ -592,7 +592,7 @@
                                     </span>
                                 </div>
                                 <div class="khatma-meta">
-                                    <i class="bi bi-person-circle"></i> {{ khatma.creator.username }}
+                                    <i class="bi bi-person-circle"></i> {{ khatma.creator.email }}
                                     <span class="mx-2">•</span>
                                     <i class="bi bi-calendar3"></i> {{ khatma.created_at|date:"Y-m-d" }}
                                 </div>

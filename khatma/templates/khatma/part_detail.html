@@ -83,7 +83,7 @@
                     <div class="col-md-6">
                         <p><strong>مخصص لـ:</strong>
                             {% if part.assigned_to %}
-                                {{ part.assigned_to.username }}
+                                {{ part.assigned_to.email }}
                                 {% if part.assigned_to == user %}
                                     <span class="badge bg-info">أنت</span>
                                 {% endif %}
@@ -92,7 +92,7 @@
                             {% endif %}
                         </p>
                         <p><strong>الختمة:</strong> <a href="{% url 'khatma:khatma_detail' khatma_id=khatma.id %}">{{ khatma.title }}</a></p>
-                        <p><strong>منشئ الختمة:</strong> {{ khatma.creator.username }}</p>
+                         <p><strong>منشئ الختمة:</strong> {{ khatma.creator.email }}</p>
                     </div>
                 </div>
 
@@ -210,13 +210,13 @@
                 <div class="card-body">
                     <div class="text-center mb-3">
                         {% if part.assigned_to.profile.profile_picture %}
-                            <img src="{{ part.assigned_to.profile.profile_picture.url }}" alt="{{ part.assigned_to.username }}" class="rounded-circle" width="80" height="80">
+                            <img src="{{ part.assigned_to.profile.profile_picture.url }}" alt="{{ part.assigned_to.email }}" class="rounded-circle" width="80" height="80">
                         {% else %}
                             <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; margin: 0 auto;">
                                 <i class="fas fa-user fa-2x text-secondary"></i>
                             </div>
                         {% endif %}
-                        <h6 class="mt-2">{{ part.assigned_to.username }}</h6>
+                        <h6 class="mt-2">{{ part.assigned_to.email }}</h6>
                         {% if part.assigned_to.profile.bio %}
                             <p class="small text-muted">{{ part.assigned_to.profile.bio|truncatechars:100 }}</p>
                         {% endif %}

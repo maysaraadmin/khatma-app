@@ -43,7 +43,7 @@ def group_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def my_groups(request):
@@ -57,7 +57,7 @@ def my_groups(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in my_groups: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def create_group(request):
@@ -78,7 +78,7 @@ def create_group(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_group: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def group_detail(request, group_id):
     try:
@@ -129,7 +129,7 @@ def group_detail(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.exception('Error in group_detail')
-        return render(request, 'core/error.html', context={'error': 'حدث خطأ أثناء محاولة عرض تفاصيل المجموعة. يرجى المحاولة مرة أخرى.'})
+        raise
 
 @login_required
 def edit_group(request, group_id):
@@ -152,7 +152,7 @@ def edit_group(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in edit_group: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def delete_group(request, group_id):
@@ -171,7 +171,7 @@ def delete_group(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_group: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def join_group(request, group_id):
@@ -214,7 +214,7 @@ def join_group(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in join_group: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def leave_group(request, group_id):
@@ -237,7 +237,7 @@ def leave_group(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in leave_group: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def group_members(request, group_id):
@@ -258,7 +258,7 @@ def group_members(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_members: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def change_member_role(request, group_id, user_id):
@@ -369,7 +369,7 @@ def group_announcements(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_announcements: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def create_announcement(request, group_id):
@@ -465,7 +465,7 @@ def group_events(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_events: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def create_event(request, group_id):
@@ -533,7 +533,7 @@ def event_detail(request, group_id, event_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in event_detail: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def edit_event(request, group_id, event_id):
@@ -651,7 +651,7 @@ def attend_event(request, group_id, event_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in attend_event: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def group_dashboard(request, group_id):
@@ -674,7 +674,7 @@ def group_dashboard(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_dashboard: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def group_khatmas(request, group_id):
@@ -691,7 +691,7 @@ def group_khatmas(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_khatmas: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def create_group_khatma(request, group_id):
@@ -752,7 +752,7 @@ def create_group_khatma(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in create_group_khatma: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def send_group_chat(request, group_id):
@@ -777,4 +777,4 @@ def send_group_chat(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in send_group_chat: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise

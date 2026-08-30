@@ -59,7 +59,7 @@
 
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>منشئ الختمة:</strong> {{ khatma.creator.username }}</p>
+                        <p><strong>منشئ الختمة:</strong> {{ khatma.creator.email }}</p>
                         <p><strong>نوع الختمة:</strong> {{ khatma.get_khatma_type_display }}</p>
                         <p><strong>تكرار الختمة:</strong> {{ khatma.get_frequency_display }}</p>
                         <p><strong>تاريخ الإنشاء:</strong> {{ khatma.created_at|date:"Y-m-d" }}</p>
@@ -144,7 +144,7 @@
                                 {% if part.is_completed %}
                                     <i class="fas fa-check-circle text-success"></i>
                                 {% elif part.assigned_to %}
-                                    <div class="assigned-to small">{{ part.assigned_to.username }}</div>
+                                    <div class="assigned-to small">{{ part.assigned_to.email }}</div>
                                 {% else %}
                                     <i class="far fa-circle text-muted"></i>
                                 {% endif %}
@@ -165,7 +165,7 @@
                 <ul class="list-group">
                     {% for participant in khatma.participants.all %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ participant.username }}
+                            {{ participant.email }}
                             {% if participant == khatma.creator %}
                                 <span class="badge bg-primary">منشئ الختمة</span>
                             {% endif %}

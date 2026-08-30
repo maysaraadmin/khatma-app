@@ -53,7 +53,7 @@ def logout_view(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in logout_view: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def user_profile(request):
@@ -74,7 +74,7 @@ def user_profile(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in user_profile: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def edit_profile(request):
@@ -94,7 +94,7 @@ def edit_profile(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in edit_profile: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def user_achievements(request):
@@ -106,7 +106,7 @@ def user_achievements(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in user_achievements: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def settings(request):
@@ -134,7 +134,7 @@ def settings(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in settings: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def achievements_list(request):
@@ -147,7 +147,7 @@ def achievements_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in achievements_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def community_leaderboard(request):
@@ -161,4 +161,4 @@ def community_leaderboard(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in community_leaderboard: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise

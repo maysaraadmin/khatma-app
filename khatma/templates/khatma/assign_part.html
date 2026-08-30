@@ -29,7 +29,7 @@
                         </p>
                         <p><strong>معين إلى:</strong>
                             {% if part.assigned_to %}
-                                {{ part.assigned_to.username }}
+                                {{ part.assigned_to.email }}
                             {% else %}
                                 <span class="text-muted">غير معين</span>
                             {% endif %}

@@ -20,7 +20,7 @@
                         <div class="rounded-circle border-4 border-white shadow-lg bg-white d-flex align-items-center justify-center"
                              style="width: 120px; height: 120px;">
                             <span class="fs-2 fw-bold text-indigo">
-                                {{ user.username|slice:":1"|upper }}
+                                {{ user.email|slice:":1"|upper }}
                             </span>
                         </div>
                     {% endif %}
@@ -29,7 +29,7 @@
                 <!-- User Info -->
                 <div class="col-md text-center text-md-end">
                     <h1 class="display-5 fw-bold text-white mb-2">
-                        {{ user.get_full_name|default:user.username }}
+                        {{ user.get_full_name|default:user.email }}
                     </h1>
                     <p class="text-indigo-100 mb-3">@{{ user.email }}</p>
                     <div class="d-flex flex-wrap justify-content-center justify-content-md-end gap-2">

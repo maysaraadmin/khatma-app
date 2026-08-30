@@ -60,19 +60,19 @@
                                         <div class="me-3">
                                             {% if membership.user.profile.profile_picture %}
                                                 <img src="{{ membership.user.profile.profile_picture.url }}" 
-                                                     alt="{{ membership.user.username }}" 
+                                                     alt="{{ membership.user.email }}" 
                                                      class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
                                             {% else %}
                                                 <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                                                     <span class="text-white fw-bold" style="font-size: 1.2rem;">
-                                                        {{ membership.user.username|slice:":1"|upper }}
+                                                        {{ membership.user.email|slice:":1"|upper }}
                                                     </span>
                                                 </div>
                                             {% endif %}
                                         </div>
                                         <div class="flex-grow-1">
-                                            <h6 class="card-title mb-1">{{ membership.user.get_full_name|default:membership.user.username }}</h6>
-                                            <p class="card-text text-muted small">@{{ membership.user.username }}</p>
+                                            <h6 class="card-title mb-1">{{ membership.user.get_full_name|default:membership.user.email }}</h6>
+                                            <p class="card-text text-muted small">@{{ membership.user.email }}</p>
                                             
                                             <div class="mb-2">
                                                 {% if membership.role == 'admin' %}

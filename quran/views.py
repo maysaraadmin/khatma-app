@@ -59,7 +59,7 @@ def surah_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in surah_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def surah_detail(request, surah_number):
     """View for displaying a specific Surah"""
@@ -122,7 +122,7 @@ def juz_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in juz_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def juz_detail(request, part_number):
     """View for displaying a specific Juz' (part)"""
@@ -134,13 +134,13 @@ def juz_detail(request, part_number):
         context = get_part_detail(part_number, request.user)
 
         if context is None:
-            return render(request, 'core/error.html', context={'error': f'Part {part_number} not found'})
+            raise Http404(f'Part {part_number} not found')
 
         return render(request, 'quran/juz_detail.html', context)
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in juz_detail: {str(e)}")
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def reciter_list(request):
     try:
@@ -162,7 +162,7 @@ def reciter_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in reciter_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def reciter_detail(request, reciter_id):
     """View for displaying a specific reciter's details and recitations"""
@@ -174,7 +174,7 @@ def reciter_detail(request, reciter_id):
         context = get_reciter_detail(reciter_id)
 
         if context is None:
-            return render(request, 'core/error.html', context={'error': f'Reciter with ID {reciter_id} not found'})
+            raise Http404(f'Reciter with ID {reciter_id} not found')
 
         # Process recitations by surah
         recitations = QuranRecitation.objects.filter(reciter=context['reciter']).order_by('surah__surah_number')
@@ -190,7 +190,7 @@ def reciter_detail(request, reciter_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in reciter_detail: {str(e)}")
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def search_quran(request):
     """View for searching the Quran"""
@@ -235,7 +235,7 @@ def search_quran(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in search_quran: {str(e)}")
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def bookmark_ayah(request, surah_number, ayah_number):
@@ -277,7 +277,7 @@ def bookmark_ayah(request, surah_number, ayah_number):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in bookmark_ayah: {str(e)}")
-        return render(request, 'core/error.html', context={'error': str(e)})
+        raise
 
 @login_required
 def bookmarks_list(request):
@@ -292,7 +292,7 @@ def bookmarks_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in bookmarks_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def delete_bookmark(request, bookmark_id):
@@ -308,7 +308,7 @@ def delete_bookmark(request, bookmark_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_bookmark: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def reading_settings(request):
@@ -343,7 +343,7 @@ def reading_settings(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in reading_settings: {str(e)}")
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def update_last_read(request):
@@ -366,7 +366,7 @@ def update_last_read(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in update_last_read: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def continue_reading(request):
     """View for continuing from last read position"""
@@ -395,7 +395,7 @@ def quran_home(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in quran_home: {str(e)}")
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def list_reciters(request):
     try:
@@ -413,7 +413,7 @@ def list_reciters(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in list_reciters: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def reciter_surahs(request, reciter_name):
     """View for displaying surahs available for a specific reciter"""
@@ -502,13 +502,13 @@ def quran_part_view(request, part_number):
         context = get_part_detail(part_number, request.user)
 
         if context is None:
-            return render(request, 'core/error.html', context={'error': f'Part {part_number} not found'})
+            raise Http404(f'Part {part_number} not found')
 
         return render(request, 'quran/part_view.html', context)
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error(f"Error in quran_part_view: {str(e)}")
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 def khatma_quran_chapters(request):
     try:
@@ -520,4 +520,4 @@ def khatma_quran_chapters(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_quran_chapters: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise

@@ -165,7 +165,7 @@
                                         </div>
                                         <p class="khatma-description">{{ khatma.description|truncatechars:100|default:"لا يوجد وصف" }}</p>
                                         <div class="khatma-meta">
-                                            <i class="bi bi-person-circle"></i> أنشأها {{ khatma.creator.username }}
+                                            <i class="bi bi-person-circle"></i> أنشأها {{ khatma.creator.email }}
                                             {% if khatma.deceased %}
                                                 <span class="mx-2">•</span>
                                                 <i class="bi bi-heart"></i> مهداة لروح {{ khatma.deceased.name }}
@@ -218,7 +218,7 @@
                                         </div>
                                         <p class="khatma-description">{{ khatma.description|truncatechars:100|default:"لا يوجد وصف" }}</p>
                                         <div class="khatma-meta">
-                                            <i class="bi bi-person-circle"></i> أنشأها {{ khatma.creator.username }}
+                                            <i class="bi bi-person-circle"></i> أنشأها {{ khatma.creator.email }}
                                             {% if khatma.deceased %}
                                                 <span class="mx-2">•</span>
                                                 <i class="bi bi-heart"></i> مهداة لروح {{ khatma.deceased.name }}
@@ -260,7 +260,7 @@
                                         </div>
                                         <p class="khatma-description">{{ khatma.description|truncatechars:100|default:"لا يوجد وصف" }}</p>
                                         <div class="khatma-meta">
-                                            <i class="bi bi-person-circle"></i> أنشأها {{ khatma.creator.username }}
+                                            <i class="bi bi-person-circle"></i> أنشأها {{ khatma.creator.email }}
                                             {% if khatma.deceased %}
                                                 <span class="mx-2">•</span>
                                                 <i class="bi bi-heart"></i> مهداة لروح {{ khatma.deceased.name }}

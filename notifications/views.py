@@ -23,7 +23,7 @@ def notification_list(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in notification_list: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def notification_settings(request):
@@ -43,7 +43,7 @@ def notification_settings(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in notification_settings: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def mark_notification_read(request, notification_id):
@@ -58,7 +58,7 @@ def mark_notification_read(request, notification_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in mark_notification_read: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 
 @login_required
@@ -73,7 +73,7 @@ def mark_all_read(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in mark_all_read: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 
 @login_required
@@ -89,7 +89,7 @@ def delete_notification(request, notification_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_notification: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def delete_all_notifications(request):
@@ -102,7 +102,7 @@ def delete_all_notifications(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_all_notifications: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def get_unread_count(request):
@@ -113,7 +113,7 @@ def get_unread_count(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in get_unread_count: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def get_recent_notifications(request):
@@ -127,7 +127,7 @@ def get_recent_notifications(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in get_recent_notifications: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def notifications(request):
@@ -143,7 +143,7 @@ def notifications(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in notifications: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def mark_all_notifications_read(request):
@@ -155,4 +155,4 @@ def mark_all_notifications_read(request):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in mark_all_notifications_read: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise

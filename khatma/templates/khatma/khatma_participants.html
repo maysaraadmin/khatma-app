@@ -27,7 +27,7 @@
                                 {% for participant in participants %}
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
-                                            <strong>{{ participant.user.username }}</strong>
+                                            <strong>{{ participant.user.email }}</strong>
                                             {% if participant.user == khatma.creator %}
                                                 <span class="badge bg-primary ms-2">منشئ الختمة</span>
                                             {% endif %}

@@ -80,7 +80,7 @@
                             <li class="list-group-item d-flex align-items-center">
                                 <div class="me-3">
                                     {% if admin.user.profile.profile_picture %}
-                                        <img src="{{ admin.user.profile.profile_picture.url }}" alt="{{ admin.user.username }}" class="rounded-circle" width="40" height="40">
+                                        <img src="{{ admin.user.profile.profile_picture.url }}" alt="{{ admin.user.email }}" class="rounded-circle" width="40" height="40">
                                     {% else %}
                                         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                             <i class="bi bi-person-fill"></i>
@@ -88,7 +88,7 @@
                                     {% endif %}
                                 </div>
                                 <div>
-                                    <h6 class="mb-0">{{ admin.user.username }}</h6>
+                                    <h6 class="mb-0">{{ admin.user.email }}</h6>
                                     <small class="text-muted">مدير المجموعة</small>
                                 </div>
                             </li>
@@ -98,7 +98,7 @@
                             <li class="list-group-item d-flex align-items-center">
                                 <div class="me-3">
                                     {% if moderator.user.profile.profile_picture %}
-                                        <img src="{{ moderator.user.profile.profile_picture.url }}" alt="{{ moderator.user.username }}" class="rounded-circle" width="40" height="40">
+                                        <img src="{{ moderator.user.profile.profile_picture.url }}" alt="{{ moderator.user.email }}" class="rounded-circle" width="40" height="40">
                                     {% else %}
                                         <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                             <i class="bi bi-person-fill"></i>
@@ -106,7 +106,7 @@
                                     {% endif %}
                                 </div>
                                 <div>
-                                    <h6 class="mb-0">{{ moderator.user.username }}</h6>
+                                    <h6 class="mb-0">{{ moderator.user.email }}</h6>
                                     <small class="text-muted">مشرف</small>
                                 </div>
                             </li>
@@ -141,7 +141,7 @@
                                 <p class="announcement-content small mb-1">{{ announcement.content }}</p>
                                 <div class="announcement-meta d-flex justify-content-between align-items-center">
                                     <small class="text-muted">{{ announcement.created_at|date:"Y-m-d" }}</small>
-                                    <small class="text-muted">{{ announcement.created_by.username }}</small>
+                                    <small class="text-muted">{{ announcement.created_by.email }}</small>
                                 </div>
                             </div>
                             {% if not forloop.last %}

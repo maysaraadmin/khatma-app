@@ -40,7 +40,7 @@ def khatma_chat(request, khatma_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in khatma_chat: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def group_chat(request, group_id):
@@ -74,7 +74,7 @@ def group_chat(request, group_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in group_chat: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def pin_khatma_message(request, khatma_id, message_id):
@@ -93,7 +93,7 @@ def pin_khatma_message(request, khatma_id, message_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in pin_khatma_message: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def pin_group_message(request, group_id, message_id):
@@ -113,7 +113,7 @@ def pin_group_message(request, group_id, message_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in pin_group_message: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def delete_khatma_message(request, khatma_id, message_id):
@@ -130,7 +130,7 @@ def delete_khatma_message(request, khatma_id, message_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_khatma_message: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise
 
 @login_required
 def delete_group_message(request, group_id, message_id):
@@ -148,4 +148,4 @@ def delete_group_message(request, group_id, message_id):
     except (Http404, PermissionDenied): raise
     except Exception as e:
         logging.error('Error in delete_group_message: ' + str(e))
-        return render(request, 'core/error.html', context={'error': e})
+        raise

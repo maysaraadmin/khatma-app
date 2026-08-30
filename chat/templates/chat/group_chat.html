@@ -33,7 +33,7 @@
                     <div class="pinned-messages">
                         {% for message in pinned_messages %}
                             <div class="pinned-message">
-                                <small class="text-muted">{{ message.user.username }} - {{ message.created_at|date:"j F Y" }}</small>
+                                <small class="text-muted">{{ message.user.email }} - {{ message.created_at|date:"j F Y" }}</small>
                                 <p class="mb-0">{{ message.message|truncatechars:100 }}</p>
                             </div>
                         {% endfor %}
@@ -47,7 +47,7 @@
                             {% for message in chat_messages %}
                                 <div class="message {% if message.user == request.user %}message-mine{% endif %} {% if message.is_pinned %}message-pinned{% endif %}">
                                     <div class="message-header">
-                                        <strong>{{ message.user.username }}</strong>
+                                        <strong>{{ message.user.email }}</strong>
                                         <small class="text-muted">{{ message.created_at|date:"j F Y, g:i a" }}</small>
 
                                         {% if message.is_pinned %}
